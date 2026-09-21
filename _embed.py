@@ -38,6 +38,7 @@ blob = json.dumps(
         "t": table,
         "r": packed,
         "h": src.get("h") or {},
+        "c": src.get("c") or {},
     },
     ensure_ascii=False,
     separators=(",", ":"),

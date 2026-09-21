@@ -13,6 +13,8 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+from _sites import company_sites
+
 ROOT = Path(__file__).resolve().parent
 RAW = ROOT / "data" / "raw"
 OUT = ROOT / "data"
@@ -148,10 +150,14 @@ def xlsx_rows(path: Path, sheet_name: str | None = None):
                 ref = c.get("r") or ""
                 idx = col_index(ref) if ref else i
                 t = c.get("t")
-                v = c.find("m:v", NS_SS)
-                val = v.text if v is not None else ""
-                if t == "s" and val and val.isdigit() and int(val) < len(ss):
-                    val = ss[int(val)]
+                val = ""
+                if t == "inlineStr":
+                    val = "".join(x.text or "" for x in c.iter() if local(x.tag) == "t")
+                else:
+                    v = c.find("m:v", NS_SS)
+                    val = v.text if v is not None else ""
+                    if t == "s" and val and val.isdigit() and int(val) < len(ss):
+                        val = ss[int(val)]
                 cells[idx] = val or ""
                 maxc = max(maxc, idx)
                 i += 1
@@ -956,10 +962,105 @@ def parse_no(rows):
                 add_row(rows, "NO", inn, name or nfs, form, strength_from(nfs), company, extra)
                 n += 1
             el.clear()
-        elif tag == "KatLegemiddelMerkevare":
+        if tag == "KatLegemiddelMerkevare":
             el.clear()
             break
     log(f"parse NO {n}")
+
+
+def xlsx_cell_text(c) -> str:
+    t = c.get("t")
+    if t == "inlineStr":
+        return "".join(x.text or "" for x in c.iter() if local(x.tag) == "t")
+    v = None
+    for child in list(c):
+        if local(child.tag) == "v":
+            v = child.text or ""
+            break
+    return v or ""
+
+
+def parse_au(rows):
+    folder = RAW / "AU"
+    files = list(folder.glob("*.xlsx"))
+    if not files:
+        return
+    p = max(files, key=lambda x: x.stat().st_size)
+    if p.stat().st_size < 1000 or not zipfile.is_zipfile(p):
+        return
+    n = 0
+    qty_re = re.compile(r"(?:Quantity|Qty):\s*([\d.,]+\s*[A-Za-zµμ/%]+)", re.I)
+    form_re = re.compile(
+        r"\b(tablets?|capsules?|injections?|gel|cream|ointment|syrup|suspension|solution|inhalation|ampoules?|vials?|patch(?:es)?|suppositories?|spray|drops?|powder|film-coated|chewable|lozenges?)\b",
+        re.I,
+    )
+    with zipfile.ZipFile(p) as z:
+        sheet = next(n for n in z.namelist() if n.startswith("xl/worksheets/sheet") and n.endswith(".xml"))
+        header = None
+        with z.open(sheet) as fh:
+            for event, el in ET.iterparse(fh, events=("end",)):
+                if local(el.tag) != "row":
+                    continue
+                vals = []
+                for c in list(el):
+                    if local(c.tag) == "c":
+                        vals.append(xlsx_cell_text(c).strip())
+                el.clear()
+                if not any(vals):
+                    continue
+                if header is None:
+                    header = [h.lower() for h in vals]
+                    continue
+                def col(*cands):
+                    for cand in cands:
+                        for i, h in enumerate(header):
+                            if cand in h:
+                                return vals[i] if i < len(vals) else ""
+                    return ""
+                device = col("manufacturer name (devices)", "manufacturer")
+                if device and device.lower() not in {"not applicable", "n/a", "-", ""}:
+                    reject("AU", "not_human")
+                    continue
+                name = col("product name", "name")
+                inn_raw = col("active ingredients", "active")
+                company = col("sponsor name", "sponsor")
+                extra = col("artg id", "artg")
+                if not inn_raw and not name:
+                    reject("AU", "not_human")
+                    continue
+                inn = ""
+                strength = ""
+                eq = re.search(
+                    r"Equivalent:\s*([^,()]+?)(?:,\s*Qty\s+([^)]+))?\s*\)",
+                    inn_raw or "",
+                    re.I,
+                )
+                if eq:
+                    inn = (eq.group(1) or "").strip()
+                    strength = (eq.group(2) or "").strip()
+                if not inn:
+                    inn = (inn_raw or "").split(",")[0]
+                    inn = re.sub(r"\s*Quantity:.*", "", inn, flags=re.I).strip()
+                if len(inn) < 3:
+                    bits = re.findall(r"[A-Za-z][A-Za-z][A-Za-z0-9\-']+", inn_raw or name or "")
+                    skip = {"quantity", "qty", "equivalent", "as", "the", "and", "with", "blister", "pack", "tablet", "tablets", "capsule", "injection"}
+                    inn = next((b for b in bits if b.lower() not in skip), inn)
+                if not strength:
+                    qm = re.search(r"Equivalent:[^)]*?Qty\s+([\d.,]+\s*[A-Za-zµμ/%]+)", inn_raw or "", re.I)
+                    if not qm:
+                        qm = qty_re.search(inn_raw or "")
+                    if qm:
+                        strength = qm.group(1).strip()
+                if not strength:
+                    sm = re.search(r"(\d[\d.,]*\s*(?:mg|mcg|g|ml|µg|iu)\b)", name or "", re.I)
+                    if sm:
+                        strength = sm.group(1)
+                fm = form_re.search(name or "")
+                form = fm.group(1) if fm else ""
+                accept_prod("AU")
+                add_row(rows, "AU", inn, name, form, strength, company, extra)
+                n += 1
+    log(f"parse AU {p.name} {n}")
 
 
 def parse_sk(rows):
@@ -1028,6 +1129,7 @@ def build_health(rows):
         "BE": next(iter((RAW / "BE").glob("Export*humain-20*.csv")), RAW / "BE"),
         "IT": RAW / "IT" / "confezioni_fornitura.csv",
         "NO": pick_file(RAW / "NO" / "fest251", "fest251.xml") or RAW / "NO" / "fest251.xml",
+        "AU": next(iter(sorted((RAW / "AU").glob("*.xlsx"), key=lambda x: x.stat().st_size, reverse=True)), RAW / "AU"),
         "EMA": RAW / "EMA" / "medicines.json",
     }
     names = dict(SRA36)
@@ -1135,12 +1237,14 @@ def write_outputs(rows):
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
         w.writerows(rows)
+    sites = company_sites(rows)
     compact = {
         "v": 2,
         "updated": time.strftime("%Y-%m-%d"),
         "count": len(rows),
         "r": [[r["country"], r["inn"], r["name"], r["form"], r["strength"], r["company"]] for r in rows],
         "h": health,
+        "c": sites,
     }
     js_path = OUT / "search.json"
     js_path.write_text(json.dumps(compact, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
@@ -1149,9 +1253,12 @@ def write_outputs(rows):
         json.dumps({"count": len(rows), "by_country": dict(by), "health": health}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    miss = Counter(r["company"] for r in rows if r.get("company") and r["company"] not in sites)
     log(f"WROTE {len(rows)} rows csv={csv_path.stat().st_size:,} json={js_path.stat().st_size:,}")
     log("by: " + ", ".join(f"{k}:{v}" for k, v in sorted(by.items())))
     log("dropped: " + ", ".join(f"{k}:{sum(v.values())}" for k, v in sorted(FUNNEL["drop"].items())))
+    log(f"sites {len(sites)} unmatched {len(miss)}")
+    log("unmatched top: " + ", ".join(f"{k}:{v}" for k, v in miss.most_common(20)))
 
 
 def main():
@@ -1176,6 +1283,7 @@ def main():
     parse_be(rows)
     parse_it(rows)
     parse_no(rows)
+    parse_au(rows)
     write_outputs(rows)
     log(f"done in {time.time() - t0:.0f}s")
 

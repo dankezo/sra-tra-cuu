@@ -6,8 +6,8 @@
       const chips = [...document.querySelectorAll(".toolbar .chip[data-f]")];
       const guideBtns = [...document.querySelectorAll(".lang-switch button")];
       let filter = "all";
-      let saved = "en";
-      try { saved = localStorage.getItem("sra-guide") || "en"; } catch (e) {}
+      let saved = "orig";
+      try { saved = localStorage.getItem("sra-guide") || "orig"; } catch (e) {}
 
       function apply() {
         const v = (q && q.value || "").trim().toLowerCase();
@@ -63,8 +63,8 @@
           str: "Hàm lượng",
           co: "Công ty",
           src: "Nguồn",
-          site: "Tìm website công ty",
-          rec: "hồ sơ",
+          site: "Website công ty",
+          rec: "Hồ sơ công ty",
           hit: function (n, c) { return n.toLocaleString("vi-VN") + " dòng · " + c + " nước — bấm thẻ nước để mở hết dòng."; }
         },
         en: {
@@ -88,13 +88,13 @@
           str: "Strength",
           co: "Company",
           src: "Source",
-          site: "Find company website",
-          rec: "record",
+          site: "Company website",
+          rec: "Company profile",
           hit: function (n, c) { return n.toLocaleString("en-US") + " rows · " + c + " countries — tap a card to open all rows."; }
         }
       };
       function loc() {
-        return LBL[root.dataset.guide === "orig" ? "orig" : "en"];
+        return LBL.orig;
       }
 
       function paintUi(mode, forPrint) {
@@ -103,24 +103,7 @@
           const e = el.getAttribute("data-e") || o;
           el.textContent = forPrint && o !== e ? o + " / " + e : (mode === "en" ? e : o);
         });
-        const L = LBL[mode === "orig" ? "orig" : "en"];
-        const kicker = document.getElementById("tra-kicker");
-        const title = document.getElementById("tra-title");
-        const lede = document.getElementById("tra-lede");
-        const mqEl = document.getElementById("mq");
-        const mgoEl = document.getElementById("mgo");
-        const mnoneEl = document.getElementById("mnone");
-        if (kicker) kicker.textContent = L.kicker;
-        if (title) title.textContent = L.title;
-        if (lede) lede.textContent = L.lede;
-        if (mqEl) mqEl.placeholder = L.ph;
-        if (mgoEl) mgoEl.textContent = L.find;
-        if (mnoneEl && mnoneEl.style.display !== "block") { /* keep message ready */ }
-        if (mnoneEl) mnoneEl.textContent = L.empty;
-        paintSrcChips();
-        paintFlagChips();
-        root.lang = mode === "orig" ? "vi" : "en";
-        if (mq && (mq.value || "").trim().length >= 2) searchMed();
+        root.lang = "vi";
       }
       function setGuide(mode) {
         root.dataset.guide = mode;
@@ -202,10 +185,8 @@
       const mhit = document.getElementById("tra-hit");
       const mnone = document.getElementById("mnone");
       const suggest = document.getElementById("suggest");
-      const msrc = document.getElementById("msrc");
-      const mflags = document.getElementById("mflags");
+      const mfilters = document.getElementById("mfilters");
       const CC = { FR:"Pháp", ES:"Tây Ban Nha", EMA:"EMA", IS:"Iceland", SK:"Slovakia", EE:"Estonia", LT:"Lithuania", CA:"Canada", CH:"Thụy Sĩ", PL:"Ba Lan", LV:"Latvia", US:"Mỹ", SE:"Thụy Điển", IT:"Ý", IE:"Ireland", CZ:"Séc", FI:"Phần Lan", RO:"Romania", BE:"Bỉ", AT:"Áo", NO:"Na Uy", AU:"Úc", LU:"Luxembourg", GB:"Anh", DE:"Đức", JP:"Nhật Bản", HU:"Hungary", NL:"Hà Lan", PT:"Bồ Đào Nha", BG:"Bulgaria", HR:"Croatia", CY:"Síp", DK:"Đan Mạch", GR:"Hy Lạp", MT:"Malta", SI:"Slovenia", LI:"Liechtenstein" };
-      const FLAG = { FR:"🇫🇷", ES:"🇪🇸", EMA:"🇪🇺", CA:"🇨🇦", US:"🇺🇸", IE:"🇮🇪", CZ:"🇨🇿", RO:"🇷🇴", LV:"🇱🇻", LU:"🇱🇺", CH:"🇨🇭", FI:"🇫🇮", IS:"🇮🇸", IT:"🇮🇹", AT:"🇦🇹", BE:"🇧🇪", EE:"🇪🇪", LT:"🇱🇹", PL:"🇵🇱", BG:"🇧🇬", HR:"🇭🇷", CY:"🇨🇾", DK:"🇩🇰", DE:"🇩🇪", GR:"🇬🇷", HU:"🇭🇺", MT:"🇲🇹", NL:"🇳🇱", PT:"🇵🇹", SK:"🇸🇰", SI:"🇸🇮", SE:"🇸🇪", GB:"🇬🇧", JP:"🇯🇵", AU:"🇦🇺", NO:"🇳🇴", LI:"🇱🇮" };
       const EN = { FR:"France", ES:"Spain", EMA:"EMA", CA:"Canada", US:"United States", IE:"Ireland", CZ:"Czechia", RO:"Romania", LV:"Latvia", LU:"Luxembourg", CH:"Switzerland", FI:"Finland", IS:"Iceland", IT:"Italy", AT:"Austria", BE:"Belgium", EE:"Estonia", LT:"Lithuania", PL:"Poland", BG:"Bulgaria", HR:"Croatia", CY:"Cyprus", DK:"Denmark", DE:"Germany", GR:"Greece", HU:"Hungary", MT:"Malta", NL:"Netherlands", PT:"Portugal", SK:"Slovakia", SI:"Slovenia", SE:"Sweden", GB:"United Kingdom", JP:"Japan", AU:"Australia", NO:"Norway", LI:"Liechtenstein" };
       const EEA = new Set(["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","IS","NO","LI"]);
       const SRC = {
@@ -226,10 +207,12 @@
         EE: { agency:"SAM", url:"https://ravimiregister.ee/en/default.aspx" },
         BE: { agency:"AFMPS", url:"https://banquededonneesmedicaments.fagg-afmps.be/usage-humain" },
         IT: { agency:"AIFA", url:"https://www.aifa.gov.it/liste-dei-farmaci" },
-        NO: { agency:"NOMA · FEST", url:"https://www.legemiddelsok.no/" }
+        NO: { agency:"NOMA · FEST", url:"https://www.legemiddelsok.no/" },
+        AU: { agency:"TGA · ARTG", url:"https://www.tga.gov.au/resources/artg" }
       };
       let MED = [];
       let HEALTH = null;
+      let SITES = {};
       let INNS = [];
       let haveCc = [];
       let srcKind = "all";
@@ -238,7 +221,25 @@
       const store = new WeakMap();
 
       function countryName(cc) {
-        return (root.dataset.guide === "en" ? EN[cc] : CC[cc]) || cc;
+        return CC[cc] || cc;
+      }
+      function flagIso(cc) {
+        return cc === "EMA" ? "eu" : String(cc || "").toLowerCase();
+      }
+      function flagImg(cc) {
+        const iso = flagIso(cc);
+        return "<img class=\"flg\" width=\"20\" height=\"15\" alt=\"\" src=\"https://flagcdn.com/w20/" + iso + ".png\" srcset=\"https://flagcdn.com/w40/" + iso + ".png 2x\" />";
+      }
+      function hydrateFlags() {
+        document.querySelectorAll("span.flag").forEach((el) => {
+          if (el.querySelector("img")) return;
+          const cps = [];
+          for (const ch of el.textContent.trim()) cps.push(ch.codePointAt(0));
+          if (cps.length >= 2 && cps[0] >= 0x1F1E6 && cps[0] <= 0x1F1FF) {
+            const iso = String.fromCharCode(cps[0] - 0x1F1E6 + 65, cps[1] - 0x1F1E6 + 65).toLowerCase();
+            el.innerHTML = "<img class=\"flg\" width=\"20\" height=\"15\" alt=\"\" src=\"https://flagcdn.com/w20/" + iso + ".png\" srcset=\"https://flagcdn.com/w40/" + iso + ".png 2x\" />";
+          }
+        });
       }
       function esc(s) {
         return String(s || "").replace(/[&<>"]/g, (ch) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[ch]));
@@ -252,45 +253,42 @@
         const L = loc();
         return "<a class=\"src" + (ema ? " ema" : "") + "\" href=\"" + esc(src.url) + "\" target=\"_blank\" rel=\"noopener\">" + (ema ? L.ema : L.dump) + "</a>";
       }
-      function coHref(cc, company) {
-        if (!company) return "";
+      function wikiHref(company) {
+        return "https://en.wikipedia.org/wiki/Special:Search?go=Go&search=" + encodeURIComponent(company);
+      }
+      function googleHref(cc, company) {
         const place = EN[cc] || cc;
         return "https://www.google.com/search?q=" + encodeURIComponent('"' + company + '" ' + place + " official website");
-      }
-      function ocHref(company) {
-        if (!company) return "";
-        return "https://opencorporates.com/companies?q=" + encodeURIComponent(company);
       }
       function coCell(cc, company) {
         if (!company) return "—";
         const L = loc();
-        return "<a class=\"co\" href=\"" + esc(coHref(cc, company)) + "\" target=\"_blank\" rel=\"noopener\" title=\"" + esc(L.site) + "\">" + esc(company) + "</a>" +
-          "<a class=\"co-alt\" href=\"" + esc(ocHref(company)) + "\" target=\"_blank\" rel=\"noopener\">" + esc(L.rec) + "</a>";
+        const official = SITES[company];
+        if (official) {
+          return "<a class=\"co\" href=\"" + esc(official) + "\" target=\"_blank\" rel=\"noopener\" title=\"" + esc(L.site) + "\">" + esc(company) + "</a>";
+        }
+        const wiki = wikiHref(company);
+        if (wiki) {
+          return "<a class=\"co\" href=\"" + esc(wiki) + "\" target=\"_blank\" rel=\"noopener\" title=\"" + esc(L.rec) + "\">" + esc(company) + "</a>";
+        }
+        return "<a class=\"co g\" href=\"" + esc(googleHref(cc, company)) + "\" target=\"_blank\" rel=\"noopener\" title=\"" + esc(L.site) + "\">" + esc(company) + "</a>";
       }
-      function paintSrcChips() {
-        if (!msrc) return;
+      function paintFilters() {
+        if (!mfilters) return;
         const L = loc();
-        const opts = [
-          ["all", L.all],
-          ["dump", L.dump],
-          ["ema", L.ema]
-        ];
-        msrc.innerHTML = opts.map(([k, lab]) => {
+        const src = [["all", L.all], ["dump", L.dump], ["ema", L.ema]].map(([k, lab]) => {
           return "<button type=\"button\" data-src=\"" + k + "\" class=\"" + (srcKind === k ? "on" : "") + "\">" + esc(lab) + "</button>";
         }).join("");
-      }
-      function paintFlagChips() {
-        if (!mflags) return;
         const order = haveCc.slice().sort((a, b) => {
           if (a === "EMA") return -1;
           if (b === "EMA") return 1;
-          return countryName(a).localeCompare(countryName(b));
+          return countryName(a).localeCompare(countryName(b), "vi");
         });
-        mflags.innerHTML = order.map((c) => {
-          const on = selCc.size === 0 || selCc.has(c);
-          return "<button type=\"button\" data-cc=\"" + c + "\" class=\"" + (selCc.size && selCc.has(c) ? "on" : (selCc.size === 0 ? "" : "")) + "\">" +
-            (FLAG[c] || "") + " " + esc(countryName(c)) + "</button>";
+        const flags = order.map((c) => {
+          return "<button type=\"button\" data-cc=\"" + c + "\" class=\"" + (selCc.size && selCc.has(c) ? "on" : "") + "\">" +
+            flagImg(c) + " " + esc(countryName(c)) + "</button>";
         }).join("");
+        mfilters.innerHTML = src + (order.length ? "<i class=\"sep\"></i>" : "") + flags;
       }
       function hideSuggest() {
         if (!suggest) return;
@@ -311,13 +309,13 @@
         if (v.length < 2) return [];
         const start = [];
         const mid = [];
-        for (let i = 0; i < INNS.length && start.length + mid.length < 40; i++) {
+        for (let i = 0; i < INNS.length && start.length + mid.length < 12; i++) {
           const it = INNS[i];
           const ix = it.key.indexOf(v);
           if (ix === 0) start.push(it);
           else if (ix > 0) mid.push(it);
         }
-        return start.concat(mid).slice(0, 8);
+        return start.concat(mid).slice(0, 3);
       }
       function rowHtml(r, idx, code) {
         const L = loc();
@@ -374,7 +372,7 @@
             return "<div>" + esc(r[1]) + " · " + esc(r[2]) + (r[5] ? " · " + esc(r[5]) : "") + "</div>";
           }).join("");
           d.innerHTML =
-            "<summary><span class=\"cg-flag\">" + (FLAG[code] || "") + "</span><span>" + esc(countryName(code)) + "</span>" +
+            "<summary><span class=\"cg-flag\">" + flagImg(code) + "</span><span>" + esc(countryName(code)) + "</span>" +
             "<span class=\"cg-n\">" + list.length + " " + L.rows + "</span>" +
             "<a class=\"src" + (code === "EMA" ? " ema" : "") + "\" href=\"" + esc(src.url) + "\" target=\"_blank\" rel=\"noopener\" onclick=\"event.stopPropagation()\">" + (code === "EMA" ? L.ema : L.dump) + "</a>" +
             "<div class=\"cg-prev\">" + prev + "</div></summary>" +
@@ -486,7 +484,7 @@
         body.innerHTML = PACK.filter(function (p) { return !have.has(p.cc); }).map(function (p) {
           const open = "<a class=\"go\" href=\"" + esc(p.url) + "\" target=\"_blank\" rel=\"noopener\">Open</a>";
           const save = p.save ? "<code>" + esc(p.save) + "</code>" : "—";
-          return "<tr data-df=\"" + p.tag + "\"><td>" + (FLAG[p.cc] || "") + " <strong>" + esc(p.name) + "</strong> <span class=\"hint\">" + p.cc + "</span></td><td>" + tagHtml(p.tag) + "</td><td class=\"how\">" + p.how + (p.files ? "<br><span class=\"hint\">File: " + esc(p.files) + "</span>" : "") + "</td><td class=\"fmt\">" + save + "</td><td>" + open + "</td></tr>";
+          return "<tr data-df=\"" + p.tag + "\"><td>" + flagImg(p.cc) + " <strong>" + esc(p.name) + "</strong> <span class=\"hint\">" + p.cc + "</span></td><td>" + tagHtml(p.tag) + "</td><td class=\"how\">" + p.how + (p.files ? "<br><span class=\"hint\">File: " + esc(p.files) + "</span>" : "") + "</td><td class=\"fmt\">" + save + "</td><td>" + open + "</td></tr>";
         }).join("");
       }
       function covClass(s, have) {
@@ -530,7 +528,7 @@
         const donut = document.getElementById("hdonut");
         const heroCap = document.getElementById("hhero-cap");
         if (heroCap) {
-          heroCap.textContent = "Green = national dump in search. Navy = no national dump, EMA still covers (EEA). Red = neither dump nor EMA (JP / AU / GB).";
+          heroCap.textContent = "Green = national dump in search. Navy = no national dump, EMA still covers (EEA). Red = neither dump nor EMA.";
         }
         const track = document.getElementById("htrack");
         if (track) {
@@ -624,12 +622,13 @@
             return [t[r[0]] || "", t[r[1]] || "", t[r[2]] || "", t[r[3]] || "", t[r[4]] || "", t[r[5]] || ""];
           });
           HEALTH = d.h || null;
+          SITES = d.c || {};
           buildInns();
-          paintSrcChips();
-          paintFlagChips();
-          const locn = root.dataset.guide === "orig" ? "vi-VN" : "en-US";
-          mmeta.textContent = (d.n || MED.length).toLocaleString(locn) + " circulating rows · " + (d.u || "");
+          paintFilters();
+          const locn = "vi-VN";
+          mmeta.textContent = (d.n || MED.length).toLocaleString(locn) + " dòng đang lưu hành · " + (d.u || "");
           paintHealth();
+          hydrateFlags();
         } catch (e) {
           mmeta.textContent = "Could not read the medicine index on this page.";
         }
@@ -641,20 +640,20 @@
       window.addEventListener("afterprint", () => paintUi(root.dataset.guide, false));
 
       if (mgo) mgo.addEventListener("click", searchMed);
-      if (msrc) msrc.addEventListener("click", (ev) => {
-        const b = ev.target.closest("button[data-src]");
-        if (!b) return;
-        srcKind = b.getAttribute("data-src");
-        paintSrcChips();
-        if ((mq.value || "").trim().length >= 2) searchMed();
-      });
-      if (mflags) mflags.addEventListener("click", (ev) => {
-        const b = ev.target.closest("button[data-cc]");
-        if (!b) return;
-        const cc = b.getAttribute("data-cc");
+      if (mfilters) mfilters.addEventListener("click", (ev) => {
+        const srcBtn = ev.target.closest("button[data-src]");
+        if (srcBtn) {
+          srcKind = srcBtn.getAttribute("data-src");
+          paintFilters();
+          if ((mq.value || "").trim().length >= 2) searchMed();
+          return;
+        }
+        const ccBtn = ev.target.closest("button[data-cc]");
+        if (!ccBtn) return;
+        const cc = ccBtn.getAttribute("data-cc");
         if (selCc.has(cc)) selCc.delete(cc);
         else selCc.add(cc);
-        paintFlagChips();
+        paintFilters();
         if ((mq.value || "").trim().length >= 2) searchMed();
       });
       let sugTimer = 0;

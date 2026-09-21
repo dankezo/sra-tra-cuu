@@ -1,0 +1,477 @@
+[
+  {
+    "url": "https://base-donnees-publique.medicaments.gouv.fr/download/file/CIS_bdpm.txt",
+    "ok": true,
+    "skipped": true,
+    "file": "FR/CIS_bdpm.txt",
+    "bytes": 3169992
+  },
+  {
+    "url": "https://base-donnees-publique.medicaments.gouv.fr/download/file/CIS_CIP_bdpm.txt",
+    "ok": true,
+    "skipped": true,
+    "file": "FR/CIS_CIP_bdpm.txt",
+    "bytes": 4143820
+  },
+  {
+    "url": "https://listadomedicamentos.aemps.gob.es/Medicamentos.xls",
+    "ok": false,
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "file": "ES/Medicamentos.xls"
+  },
+  {
+    "url": "https://listadomedicamentos.aemps.gob.es/Presentaciones.xls",
+    "ok": false,
+    "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+    "file": "ES/Presentaciones.xls"
+  },
+  {
+    "url": "https://ravimiregister.ee/Data/XML/pakendid.csv",
+    "ok": false,
+    "error": "HTTP Error 403: Forbidden",
+    "file": "EE/pakendid.csv"
+  },
+  {
+    "url": "https://www.lyfjastofnun.is/rest/v2/medicine/0",
+    "ok": false,
+    "error": "HTTP Error 404: Not Found",
+    "file": "IS/medicine.json"
+  },
+  {
+    "url": "https://www.ema.europa.eu/sites/default/files/Medicines_output_european_public_assessment_reports.xlsx",
+    "ok": false,
+    "error": "HTTP Error 404: Not Found",
+    "file": "EMA/epar.xlsx"
+  },
+  {
+    "url": "https://www.fda.gov/media/89850/download",
+    "final": "https://www.fda.gov/media/89850/download",
+    "ok": true,
+    "bytes": 6081382,
+    "file": "US/drugsfda.zip"
+  },
+  {
+    "url": "https://ogd.swissmedic.cloud/ogd-arzneimittel/Daten/OGD.zip",
+    "final": "https://ogd.swissmedic.cloud/ogd-arzneimittel/Daten/OGD.zip",
+    "ok": true,
+    "bytes": 2883980,
+    "file": "CH/OGD.zip"
+  },
+  {
+    "url": "https://get.data.gov.lt/datasets/gov/vvkt/vaistiniai_preparatai/PreparatasPakuote.csv",
+    "ok": false,
+    "error": "HTTP Error 500: Internal Server Error",
+    "file": "LT/PreparatasPakuote.csv"
+  },
+  {
+    "url": "https://open.canada.ca/data/dataset/bf55e42a-63cb-4556-bfd8-44f26e5a36fe/resource/b05ae610-0366-478f-993f-b4afbdaadbc6/download/allfiles.zip",
+    "final": "https://opencanada.blob.core.windows.net/opengovprod/resources/b05ae610-0366-478f-993f-b4afbdaadbc6/allfiles.zip?se=2026-09-21T05%3A49%3A21Z&sp=r&sv=2024-08-04&sr=b&sig=K/00MsaB9WSwD/2Ahu0NpDmWdZTSbSJMFGEHZhS52Ms%3D",
+    "ok": true,
+    "bytes": 1444752,
+    "file": "CA/allfiles.zip"
+  },
+  {
+    "url": "https://www.ema.europa.eu/en/documents/report/medicines-output-medicines_json-report_en.json",
+    "final": "https://www.ema.europa.eu/en/documents/report/medicines-output-medicines_json-report_en.json",
+    "ok": true,
+    "bytes": 6773631,
+    "file": "EMA/medicines.json"
+  },
+  {
+    "url": "http://nsl.mpa.se/sensl.zip",
+    "ok": false,
+    "error": "<urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+    "file": "SE/sensl.zip"
+  },
+  {
+    "url": "https://rejestry.ezdrowie.gov.pl/api/rpl/medicinal-products/public-pl-report/6.0.0/overall.xml",
+    "ok": false,
+    "error": "<urlopen error [WinError 10060] A connection attempt failed because the connected party did not properly respond after a period of time, or established connection failed because connected host has failed to respond>",
+    "file": "PL/overall.xml"
+  },
+  {
+    "url": "https://base-donnees-publique.medicaments.gouv.fr/download/file/CIS_COMPO_bdpm.txt",
+    "final": "https://base-donnees-publique.medicaments.gouv.fr/download/file/CIS_COMPO_bdpm.txt",
+    "ok": true,
+    "bytes": 2732807,
+    "file": "FR/CIS_COMPO_bdpm.txt"
+  },
+  {
+    "url": "https://dati.zva.gov.lv/zalu-registrs/export/HumanProducts.xml.zip",
+    "final": "https://dati.zva.gov.lv/zalu-registrs/export/HumanProducts.xml.zip",
+    "ok": true,
+    "bytes": 3015325,
+    "file": "LV/HumanProducts.xml.zip"
+  },
+  {
+    "url": "https://nomenclator.anm.ro/files/nomenclator.xlsx",
+    "final": "https://nomenclator.anm.ro/files/nomenclator.xlsx",
+    "ok": true,
+    "bytes": 2221406,
+    "file": "RO/nomenclator.xlsx"
+  },
+  {
+    "url": "https://dati.zva.gov.lv/zalu-registrs/export/HumanProducts.json.zip",
+    "final": "https://dati.zva.gov.lv/zalu-registrs/export/HumanProducts.json.zip",
+    "ok": true,
+    "bytes": 2648385,
+    "file": "LV/registry.json.zip"
+  },
+  {
+    "url": "https://opendata.sukl.cz/soubory/DLP_datove_rozhrani20260701.csv",
+    "final": "https://opendata.sukl.cz/soubory/DLP_datove_rozhrani20260701.csv",
+    "ok": true,
+    "bytes": 13356,
+    "file": "CZ\\DLP_datove_rozhrani20260701.csv"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zl-ham-ohne-indikation.xlsx.download.xlsx/Zugelassene_Arzneimittel%20HAM_oind_29022024.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zl-ham-ohne-indikation.xlsx.download.xlsx/Zugelassene_Arzneimittel%20HAM_oind_29022024.xlsx",
+    "ok": true,
+    "bytes": 296221,
+    "file": "CH\\Zugelassene_Arzneimittel%20HAM_oind_29022024.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/erweiterte-ham-ohne-indikation.xlsx.download.xlsx/Erweiterte_Arzneimittelliste%20HAM_oind_29022024.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/erweiterte-ham-ohne-indikation.xlsx.download.xlsx/Erweiterte_Arzneimittelliste%20HAM_oind_29022024.xlsx",
+    "ok": true,
+    "bytes": 377078,
+    "file": "CH\\Erweiterte_Arzneimittelliste%20HAM_oind_29022024.xlsx"
+  },
+  {
+    "url": "https://assets.hpra.ie/products/xml/latestInterchangeableslist.xml",
+    "final": "https://assets.hpra.ie/products/xml/latestInterchangeableslist.xml",
+    "ok": true,
+    "bytes": 1436860,
+    "file": "IE\\latestInterchangeableslist.xml"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_arzneimittel_ham_ind.xlsx.download.xlsx/Zugelassene_Arzneimittel_HAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_arzneimittel_ham_ind.xlsx.download.xlsx/Zugelassene_Arzneimittel_HAM.xlsx",
+    "ok": true,
+    "bytes": 1005371,
+    "file": "CH\\Zugelassene_Arzneimittel_HAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/gentechnologisch_ws_ham.xlsx.download.xlsx/Gentechliste%20HAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/gentechnologisch_ws_ham.xlsx.download.xlsx/Gentechliste%20HAM.xlsx",
+    "ok": true,
+    "bytes": 342921,
+    "file": "CH\\Gentechliste%20HAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/erweiterte_ham_ind.xlsx.download.xlsx/Erweiterte_Arzneimittelliste%20HAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/erweiterte_ham_ind.xlsx.download.xlsx/Erweiterte_Arzneimittelliste%20HAM.xlsx",
+    "ok": true,
+    "bytes": 2598464,
+    "file": "CH\\Erweiterte_Arzneimittelliste%20HAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/gesuchseingaenge-ham.xlsx.download.xlsx/Gesuchseing%C3%A4nge%20HAM_31012021.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/gesuchseingaenge-ham.xlsx.download.xlsx/Gesuchseing%C3%A4nge%20HAM_31012021.xlsx",
+    "ok": true,
+    "bytes": 509848,
+    "file": "CH\\Gesuchseing%C3%A4nge%20HAM_31012021.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_packungen_human.xlsx.download.xlsx/zugelassene_packungen_ham.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_packungen_human.xlsx.download.xlsx/zugelassene_packungen_ham.xlsx",
+    "ok": true,
+    "bytes": 3271392,
+    "file": "CH\\zugelassene_packungen_ham.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/co-marketing_ham.xlsx.download.xlsx/Co-Marketing_nachBasis%20HAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/co-marketing_ham.xlsx.download.xlsx/Co-Marketing_nachBasis%20HAM.xlsx",
+    "ok": true,
+    "bytes": 295412,
+    "file": "CH\\Co-Marketing_nachBasis%20HAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/insuline_gentechnologisch_ws.xlsx.download.xlsx/Insulin_gentech.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/insuline_gentechnologisch_ws.xlsx.download.xlsx/Insulin_gentech.xlsx",
+    "ok": true,
+    "bytes": 270346,
+    "file": "CH\\Insulin_gentech.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/befristete_ham.xlsx.download.xlsx/Befristet_zugelassene_Arzneimittel%20HAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/befristete_ham.xlsx.download.xlsx/Befristet_zugelassene_Arzneimittel%20HAM.xlsx",
+    "ok": true,
+    "bytes": 270822,
+    "file": "CH\\Befristet_zugelassene_Arzneimittel%20HAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/liste-umteilungen-abgabekategorie_b.xlsx.download.xlsx/Liste-Umteilungen-Abgabekategorie_B.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/liste-umteilungen-abgabekategorie_b.xlsx.download.xlsx/Liste-Umteilungen-Abgabekategorie_B.xlsx",
+    "ok": true,
+    "bytes": 270540,
+    "file": "CH\\Liste-Umteilungen-Abgabekategorie_B.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/meldungen_art11_ham.xlsx.download.xlsx/Liste%20Meldungen%2011%20VAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/meldungen_art11_ham.xlsx.download.xlsx/Liste%20Meldungen%2011%20VAM.xlsx",
+    "ok": true,
+    "bytes": 285506,
+    "file": "CH\\Liste%20Meldungen%2011%20VAM.xlsx"
+  },
+  {
+    "url": "https://assets.hpra.ie/products/xml/latestHumanlist.xml",
+    "final": "https://assets.hpra.ie/products/xml/latestHumanlist.xml",
+    "ok": true,
+    "bytes": 13546133,
+    "file": "IE\\latestHumanlist.xml"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/arzneimittelliste_nhp_ed.xlsx.download.xlsx/Arzneimittelliste_NHP_ED.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/arzneimittelliste_nhp_ed.xlsx.download.xlsx/Arzneimittelliste_NHP_ED.xlsx",
+    "ok": true,
+    "bytes": 403214,
+    "file": "CH\\Arzneimittelliste_NHP_ED.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/status_orphandrug_ham.xlsx.download.xlsx/Liste_OrphanDrug_Internet.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/status_orphandrug_ham.xlsx.download.xlsx/Liste_OrphanDrug_Internet.xlsx",
+    "ok": true,
+    "bytes": 345086,
+    "file": "CH\\Liste_OrphanDrug_Internet.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/liste_meldungen_11_vam_homant.xlsx.download.xlsx/liste_meldungen_11_vam_homant.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/liste_meldungen_11_vam_homant.xlsx.download.xlsx/liste_meldungen_11_vam_homant.xlsx",
+    "ok": true,
+    "bytes": 27271,
+    "file": "CH\\liste_meldungen_11_vam_homant.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_arzneimittel_homant_hom.xlsx.download.xlsx/zugelassene_arzneimittel_homant_hom.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_arzneimittel_homant_hom.xlsx.download.xlsx/zugelassene_arzneimittel_homant_hom.xlsx",
+    "ok": true,
+    "bytes": 680212,
+    "file": "CH\\zugelassene_arzneimittel_homant_hom.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/nicht_mehr_zugelassene_am_homant_hom.xlsx.download.xlsx/nicht_mehr_zugelassene_am_homant_hom.xls.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/nicht_mehr_zugelassene_am_homant_hom.xlsx.download.xlsx/nicht_mehr_zugelassene_am_homant_hom.xls.xlsx",
+    "ok": true,
+    "bytes": 249327,
+    "file": "CH\\nicht_mehr_zugelassene_am_homant_hom.xls.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_impfkombinationen_tam.pdf.download.pdf/20221222_Zugelassene_Impfstoffkombinationen.pdf",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_impfkombinationen_tam.pdf.download.pdf/20221222_Zugelassene_Impfstoffkombinationen.pdf",
+    "ok": true,
+    "bytes": 141839,
+    "file": "CH\\20221222_Zugelassene_Impfstoffkombinationen.pdf"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/erweiterte_tam.xlsx.download.xlsx/Erweiterte_Arzneimittelliste%20TAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/erweiterte_tam.xlsx.download.xlsx/Erweiterte_Arzneimittelliste%20TAM.xlsx",
+    "ok": true,
+    "bytes": 484615,
+    "file": "CH\\Erweiterte_Arzneimittelliste%20TAM.xlsx"
+  },
+  {
+    "url": "https://assets.hpra.ie/products/xml/withdrawnHumanlist.xml",
+    "final": "https://assets.hpra.ie/products/xml/withdrawnHumanlist.xml",
+    "ok": true,
+    "bytes": 17816962,
+    "file": "IE\\withdrawnHumanlist.xml"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/tam_gentechnologisch_ws.xlsx.download.xlsx/Gentechliste%20TAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/tam_gentechnologisch_ws.xlsx.download.xlsx/Gentechliste%20TAM.xlsx",
+    "ok": true,
+    "bytes": 270146,
+    "file": "CH\\Gentechliste%20TAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_verpackungen_tam.xlsx.download.xlsx/Zugelassene_Packungen%20TAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_verpackungen_tam.xlsx.download.xlsx/Zugelassene_Packungen%20TAM.xlsx",
+    "ok": true,
+    "bytes": 551846,
+    "file": "CH\\Zugelassene_Packungen%20TAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_tam.xlsx.download.xlsx/Zugelassene_Arzneimittel%20TAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_tam.xlsx.download.xlsx/Zugelassene_Arzneimittel%20TAM.xlsx",
+    "ok": true,
+    "bytes": 341285,
+    "file": "CH\\Zugelassene_Arzneimittel%20TAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/co-marketing_tam.xlsx.download.xlsx/Co-Marketing_nachBasis%20TAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/co-marketing_tam.xlsx.download.xlsx/Co-Marketing_nachBasis%20TAM.xlsx",
+    "ok": true,
+    "bytes": 265270,
+    "file": "CH\\Co-Marketing_nachBasis%20TAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/gesuchseingaenge_tam.xlsx.download.xlsx/Gesuchseing%C3%A4nge%20TAM_31012021.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/gesuchseingaenge_tam.xlsx.download.xlsx/Gesuchseing%C3%A4nge%20TAM_31012021.xlsx",
+    "ok": true,
+    "bytes": 459958,
+    "file": "CH\\Gesuchseing%C3%A4nge%20TAM_31012021.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/befristete_tam.xlsx.download.xlsx/Befristet_zugelassene_Arzneimittel%20TAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/befristete_tam.xlsx.download.xlsx/Befristet_zugelassene_Arzneimittel%20TAM.xlsx",
+    "ok": true,
+    "bytes": 267948,
+    "file": "CH\\Befristet_zugelassene_Arzneimittel%20TAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/meldungenart11_tam.xlsx.download.xlsx/11%20VAM%20Liste%20Meldungen%20TAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/meldungenart11_tam.xlsx.download.xlsx/11%20VAM%20Liste%20Meldungen%20TAM.xlsx",
+    "ok": true,
+    "bytes": 270440,
+    "file": "CH\\11%20VAM%20Liste%20Meldungen%20TAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/imkereifachgeschaefte.xlsx.download.xlsx/Liste_Imkereigeschaefte.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/imkereifachgeschaefte.xlsx.download.xlsx/Liste_Imkereigeschaefte.xlsx",
+    "ok": true,
+    "bytes": 258312,
+    "file": "CH\\Liste_Imkereigeschaefte.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zoofachgeschaefte.xlsx.download.xlsx/Liste_Zoofachgeschaefte.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zoofachgeschaefte.xlsx.download.xlsx/Liste_Zoofachgeschaefte.xlsx",
+    "ok": true,
+    "bytes": 259675,
+    "file": "CH\\Liste_Zoofachgeschaefte.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_btm_ham.xlsx.download.xlsx/BTM%20HAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_btm_ham.xlsx.download.xlsx/BTM%20HAM.xlsx",
+    "ok": true,
+    "bytes": 335752,
+    "file": "CH\\BTM%20HAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/mums_liste.xlsx.download.xlsx/Mums.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/mums_liste.xlsx.download.xlsx/Mums.xlsx",
+    "ok": true,
+    "bytes": 273597,
+    "file": "CH\\Mums.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/bewilligungen/btm/verzeichnis_der_rohmaterialienunderzeugnissemitvermuteterbetaeub.pdf.download.pdf/verzeichnis_der_rohmaterialienunderzeugnissemitvermuteterbetaeub.pdf",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/bewilligungen/btm/verzeichnis_der_rohmaterialienunderzeugnissemitvermuteterbetaeub.pdf.download.pdf/verzeichnis_der_rohmaterialienunderzeugnissemitvermuteterbetaeub.pdf",
+    "ok": true,
+    "bytes": 245134,
+    "file": "CH\\verzeichnis_der_rohmaterialienunderzeugnissemitvermuteterbetaeub.pdf"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/liste_substanzen_art_21.xlsx.download.xlsx/Excel%20Liste%20Substanzen%20Art%2021.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/liste_substanzen_art_21.xlsx.download.xlsx/Excel%20Liste%20Substanzen%20Art%2021.xlsx",
+    "ok": true,
+    "bytes": 264791,
+    "file": "CH\\Excel%20Liste%20Substanzen%20Art%2021.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/betriebsbewilligungzumumgangmitkontrolliertensubstanzenart2bsthb.xlsx.download.xlsx/betriebsbewilligungzumumgangmitkontrolliertensubstanzenart2bsthb.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/betriebsbewilligungzumumgangmitkontrolliertensubstanzenart2bsthb.xlsx.download.xlsx/betriebsbewilligungzumumgangmitkontrolliertensubstanzenart2bsthb.xlsx",
+    "ok": true,
+    "bytes": 324016,
+    "file": "CH\\betriebsbewilligungzumumgangmitkontrolliertensubstanzenart2bsthb.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_btm_tam.xlsx.download.xlsx/BTM%20TAM.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_btm_tam.xlsx.download.xlsx/BTM%20TAM.xlsx",
+    "ok": true,
+    "bytes": 270227,
+    "file": "CH\\BTM%20TAM.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/bewilligungen/btm/diebstahl_verlustvonrezeptformularenfuerbetaeubungsmittel.xlsx.download.xlsx/diebstahl_verlustvonrezeptformularenfuerbetaeubungsmittel.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/bewilligungen/btm/diebstahl_verlustvonrezeptformularenfuerbetaeubungsmittel.xlsx.download.xlsx/diebstahl_verlustvonrezeptformularenfuerbetaeubungsmittel.xlsx",
+    "ok": true,
+    "bytes": 596067,
+    "file": "CH\\diebstahl_verlustvonrezeptformularenfuerbetaeubungsmittel.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/stab/networking/bestellung_fuer_betaeubungsmittel-rezeptbloecke.xlsx.download.xlsx/bestellung_fuer_betaeubungsmittel-rezeptbloecke.pdf.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/stab/networking/bestellung_fuer_betaeubungsmittel-rezeptbloecke.xlsx.download.xlsx/bestellung_fuer_betaeubungsmittel-rezeptbloecke.pdf.xlsx",
+    "ok": true,
+    "bytes": 275443,
+    "file": "CH\\bestellung_fuer_betaeubungsmittel-rezeptbloecke.pdf.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene-impfstoffe-blutprodukte-andere-immunologische-arzneimittel.xlsx.download.xlsx/IBP.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene-impfstoffe-blutprodukte-andere-immunologische-arzneimittel.xlsx.download.xlsx/IBP.xlsx",
+    "ok": true,
+    "bytes": 289136,
+    "file": "CH\\IBP.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/mikrobiologische_labor_neuem_recht.xlsx.download.xlsx/Laboratorien_neuem_Recht.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/mikrobiologische_labor_neuem_recht.xlsx.download.xlsx/Laboratorien_neuem_Recht.xlsx",
+    "ok": true,
+    "bytes": 316482,
+    "file": "CH\\Laboratorien_neuem_Recht.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/atc-liste.xlsx.download.xlsx/ATC-Liste.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/atc-liste.xlsx.download.xlsx/ATC-Liste.xlsx",
+    "ok": true,
+    "bytes": 275871,
+    "file": "CH\\ATC-Liste.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/stab/networking/regionale_inspektorate.xlsx.download.xlsx/regionale_inspektorate.pdf.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/stab/networking/regionale_inspektorate.xlsx.download.xlsx/regionale_inspektorate.pdf.xlsx",
+    "ok": true,
+    "bytes": 268325,
+    "file": "CH\\regionale_inspektorate.pdf.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_Verfahren.xlsx.download.xlsx/Verfahren.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassene_Verfahren.xlsx.download.xlsx/Verfahren.xlsx",
+    "ok": true,
+    "bytes": 255448,
+    "file": "CH\\Verfahren.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/unterlagenschutz.xlsx.download.xlsx/Unterlagenschutz.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/unterlagenschutz.xlsx.download.xlsx/Unterlagenschutz.xlsx",
+    "ok": true,
+    "bytes": 381865,
+    "file": "CH\\Unterlagenschutz.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/kpa_zuteilung.xlsx.download.xlsx/kpa_zuteilung.xls.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/kpa_zuteilung.xlsx.download.xlsx/kpa_zuteilung.xls.xlsx",
+    "ok": true,
+    "bytes": 263037,
+    "file": "CH\\kpa_zuteilung.xls.xlsx"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/beschaffungen-von-swissmedic.pdf.download.pdf/20220403_Auftr%C3%A4ge_ab_50TCHF_final.pdf",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/beschaffungen-von-swissmedic.pdf.download.pdf/20220403_Auftr%C3%A4ge_ab_50TCHF_final.pdf",
+    "ok": true,
+    "bytes": 124808,
+    "file": "CH\\20220403_Auftr%C3%A4ge_ab_50TCHF_final.pdf"
+  },
+  {
+    "url": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassen_wirkstoffe.xlsx.download.xlsx/Stoffliste.xlsx",
+    "final": "https://www.swissmedic.ch/dam/swissmedic/de/dokumente/internetlisten/zugelassen_wirkstoffe.xlsx.download.xlsx/Stoffliste.xlsx",
+    "ok": true,
+    "bytes": 357491,
+    "file": "CH\\Stoffliste.xlsx"
+  },
+  {
+    "url": "https://santesecu.public.lu/dam-assets/fr/espace-professionnel/domaines/dpm/liste-des-medicaments.xlsx",
+    "final": "https://santesecu.public.lu/dam-assets/fr/espace-professionnel/domaines/dpm/liste-des-medicaments.xlsx",
+    "ok": true,
+    "bytes": 2486424,
+    "file": "LU\\liste-des-medicaments.xlsx"
+  },
+  {
+    "url": "https://opendata.sukl.cz/soubory/SOD20260827/DLP20260827.zip",
+    "final": "https://opendata.sukl.cz/soubory/SOD20260827/DLP20260827.zip",
+    "ok": true,
+    "bytes": 9523269,
+    "file": "CZ\\DLP20260827.zip"
+  }
+]

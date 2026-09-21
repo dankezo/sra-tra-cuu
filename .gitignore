@@ -1,0 +1,10 @@
+data/raw/
+data/search.json
+data/SRA_thuoc_gop.csv
+data/summary.json
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+*.log
+_inspect.txt

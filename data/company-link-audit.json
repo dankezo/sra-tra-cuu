@@ -1,0 +1,1307 @@
+{
+  "checkedAt": "2026-09-22T09:27:35.163009+00:00",
+  "machine": "local Windows computer",
+  "sites": {
+    "https://adamed.com": {
+      "status": 200,
+      "url": "https://www.adamed.com/",
+      "title": "Adamed – tu polska innowacja ma swój początek | Adamed",
+      "reachable": true
+    },
+    "https://alembicpharmaceuticals.com": {
+      "status": 200,
+      "url": "https://alembicpharmaceuticals.com",
+      "title": "Generic Medicine Manufacturers - Alembic Pharmaceuticals",
+      "reachable": true
+    },
+    "https://alkaloid.com.mk": {
+      "status": 200,
+      "url": "https://alkaloid.com.mk",
+      "title": "Home - Alkaloid",
+      "reachable": true
+    },
+    "https://arrotex.com.au": {
+      "status": 200,
+      "url": "https://www.dbghealth.com.au/businesses/arrotex-pharmaceuticals",
+      "title": "Arrotex | Prescription Medicines, Biologics, and Biosimilars | DBG Health",
+      "reachable": true
+    },
+    "https://au.gsk.com": {
+      "status": 200,
+      "url": "https://au.gsk.com/en-au/",
+      "title": "Home | GSK AU",
+      "reachable": true
+    },
+    "https://glenmarkpharma.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserStatus": 403,
+      "url": "https://glenmarkpharma.com/?__cf_chl_rt_tk=A7lgpv0pjVTjldTY4q0IfORUbvUOuQBXyuyIVZcaNpU-1790069356-1.0.1.1-K.tOfzZI5RJtE9X8gzSkkFn.vxz9KweOw_OBvalMvIE",
+      "title": "Just a moment...",
+      "browserChecked": true,
+      "excerpt": ""
+    },
+    "https://global.hisamitsu.com": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://global.hisamitsu.com/"
+    },
+    "https://grindeks.com": {
+      "status": 200,
+      "url": "https://grindeks.com/en/",
+      "title": "Home page - Grindeks",
+      "reachable": true
+    },
+    "https://inovapharma.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserStatus": 403,
+      "url": "https://inovapharma.com/?__cf_chl_rt_tk=RTMRuqpxSWf9IBnucF7ks4RwqgbDDgIEE81FzQHAAb4-1790069356-1.0.1.1-1EFlKVhwrfaFp5K1_zo82ZCJaPpwleDG.4w.b8vH.oo",
+      "title": "Just a moment...",
+      "browserChecked": true,
+      "excerpt": ""
+    },
+    "https://inpharm.com.pl": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://inpharm.com.pl/"
+    },
+    "https://junopharm.com.au": {
+      "status": 200,
+      "url": "https://junopharm.com.au",
+      "title": "Website Under Maintenance",
+      "reachable": false
+    },
+    "https://noumed.com.au": {
+      "status": 200,
+      "url": "https://noumed.com.au",
+      "title": "Coming Soon",
+      "reachable": false
+    },
+    "https://olainfarm.com": {
+      "status": 200,
+      "url": "https://olpha.eu/",
+      "title": "Olpha. Laba veselības aprūpe – Tev tuvāk",
+      "reachable": true,
+      "browserStatus": 200,
+      "browserChecked": true,
+      "excerpt": "Global\nAlbania\nAzerbaijan\nEstonia\nGeorgia\nKazakhstan\nKyrgyzstan\nLatvia\nLithuania\nMongolia\nTajikistan\nUkraine\nUzbekistan\nKosova\nVeselības aprūpes speciālisti\nKontakti\nPievienojies Olpha\nLAT\nENG\nIzvēlne Aizvērt \nPar mums\nOlpha grupa\nVēsture\nStratēģija\nDalība projektos\nVadības komanda\nProdukti\nVisi produkti\nTerapeitiskās grupas\nAktīvās farmaceitiskās vielas un starpprodukti\nZāļu lietošanas drošuma uzraudzība\nBiznesa partneri\nLīgumražošana\nFarmaceitiskā kopizstrāde\nFarmaceitiskā ārlicencēšana\nUztura bagātinātāju ražošana\nProduktu pārvaldība\nIlgtspēja\nPārvaldība\nSociālā atbildība\nVide\nPētniecība un"
+    },
+    "https://olpha.eu": {
+      "status": 200,
+      "url": "https://olpha.eu",
+      "title": "Olpha. Laba veselības aprūpe – Tev tuvāk",
+      "reachable": false,
+      "browserError": "page.goto: Navigation to \"https://olpha.eu/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://servier.com": {
+      "status": 200,
+      "url": "https://servier.com",
+      "title": "Servier - Laboratoire pharmaceutique international indépendant",
+      "reachable": true
+    },
+    "https://sunpharma.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://sunpharma.com/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://swisse.com": {
+      "status": 200,
+      "url": "https://swisse.com",
+      "title": "Welcome to Swisse",
+      "reachable": true
+    },
+    "https://www.1apharma.com": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.1apharma.com/"
+    },
+    "https://www.2care4.dk": {
+      "status": 200,
+      "url": "https://www.2care4.dk",
+      "title": "2care4",
+      "reachable": true
+    },
+    "https://www.aah.co.uk": {
+      "status": 200,
+      "url": "https://www.aah.co.uk/s/",
+      "title": "AAH Community",
+      "reachable": true
+    },
+    "https://www.abacusmedicine.com": {
+      "reachable": false,
+      "error": "HTTP Error 455: ",
+      "browserStatus": 454,
+      "url": "https://www.abacusmedicine.com/",
+      "title": "Checking your browser...",
+      "browserChecked": true,
+      "excerpt": "454 Checking your browser\n\nThis automatic security check will complete in a moment.\n\nReticulating splines...."
+    },
+    "https://www.abbott.com": {
+      "status": 200,
+      "url": "https://www.abbott.com/vi-vn",
+      "title": "Vietnamese – Vietnam",
+      "reachable": true
+    },
+    "https://www.abbott.com.au": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.abbott.com.au/"
+    },
+    "https://www.abbvie.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.abbvie.com/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.abbvie.com.au": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.abbvie.com.au/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.accord-healthcare.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.accord-healthcare.com/\" is interrupted by another navigation to \"https://olpha.eu/\""
+    },
+    "https://www.aftpharm.com": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserError": "page.goto: Navigation to \"https://www.aftpharm.com/\" is interrupted by another navigation to \"https://www.abbvie.com/\""
+    },
+    "https://www.alcon.com": {
+      "status": 200,
+      "url": "https://www.alcon.com",
+      "title": "Alcon: Developing Innovative Eye Care Treatments",
+      "reachable": true
+    },
+    "https://www.alexion.com": {
+      "status": 200,
+      "url": "https://alexion.com/",
+      "title": "Alexion Global Site",
+      "reachable": true
+    },
+    "https://www.alfasigma.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.alfasigma.com/\" is interrupted by another navigation to \"https://www.abbvie.com.au/\""
+    },
+    "https://www.aliud.de": {
+      "status": 200,
+      "url": "https://www.aliud.de",
+      "title": "GeniAL g&#xFC;nstig! | ALIUD PHARMA",
+      "reachable": true
+    },
+    "https://www.alkemlabs.com": {
+      "status": 200,
+      "url": "https://www.alkemlabs.com",
+      "title": "Alkem - Home",
+      "reachable": true
+    },
+    "https://www.alliance-healthcare.com": {
+      "status": 200,
+      "url": "https://www.cencora.com/solutions/european-distribution-network",
+      "title": "European Distribution Network | Cencora",
+      "reachable": true
+    },
+    "https://www.almirall.com": {
+      "status": 200,
+      "url": "https://www.almirall.com",
+      "title": "",
+      "reachable": true
+    },
+    "https://www.alvogen.com": {
+      "status": 200,
+      "url": "https://www.alvogen.com",
+      "title": "Alvogen",
+      "reachable": true
+    },
+    "https://www.amgen.com": {
+      "status": 200,
+      "url": "https://www.amgen.com",
+      "title": "Amgen | A Worldwide Pioneer in Biotechnology",
+      "reachable": true
+    },
+    "https://www.amgen.com.au": {
+      "status": 200,
+      "url": "https://www.amgen.com.au",
+      "title": "Amgen Australia: A Worldwide Pioneer in Biotechnology",
+      "reachable": true
+    },
+    "https://www.angelinipharma.com": {
+      "status": 200,
+      "url": "https://www.angelinipharma.com",
+      "title": "Angelini Pharma | Official Website",
+      "reachable": true
+    },
+    "https://www.apotex.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.apotex.com/\" is interrupted by another navigation to \"https://www.alfasigma.com/\""
+    },
+    "https://www.ardeypharm.de": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: self-signed certificate in certificate chain (_ssl.c:1010)>",
+      "browserError": "page.goto: Navigation to \"https://www.ardeypharm.de/\" is interrupted by another navigation to \"https://www.accord-healthcare.com/\""
+    },
+    "https://www.aristo-pharma.de": {
+      "status": 200,
+      "url": "https://www.aristo-pharma.de/en",
+      "title": "Aristo Pharma: Welcome to your health expert",
+      "reachable": true
+    },
+    "https://www.arrowgeneriques.com": {
+      "reachable": false,
+      "error": "<urlopen error [WinError 10054] An existing connection was forcibly closed by the remote host>",
+      "browserError": "page.goto: net::ERR_CONNECTION_REFUSED at https://www.arrowgeneriques.com/"
+    },
+    "https://www.arrowpharma.com.au": {
+      "status": 200,
+      "url": "https://www.arrowpharma.com.au",
+      "title": "Arrow Pharmaceuticals",
+      "reachable": true
+    },
+    "https://www.aska-pharma.co.jp": {
+      "status": 200,
+      "url": "https://www.aska-pharma.co.jp",
+      "title": "あすか製薬株式会社｜あすも、みらいも、すこやかに",
+      "reachable": true
+    },
+    "https://www.aspenpharma.com": {
+      "reachable": true,
+      "error": "HTTP Error 403: Forbidden",
+      "browserStatus": 200,
+      "url": "https://www.aspenpharma.com/",
+      "title": "Aspen Pharmacare | Pharmaceutical Company",
+      "browserChecked": true,
+      "excerpt": "SHARE PRICE:\n\nAPN15929-509 (-3.10%)\nSearch\nOUR RESPONSE TO COVID\nCOUNTRY SITES\nAbout Aspen\n \nInvestor Relations\n \nWe Care\n \nCareers\n \nMedia\n \nContact Us\nHEALTHCARE. WE CARE.\nEXCELLENCE\nINTEGRITY\nHEALTHCARE. WE CARE.\nINNOVATION\nCOMMITMENT\nTEAMWORK\nSED\nPROJECTS\n0\n+\nGLOBAL\nOFFICES\n0\nMANUFACTURING FACILITIES\n0\nCOUNTRIES\nSUPPLIED\n0\n+\nEMPLOYEES\nGLOBALLY\n0\n+\nPRESS RELEASES\nOUR STORIES\nOur Purpose\nFind out more\nTo improve the health and quality of life of patients.\nOur Vision\nFind out more\nTo deliver value to all our stakeholders as a responsible corporate citizen that provides high-quality, affordabl"
+    },
+    "https://www.aspenpharma.com.au": {
+      "status": 200,
+      "url": "https://www.aspenpharma.com.au",
+      "title": "Aspen Pharmacare Australia",
+      "reachable": true
+    },
+    "https://www.astellas.com": {
+      "status": 200,
+      "url": "https://www.astellas.com/en",
+      "title": "Homepage | Astellas",
+      "reachable": true
+    },
+    "https://www.astellas.com/au": {
+      "status": 200,
+      "url": "https://www.astellas.com/en/contact-us/global-directory?accId=section-a-0",
+      "title": "Global Directory | Astellas",
+      "reachable": true
+    },
+    "https://www.astrazeneca.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.astrazeneca.com/\" is interrupted by another navigation to \"https://www.aftpharm.com/\""
+    },
+    "https://www.astrazeneca.com.au": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.astrazeneca.com.au/\" is interrupted by another navigation to \"https://www.astrazeneca.com/\""
+    },
+    "https://www.aurobindo.com": {
+      "status": 200,
+      "url": "https://www.aurobindo.com",
+      "title": "Aurobindo Pharma - Leading Global Pharmaceutical Company",
+      "reachable": true
+    },
+    "https://www.bausch.com": {
+      "status": 200,
+      "url": "https://www.bausch.com",
+      "title": "Bausch &#x2B; Lomb Official Home Page",
+      "reachable": true
+    },
+    "https://www.bausch.com.au": {
+      "status": 200,
+      "url": "https://www.bausch.com.au",
+      "title": "Home - Bausch",
+      "reachable": true
+    },
+    "https://www.bauschhealth.com": {
+      "status": 200,
+      "url": "https://www.bauschhealth.com",
+      "title": "Home | Bausch Health",
+      "reachable": true
+    },
+    "https://www.baxter.com": {
+      "status": 200,
+      "url": "https://www.baxter.com",
+      "title": "Redefining Healthcare Delivery Everywhere Care Happens | Baxter",
+      "reachable": true
+    },
+    "https://www.baxter.com.au": {
+      "status": 200,
+      "url": "https://www.baxter.com.au",
+      "title": "baxter.com.au",
+      "reachable": true
+    },
+    "https://www.bayer.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.bayer.com/\" is interrupted by another navigation to \"https://www.ardeypharm.de/\""
+    },
+    "https://www.bayer.com.au": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: net::ERR_ABORTED at https://www.bayer.com.au/"
+    },
+    "https://www.bbraun.com": {
+      "reachable": true,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserStatus": 200,
+      "url": "https://www.bbraun.com/en.html",
+      "title": "B. Braun: A leading medical technology company",
+      "browserChecked": true,
+      "excerpt": "Cancel OK\nProducts & Solutions\nPatient Care\nCareer\nAbout Us\nperson\nMy B. Braun\nsearch\nHome\nB. Braun Sharing Expertise\nWhat drives us\n\nWe protect and improve the health of people around the world.\n\nLearn more about B. Braun\nsearch\nOur highlights\nWe drive advancements in health care\nAnnual Report 2025\n\nB. Braun continued its long-term growth path in fiscal year 2025. Group sales increase by 5.1 percent at constant currencies to € 9.4 billion.\n\nMore time for patient care.\n\nGlobal staff shortages make health care professionals the most valuable resource in hospitals. Their most limited asset is ti"
+    },
+    "https://www.bbraun.com.au": {
+      "reachable": true,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserStatus": 200,
+      "url": "https://www.bbraun.com.au/en.html",
+      "title": "B. Braun: A leading medical technology company",
+      "browserChecked": true,
+      "excerpt": "Cancel OK\nProducts & Solutions\nPatient Care\nCareer\nAbout us\nperson\nMy B. Braun\nsearch\nHome\nB. Braun Sharing Expertise\nWhat drives us\n\nWe protect and improve the health of people around the world.\n\nLearn more about B. Braun\nsearch\nOur highlights\nWe drive advancements in health care\nDialysis Services\n\nSupporting patients with high‑quality dialysis treatment, comfort, and continuity of care.\n\nSustainable Container Systems\n\nHealthcare actors around the world are looking for new ways to make their professional activities and the medical service they provide more sustainable and environmentally frie"
+    },
+    "https://www.berlin-chemie.com": {
+      "status": 200,
+      "url": "https://berlin-chemie.de/",
+      "title": "Startseite",
+      "reachable": true
+    },
+    "https://www.besins-healthcare.com": {
+      "status": 200,
+      "url": "https://www.besins-healthcare.com",
+      "title": "Hormone Therapies for a brighter future - Besins Healthcare",
+      "reachable": true
+    },
+    "https://www.betapharm.de": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.betapharm.de/\" is interrupted by another navigation to \"https://www.astrazeneca.com.au/\""
+    },
+    "https://www.bial.com": {
+      "status": 200,
+      "url": "https://www.bial.com",
+      "title": "Bial | Keeping Life in Mind",
+      "reachable": true
+    },
+    "https://www.biocon.com": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserError": "page.goto: Navigation to \"https://www.biocon.com/\" is interrupted by another navigation to \"https://www.betapharm.de/\""
+    },
+    "https://www.biogaran.com": {
+      "status": 200,
+      "url": "https://biogaran.fr/",
+      "title": "Biogaran : Médicaments génériques et produits de santé",
+      "reachable": true
+    },
+    "https://www.biogen.com": {
+      "status": 200,
+      "url": "https://www.biogen.com",
+      "title": "Pioneering innovative science | Biogen",
+      "reachable": true
+    },
+    "https://www.biontech.com": {
+      "status": 200,
+      "url": "https://www.biontech.com/int/en/home.html",
+      "title": "BioNTech: Advancing science to help transform cancer and infectious disease treatments",
+      "reachable": true
+    },
+    "https://www.bluefishpharma.com": {
+      "status": 200,
+      "url": "https://www.bluefishpharma.com",
+      "title": "Bluefish Pharmaceuticals | Quality Medicines",
+      "reachable": true
+    },
+    "https://www.bml.com.au": {
+      "status": 200,
+      "url": "https://ahoy.com.au/",
+      "title": "Home - Ahoy",
+      "reachable": true
+    },
+    "https://www.bms.com": {
+      "status": 200,
+      "url": "https://www.bms.com",
+      "title": "Bristol Myers Squibb - Global Biopharmaceutical Company",
+      "reachable": true
+    },
+    "https://www.boehringer-ingelheim.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.boehringer-ingelheim.com/\" is interrupted by another navigation to \"https://www.bayer.com/\""
+    },
+    "https://www.boehringer-ingelheim.com.au": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.boehringer-ingelheim.com.au/\" is interrupted by another navigation to \"https://www.boehringer-ingelheim.com/\""
+    },
+    "https://www.boiron.com": {
+      "status": 200,
+      "url": "https://www.boiron.com",
+      "title": "Boiron laboratories around the world: the choice of homeopathy",
+      "reachable": true
+    },
+    "https://www.boiron.es": {
+      "status": 200,
+      "url": "https://www.boiron.es",
+      "title": "BOIRON España | Tu aliado natural en el cuidado de la salud",
+      "reachable": true
+    },
+    "https://www.boiron.fr": {
+      "status": 200,
+      "url": "https://www.boiron.fr",
+      "title": "Boiron, Laboratoire pharmaceutique français – Référent mondial de l’homéopathie",
+      "reachable": true
+    },
+    "https://www.cemon.it": {
+      "reachable": false,
+      "error": "<urlopen error [WinError 10054] An existing connection was forcibly closed by the remote host>",
+      "browserError": "page.goto: net::ERR_CONNECTION_RESET at https://www.cemon.it/"
+    },
+    "https://www.chartwellpharma.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.chartwellpharma.com/\" is interrupted by another navigation to \"https://www.boehringer-ingelheim.com/au/\""
+    },
+    "https://www.cheplapharm.com": {
+      "status": 200,
+      "url": "https://www.cheplapharm.com",
+      "title": "CHEPLAPHARM Arzneimittel GmbH | Cheplapharm",
+      "reachable": true
+    },
+    "https://www.chiesi.com": {
+      "status": 200,
+      "url": "https://www.chiesi.com/it/",
+      "title": "Home | Chiesi Farmaceutici S.p.A.",
+      "reachable": true
+    },
+    "https://www.chiesi.com.au": {
+      "status": 200,
+      "url": "https://www.chiesi.com.au",
+      "title": "Home | Chiesi Australia Pty Ltd",
+      "reachable": true
+    },
+    "https://www.chugai-pharm.co.jp": {
+      "status": 200,
+      "url": "https://www.chugai-pharm.co.jp",
+      "title": "中外製薬株式会社：創造で、想像を超える。",
+      "reachable": true
+    },
+    "https://www.cinfa.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.cinfa.com/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.cipla.com": {
+      "status": 200,
+      "url": "https://www.cipla.com",
+      "title": "",
+      "reachable": true
+    },
+    "https://www.csl.com": {
+      "reachable": false,
+      "error": "HTTP Error 429: Too Many Requests",
+      "browserError": "page.goto: Navigation to \"https://www.csl.com/\" is interrupted by another navigation to \"https://www.chartwellpharma.com/\""
+    },
+    "https://www.cslbehring.com": {
+      "reachable": false,
+      "error": "HTTP Error 429: Too Many Requests",
+      "browserError": "page.goto: Navigation to \"https://www.cslbehring.com/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.daiichisankyo.com": {
+      "status": 200,
+      "url": "https://www.daiichisankyo.com",
+      "title": "Daiichi Sankyo",
+      "reachable": true
+    },
+    "https://www.delfarma.pl": {
+      "status": 200,
+      "url": "https://www.delfarma.pl",
+      "title": "Delfarma - import równoległy - tańsze leki",
+      "reachable": true
+    },
+    "https://www.desitin.de": {
+      "status": 200,
+      "url": "https://www.desitin.de",
+      "title": "Home - DESITIN Arzneimittel GmbH",
+      "reachable": true
+    },
+    "https://www.dhu.com": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: TLSV1_UNRECOGNIZED_NAME] tlsv1 unrecognized name (_ssl.c:1010)>",
+      "browserError": "page.goto: net::ERR_SSL_UNRECOGNIZED_NAME_ALERT at https://www.dhu.com/"
+    },
+    "https://www.docgenerici.it": {
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "browserError": "page.goto: net::ERR_CONNECTION_TIMED_OUT at https://www.docgenerici.it/"
+    },
+    "https://www.drreddys.com": {
+      "status": 200,
+      "url": "https://www.drreddys.com",
+      "title": "Dr. Reddy&#x27;s - Good Health Can&#x27;t Wait",
+      "reachable": true
+    },
+    "https://www.egis.hu": {
+      "status": 200,
+      "url": "https://hu.egis.health/",
+      "title": "Egis | Főoldal",
+      "reachable": true
+    },
+    "https://www.egopharm.com": {
+      "status": 200,
+      "url": "https://www.egopharm.com/au/en.html",
+      "title": "The Science Of Healthy Skin - Ego Pharmaceuticals Australia",
+      "reachable": true
+    },
+    "https://www.eisai.com": {
+      "status": 200,
+      "url": "https://www.eisai.com/index.html",
+      "title": "Eisai Co., Ltd.｜A human health care company",
+      "reachable": true
+    },
+    "https://www.eureco-pharma.nl": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.eureco-pharma.nl/\" is interrupted by another navigation to \"https://www.csl.com/\""
+    },
+    "https://www.eurogenerics.com": {
+      "reachable": false,
+      "error": "<urlopen error [WinError 10054] An existing connection was forcibly closed by the remote host>",
+      "browserError": "page.goto: net::ERR_CONNECTION_RESET at https://www.eurogenerics.com/"
+    },
+    "https://www.exeltis.com": {
+      "reachable": false,
+      "error": "HTTP Error 429: Too Many Requests",
+      "browserError": "page.goto: Navigation to \"https://www.exeltis.com/\" is interrupted by another navigation to \"https://www.eureco-pharma.nl/\""
+    },
+    "https://www.ferring.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.ferring.com/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.fresenius-kabi.com": {
+      "status": 200,
+      "url": "https://www.fresenius-kabi.com",
+      "title": "Fresenius Kabi Global Website",
+      "reachable": true
+    },
+    "https://www.fresenius-kabi.com/au": {
+      "status": 200,
+      "url": "https://www.fresenius-kabi.com/au",
+      "title": "Fresenius Kabi Australia",
+      "reachable": true
+    },
+    "https://www.fresenius.com": {
+      "status": 200,
+      "url": "https://www.fresenius.com",
+      "title": "Home | FSE",
+      "reachable": true
+    },
+    "https://www.fujifilm.com": {
+      "status": 200,
+      "url": "https://global.fujifilm.com/en",
+      "title": "",
+      "reachable": true
+    },
+    "https://www.galderma.com": {
+      "status": 200,
+      "url": "https://www.galderma.com",
+      "title": "Galderma: Advancing dermatology for every skin story",
+      "reachable": true
+    },
+    "https://www.galderma.com/au": {
+      "status": 200,
+      "url": "https://www.galderma.com/au/contact-us",
+      "title": "Contact us | Galderma Australia",
+      "reachable": true
+    },
+    "https://www.gedeonrichter.com": {
+      "status": 200,
+      "url": "https://www.gedeonrichter.com/en",
+      "title": "Gedeon Richter",
+      "reachable": true
+    },
+    "https://www.gehealthcare.com": {
+      "status": 200,
+      "url": "https://www.gehealthcare.com/en-us",
+      "title": "English | GE HealthCare (United States)",
+      "reachable": true
+    },
+    "https://www.gene.com": {
+      "status": 200,
+      "url": "https://www.gene.com",
+      "title": "Genentech",
+      "reachable": true
+    },
+    "https://www.generichealth.com.au": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.generichealth.com.au/\" is interrupted by another navigation to \"https://www.exeltis.com/\""
+    },
+    "https://www.generis.pt": {
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "browserError": "page.goto: net::ERR_CONNECTION_TIMED_OUT at https://www.generis.pt/"
+    },
+    "https://www.gilead.com": {
+      "status": 200,
+      "url": "https://www.gilead.com",
+      "title": "Gilead Sciences",
+      "reachable": true
+    },
+    "https://www.gl-pharma.at": {
+      "reachable": false,
+      "error": "HTTP Error 500: Internal Server Error",
+      "browserError": "page.goto: Navigation to \"https://www.gl-pharma.at/\" is interrupted by another navigation to \"https://www.csl.com/we-are-csl/our-businesses-and-products/csl-behring\""
+    },
+    "https://www.gmpharma.com.au": {
+      "status": 200,
+      "url": "https://gmpharma.com.au/",
+      "title": "CQV &amp; QA Consulting Australia | TGA GMP Validation GMPharma",
+      "reachable": false,
+      "identityRejected": true
+    },
+    "https://www.grunenthal.com": {
+      "status": 200,
+      "url": "https://www.grunenthal.com",
+      "title": "Home | Grünenthal",
+      "reachable": true
+    },
+    "https://www.gsk.com": {
+      "status": 200,
+      "url": "https://www.gsk.com/en-gb/",
+      "title": "Home | GSK",
+      "reachable": true
+    },
+    "https://www.haleon.com": {
+      "status": 200,
+      "url": "https://www.haleon.com",
+      "title": "Challenge Validation",
+      "reachable": false
+    },
+    "https://www.heteroworld.com": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11002] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.heteroworld.com/"
+    },
+    "https://www.hexal.de": {
+      "status": 200,
+      "url": "https://www.hexal.de",
+      "title": "Hexal | Ihre Gesundheit ist unsere Motivation.",
+      "reachable": true
+    },
+    "https://www.hikma.com": {
+      "status": 200,
+      "url": "https://www.hikma.com",
+      "title": "Hikma",
+      "reachable": true
+    },
+    "https://www.ibsa.com": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.ibsa.com'. (_ssl.c:1010)>",
+      "browserError": "page.goto: net::ERR_CERT_COMMON_NAME_INVALID at https://www.ibsa.com/"
+    },
+    "https://www.intaspharma.com": {
+      "status": 200,
+      "url": "https://www.intaspharma.com",
+      "title": "Intas Pharmaceuticals Ltd. &#8211; Offers wide range of formulations from tablets to injectables to capsules to newer drugs globally",
+      "reachable": true
+    },
+    "https://www.ipsen.com": {
+      "status": 200,
+      "url": "https://www.ipsen.com",
+      "title": "Ipsen Global - A Biopharmaceutical Company | Innovation for Patient Care",
+      "reachable": true
+    },
+    "https://www.jamppharma.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.jamppharma.com/\" is interrupted by another navigation to \"https://generichealth.com.au/\""
+    },
+    "https://www.janssen.com": {
+      "status": 200,
+      "url": "https://www.jnj.com/innovativemedicine",
+      "title": "Site Maintenance",
+      "reachable": false
+    },
+    "https://www.jnj.com": {
+      "status": 200,
+      "url": "https://www.jnj.com",
+      "title": "Site Maintenance",
+      "reachable": false
+    },
+    "https://www.kenvue.com": {
+      "status": 200,
+      "url": "https://www.kenvue.com",
+      "title": "Home | Kenvue - A new view of care",
+      "reachable": true
+    },
+    "https://www.kernpharma.com": {
+      "status": 200,
+      "url": "https://www.kernpharma.com/es",
+      "title": "Kern Pharma",
+      "reachable": true
+    },
+    "https://www.krka.biz": {
+      "status": 200,
+      "url": "https://www.krka.biz",
+      "title": "Living A Healthy Life | Krka",
+      "reachable": true
+    },
+    "https://www.kyorin-pharm.co.jp": {
+      "status": 200,
+      "url": "https://www.kyorin-pharm.co.jp",
+      "title": "杏林製薬株式会社 - 健康はキョーリンの願いです。",
+      "reachable": true
+    },
+    "https://www.kyowakirin.com": {
+      "status": 200,
+      "url": "https://www.kyowakirin.com",
+      "title": "Kyowa Kirin",
+      "reachable": true
+    },
+    "https://www.labhering.com.br": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.labhering.com.br/"
+    },
+    "https://www.laboratoires-thea.com": {
+      "status": 200,
+      "url": "https://thea.com/fr_WW/",
+      "title": "Laboratoires Théa",
+      "reachable": true
+    },
+    "https://www.landauer.com": {
+      "status": 200,
+      "url": "https://www.landauer.com",
+      "title": "Radiation Monitoring Services &amp; Detection Devices",
+      "reachable": true
+    },
+    "https://www.lehning.com": {
+      "status": 200,
+      "url": "https://www.lehning.com",
+      "title": "Laboratoires Lehning - Compléments Alimentaires Naturels en Ligne, Produits Cosmétiques et Médicaments Homéopathiques",
+      "reachable": true
+    },
+    "https://www.leo-pharma.com": {
+      "status": 200,
+      "url": "https://leo-pharma.com/",
+      "title": "Home - LEO Pharma Global",
+      "reachable": true
+    },
+    "https://www.leo-pharma.com.au": {
+      "status": 200,
+      "url": "https://leo-pharma.com.au/",
+      "title": "Dermatology beyond the skin - LEO Pharma",
+      "reachable": true
+    },
+    "https://www.lilly.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.lilly.com/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.lilly.com.au": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.lilly.com.au/\" is interrupted by another navigation to \"https://www.jamppharma.ca/en/\""
+    },
+    "https://www.linkmedical.com.au": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserError": "page.goto: Navigation to \"https://www.linkmedical.com.au/\" is interrupted by another navigation to \"https://www.lilly.com/\""
+    },
+    "https://www.lundbeck.com": {
+      "status": 200,
+      "url": "https://www.lundbeck.com/global",
+      "title": "Home",
+      "reachable": true
+    },
+    "https://www.lupin.com": {
+      "status": 200,
+      "url": "https://www.lupin.com",
+      "title": "Leading Global Pharmaceutical Company in India - Lupin",
+      "reachable": true
+    },
+    "https://www.macleodspharma.com": {
+      "reachable": false,
+      "error": "HTTP Error 406: Not Acceptable",
+      "browserError": "page.goto: Navigation to \"https://www.macleodspharma.com/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.maynepharma.com": {
+      "status": 200,
+      "url": "https://www.maynepharma.com",
+      "title": "Mayne Pharma - Improving patient access to life-enhancing medications",
+      "reachable": true
+    },
+    "https://www.medac.de": {
+      "status": 200,
+      "url": "https://www.medac.de",
+      "title": "medac | Deutschland – improving human health",
+      "reachable": true
+    },
+    "https://www.medcor.nl": {
+      "status": 200,
+      "url": "https://www.medcor.nl",
+      "title": "Medcor Pharmaceuticals",
+      "reachable": true
+    },
+    "https://www.medicalvalley.se": {
+      "status": 200,
+      "url": "https://medicalvalley.se/",
+      "title": "Medical Valley &#8211; Nordics",
+      "reachable": true
+    },
+    "https://www.medochemie.com": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserError": "page.goto: Navigation to \"https://www.medochemie.com/\" is interrupted by another navigation to \"https://www.linkmedical.com.au/\""
+    },
+    "https://www.medsurge.com.au": {
+      "status": 200,
+      "url": "https://www.medsurge.com.au",
+      "title": "Mconnect By Medsurge",
+      "reachable": true
+    },
+    "https://www.meiji.com": {
+      "status": 200,
+      "url": "https://www.meiji.com",
+      "title": "明治ホールディングス株式会社｜健康にアイデアを",
+      "reachable": true
+    },
+    "https://www.menarini.com": {
+      "status": 200,
+      "url": "https://www.menarini.com/en-us.html",
+      "title": "Menarini Group - Quality comes first",
+      "reachable": true
+    },
+    "https://www.menarini.com.au": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserError": "page.goto: Navigation to \"https://www.menarini.com.au/\" is interrupted by another navigation to \"https://www.lilly.com/au/\""
+    },
+    "https://www.mepha.ch": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.mepha.ch/\" is interrupted by another navigation to \"https://www.macleodspharma.com/\""
+    },
+    "https://www.merck.com": {
+      "status": 200,
+      "url": "https://www.merck.com",
+      "title": "Merck | Home",
+      "reachable": true
+    },
+    "https://www.microlabs.com": {
+      "status": 200,
+      "url": "https://www.microlabs.com",
+      "title": "Micro-Labs Graphics Boards Home Page",
+      "reachable": true
+    },
+    "https://www.modernatx.com": {
+      "status": 200,
+      "url": "https://www.modernatx.com",
+      "title": "Pioneering mRNA technology - Moderna",
+      "reachable": true
+    },
+    "https://www.msd-australia.com.au": {
+      "status": 200,
+      "url": "https://www.msd-australia.com.au",
+      "title": "Home - MSD Australia",
+      "reachable": true
+    },
+    "https://www.msd.com": {
+      "status": 200,
+      "url": "https://www.msd.com",
+      "title": "MSD | Home",
+      "reachable": true
+    },
+    "https://www.msnlabs.com": {
+      "status": 200,
+      "url": "https://www.msnlabs.com",
+      "title": "MSN Laboratories | Leading Pharmaceutical company",
+      "reachable": true
+    },
+    "https://www.mt-pharma.co.jp": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.mt-pharma.co.jp/\" is interrupted by another navigation to \"https://www.mepha.ch/\""
+    },
+    "https://www.mundipharma.com": {
+      "status": 200,
+      "url": "https://www.mundipharma.com",
+      "title": "Homepage | Mundipharma",
+      "reachable": true
+    },
+    "https://www.mundipharma.com.au": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: SSLV3_ALERT_HANDSHAKE_FAILURE] sslv3 alert handshake failure (_ssl.c:1010)>",
+      "browserError": "page.goto: net::ERR_SSL_VERSION_OR_CIPHER_MISMATCH at https://www.mundipharma.com.au/"
+    },
+    "https://www.nipponkayaku.com": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.nipponkayaku.com/"
+    },
+    "https://www.norgine.com": {
+      "status": 200,
+      "url": "https://norgine.com/",
+      "title": "Home - Norgine",
+      "reachable": true
+    },
+    "https://www.normon.es": {
+      "status": 200,
+      "url": "https://www.normon.com/",
+      "title": "Normon. La salud, nuestro camino",
+      "reachable": true
+    },
+    "https://www.novartis.com": {
+      "status": 200,
+      "url": "https://www.novartis.com",
+      "title": "Novartis",
+      "reachable": true
+    },
+    "https://www.novartis.com/au-en": {
+      "status": 200,
+      "url": "https://www.novartis.com/au-en/",
+      "title": "Novartis Australia",
+      "reachable": true
+    },
+    "https://www.novonordisk.com": {
+      "status": 200,
+      "url": "https://www.novonordisk.com",
+      "title": "Novo Nordisk",
+      "reachable": true
+    },
+    "https://www.ono-pharma.com": {
+      "status": 200,
+      "url": "https://www.ono-pharma.com/ja",
+      "title": "病気と苦痛に対する人間の闘いのために | 小野薬品工業株式会社",
+      "reachable": true
+    },
+    "https://www.organon.com": {
+      "status": 200,
+      "url": "https://www.organon.com",
+      "title": "Home | Organon",
+      "reachable": true
+    },
+    "https://www.orifarm.com": {
+      "status": 200,
+      "url": "https://www.orifarm.com",
+      "title": "Frontpage - Orifarm",
+      "reachable": true
+    },
+    "https://www.orionpharma.com": {
+      "status": 200,
+      "url": "https://www.orionpharma.com",
+      "title": "Orion Pharma - Building well-being",
+      "reachable": true
+    },
+    "https://www.otsuka.com": {
+      "status": 200,
+      "url": "https://www.otsuka.com:443/jp/",
+      "title": "大塚ホールディングス株式会社",
+      "reachable": true
+    },
+    "https://www.parlogis.is": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.parlogis.is/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.pfizer.com": {
+      "status": 200,
+      "url": "https://www.pfizer.com",
+      "title": "Pfizer: One of the world&#039;s premier biopharmaceutical companies",
+      "reachable": true
+    },
+    "https://www.pfizer.com.au": {
+      "status": 200,
+      "url": "https://www.pfizer.com.au",
+      "title": "Pfizer Australia | Homepage | Pfizer Australia",
+      "reachable": true
+    },
+    "https://www.pharmaco.co.nz": {
+      "status": 200,
+      "url": "https://pharmaco.co.nz/",
+      "title": "Pharmaco New Zealand | Pharmaco",
+      "reachable": true
+    },
+    "https://www.pharmacor.com.au": {
+      "status": 200,
+      "url": "https://www.pharmacor.com.au",
+      "title": "Pharmacor Australia",
+      "reachable": true
+    },
+    "https://www.pharmadia.lt": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.pharmadia.lt/"
+    },
+    "https://www.pharmascience.com": {
+      "status": 200,
+      "url": "https://www.pharmascience.com",
+      "title": "Pharmascience | Nous prenons soin des patients dans le monde",
+      "reachable": true
+    },
+    "https://www.phoenixmedical.co.uk": {
+      "status": 200,
+      "url": "https://www.phoenixmedical.co.uk/en/",
+      "title": "PHOENIX UK",
+      "reachable": true
+    },
+    "https://www.pierre-fabre.com": {
+      "status": 200,
+      "url": "https://www.pierre-fabre.com/en",
+      "title": "A Global Pharmaceutical and dermo-cosmetics company | Laboratoires Pierre Fabre",
+      "reachable": true
+    },
+    "https://www.polpharma.com": {
+      "status": 200,
+      "url": "https://www.polpharma.com",
+      "title": "Polpharma Group | Helping people live healthy lives in a healthy world",
+      "reachable": true
+    },
+    "https://www.prodoc.qc.ca": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.prodoc.qc.ca/\" is interrupted by another navigation to \"https://www.parlogis.is/\""
+    },
+    "https://www.ptcbio.com": {
+      "status": 200,
+      "url": "https://www.ptcbio.com",
+      "title": "PTC Therapeutics: Pioneering Rare Disease Treatments",
+      "reachable": true
+    },
+    "https://www.ratiopharm.de": {
+      "status": 200,
+      "url": "https://www.ratiopharm.de",
+      "title": "ratiopharm - Gute Preise. Gute Besserung. - ratiopharm GmbH",
+      "reachable": true
+    },
+    "https://www.reckitt.com": {
+      "status": 200,
+      "url": "https://www.reckitt.com",
+      "title": "",
+      "reachable": true
+    },
+    "https://www.recordati.com": {
+      "status": 200,
+      "url": "https://recordati.com/",
+      "title": "Home Page - Recordati",
+      "reachable": true
+    },
+    "https://www.regeneron.com": {
+      "status": 200,
+      "url": "https://www.regeneron.com",
+      "title": "Regeneron | Pushing the Bounds of Science",
+      "reachable": true
+    },
+    "https://www.risingpharma.com": {
+      "status": 200,
+      "url": "https://risingpharma.com/",
+      "title": "Rising Pharmaceuticals",
+      "reachable": true
+    },
+    "https://www.roche.com": {
+      "status": 200,
+      "url": "https://www.roche.com",
+      "title": "",
+      "reachable": true
+    },
+    "https://www.roche.com.au": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11002] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.roche.com.au/"
+    },
+    "https://www.rowex.ie": {
+      "status": 200,
+      "url": "https://www.rowex-sandoz.ie/",
+      "title": "Rowex Healthcare – OTC &amp; Prescription Medicines Sandoz in Ireland",
+      "reachable": true
+    },
+    "https://www.sandoz.com": {
+      "status": 200,
+      "url": "https://www.sandoz.com",
+      "title": "Sandoz - the leading name in generic and biosimilar",
+      "reachable": true
+    },
+    "https://www.sanis.com": {
+      "status": 200,
+      "url": "https://www.sanis.com",
+      "title": "Sanis",
+      "reachable": true
+    },
+    "https://www.sanofi.com": {
+      "status": 200,
+      "url": "https://www.sanofi.com/en",
+      "title": "R&amp;D-Driven and AI-Powered Biopharmaceutical Company | Sanofi",
+      "reachable": true
+    },
+    "https://www.sanofi.com.au": {
+      "status": 200,
+      "url": "https://www.sanofi.com/en/australia",
+      "title": "Sanofi Australia &amp; New Zealand: global healthcare and pharmaceutical company",
+      "reachable": true
+    },
+    "https://www.santen.com": {
+      "status": 200,
+      "url": "https://www.santen.com/santen_global",
+      "title": "Santen Worldwide Business Operations",
+      "reachable": true
+    },
+    "https://www.seqirus.com": {
+      "reachable": false,
+      "error": "HTTP Error 429: Too Many Requests",
+      "browserError": "page.goto: Navigation to \"https://www.seqirus.com/\" is interrupted by another navigation to \"https://www.medochemie.com/\""
+    },
+    "https://www.shionogi.com": {
+      "status": 200,
+      "url": "https://www.shionogi.com/global/en/",
+      "title": "Shionogi &amp; Co., Ltd.",
+      "reachable": true
+    },
+    "https://www.sigmahealthcare.com.au": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.sigmahealthcare.com.au/\" is interrupted by another navigation to \"https://www.prodoc.qc.ca/\""
+    },
+    "https://www.sigmapharmaceuticals.co.uk": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.sigmapharmaceuticals.co.uk/"
+    },
+    "https://www.southernxpharma.com.au": {
+      "reachable": false,
+      "error": "<urlopen error [Errno 11001] getaddrinfo failed>",
+      "browserError": "page.goto: net::ERR_NAME_NOT_RESOLVED at https://www.southernxpharma.com.au/"
+    },
+    "https://www.spirig.ch": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: TLSV1_ALERT_INTERNAL_ERROR] tlsv1 alert internal error (_ssl.c:1010)>",
+      "browserError": "page.goto: net::ERR_SSL_PROTOCOL_ERROR at https://www.spirig.ch/"
+    },
+    "https://www.stada.com": {
+      "status": 200,
+      "url": "https://www.stada.com",
+      "title": "STADA Global - Home | STADA",
+      "reachable": true
+    },
+    "https://www.stallergenesgreer.com": {
+      "reachable": false,
+      "error": "<urlopen error timed out>",
+      "browserError": "page.goto: Timeout 22000ms exceeded."
+    },
+    "https://www.strides.com": {
+      "status": 200,
+      "url": "https://www.strides.com",
+      "title": "Strides: Health where it matters",
+      "reachable": true
+    },
+    "https://www.sumitomo-pharma.com": {
+      "status": 200,
+      "url": "https://www.sumitomo-pharma.com",
+      "title": "Sumitomo Pharma Co., Ltd.",
+      "reachable": true
+    },
+    "https://www.taisho.co.jp": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserError": "page.goto: Navigation to \"https://www.taisho.co.jp/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.takeda.com": {
+      "status": 200,
+      "url": "https://www.takeda.com",
+      "title": "Takeda Pharmaceuticals: Global Homepage",
+      "reachable": true
+    },
+    "https://www.techdow.com": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1010)>",
+      "browserError": "page.goto: Navigation to \"https://www.techdow.com/\" is interrupted by another navigation to \"https://www.taisho.co.jp/\""
+    },
+    "https://www.terapia.ro": {
+      "status": 200,
+      "url": "https://www.terapia.ro",
+      "title": "Ranbaxy",
+      "reachable": true
+    },
+    "https://www.terumo.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.terumo.com/\" is interrupted by another navigation to \"https://www.techdow.com/\""
+    },
+    "https://www.tevapharm.com": {
+      "status": 200,
+      "url": "https://www.tevapharm.com",
+      "title": "Teva Pharmaceutical Company | Teva Pharmaceuticals",
+      "reachable": true
+    },
+    "https://www.torrentpharma.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.torrentpharma.com/\" is interrupted by another navigation to \"chrome-error://chromewebdata/\""
+    },
+    "https://www.trbchemedica.com": {
+      "status": 200,
+      "url": "https://www.trbchemedica.com",
+      "title": "TRB - Swiss heritage. Global health",
+      "reachable": true
+    },
+    "https://www.ucb.com": {
+      "status": 200,
+      "url": "https://www.ucb.com",
+      "title": "Inspired by Patients. Driven by Science.",
+      "reachable": true
+    },
+    "https://www.viatris.com": {
+      "status": 200,
+      "url": "https://www.viatris.com/en",
+      "title": "Viatris | Global Healthcare Company",
+      "reachable": true
+    },
+    "https://www.vrtx.com": {
+      "reachable": false,
+      "error": "HTTP Error 403: Forbidden",
+      "browserError": "page.goto: Navigation to \"https://www.vrtx.com/\" is interrupted by another navigation to \"https://www.torrentpharma.com/\""
+    },
+    "https://www.wala.ch": {
+      "reachable": false,
+      "error": "<urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatch, certificate is not valid for 'www.wala.ch'. (_ssl.c:1010)>",
+      "browserError": "page.goto: net::ERR_CERT_COMMON_NAME_INVALID at https://www.wala.ch/"
+    },
+    "https://www.weleda.com": {
+      "status": 200,
+      "url": "https://www.weleda.com/international",
+      "title": "Weleda International | Natural Beauty &amp; Health - Weleda",
+      "reachable": true
+    },
+    "https://www.wockhardt.com": {
+      "status": 200,
+      "url": "https://www.wockhardt.com",
+      "title": "Wockhardt | Innovation Wins. Excellence Wins. Life Wins",
+      "reachable": true
+    },
+    "https://www.xiromed.com": {
+      "reachable": false,
+      "error": "HTTP Error 429: Too Many Requests",
+      "browserError": "page.goto: Navigation to \"https://www.xiromed.com/\" is interrupted by another navigation to \"https://www.vrtx.com/\""
+    },
+    "https://www.zentiva.com": {
+      "status": 200,
+      "url": "https://www.zentiva.com",
+      "title": "At Zentiva, we provide health and wellbeing for all generations | Zentiva",
+      "reachable": true
+    },
+    "https://zyduslife.com": {
+      "status": 200,
+      "url": "https://zyduslife.com",
+      "title": "Leading Global Pharmaceutical Company in India - Zydus group - Zydus",
+      "reachable": true
+    }
+  }
+}

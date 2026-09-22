@@ -196,18 +196,20 @@
       const PACK = [
         { cc:"LT", name:"Lithuania", tag:"dump", how:"VVKT CSV đã nạp từ data/raw/add.", url:"https://vapris.vvkt.lt/vvkt-web/public/medications" },
         { cc:"PL", name:"Ba Lan", tag:"dump", how:"RPL xlsx đã nạp từ data/raw/add.", url:"https://rejestrymedyczne.ezdrowie.gov.pl/rpl/search/public" },
-        { cc:"SE", name:"Thụy Điển", tag:"dump", how:"Lakemedelsfakta produktdokument XML đã nạp.", url:"https://www.lakemedelsverket.se/sv/sok-lakemedelsfakta" },
+        { cc:"SE", name:"Thụy Điển", tag:"dump", how:"Lakemedelsprodukter Excel (mọi sheet, chỉ Godkänd/Registrerad đang bán) đã nạp.", url:"https://www.lakemedelsverket.se/sv/sok-lakemedelsfakta" },
+        { cc:"ES", name:"Tây Ban Nha", tag:"dump", how:"CIMA REST API (pagina JSON) đã nạp — không phụ thuộc form web.", url:"https://cima.aemps.es/cima/rest/medicamentos?pagina=1" },
+        { cc:"CH", name:"Thụy Sĩ", tag:"dump", how:"Swissmedic Erweiterte Liste HAM Excel đã nạp.", url:"https://www.swissmedic.ch/swissmedic/en/home/services/ogd.html" },
         { cc:"NL", name:"Hà Lan", tag:"dump", how:"CBG-MEB CSV đã nạp từ data/raw/add.", url:"https://www.geneesmiddeleninformatiebank.nl/" },
-        { cc:"HU", name:"Hungary", tag:"ask", how:"CSV header-only; đang dùng EMA Article 57 theo nước.", url:"https://ogyei.gov.hu/gyogyszeradatbazis" },
+        { cc:"HU", name:"Hungary", tag:"dump", how:"OGYÉI tk_lista CSV đã nạp.", url:"https://ogyei.gov.hu/gyogyszeradatbazis" },
         { cc:"DE", name:"Đức", tag:"skip", how:"BfArM không dump công; đang dùng EMA Article 57 theo nước.", url:"https://portal.bfarm.de/amguifree/am/search.xhtml" },
-        { cc:"DK", name:"Đan Mạch", tag:"skip", how:"Không dump cả CSDL; đang dùng EMA Article 57 theo nước.", url:"https://www.produktresume.dk/AppBuilder/search" },
+        { cc:"DK", name:"Đan Mạch", tag:"dump", how:"DKMA Godkendte Lægemidler Excel đã nạp.", url:"https://www.produktresume.dk/AppBuilder/search" },
         { cc:"PT", name:"Bồ Đào Nha", tag:"dump", how:"INFARMED list đã nạp từ data/raw/add.", url:"https://extranet.infarmed.pt/INFOMED-fo/index.xhtml" },
         { cc:"SK", name:"Slovakia", tag:"dump", how:"SIDC JSON (lieky_ui42 + atc.php) đã nạp.", url:"https://www.sukl.sk/en/servis/search/searching-on-the-database-of-medicinal-products?page_id=410" },
         { cc:"HR", name:"Croatia", tag:"dump", how:"HALMED Excel đã nạp từ data/raw/add.", url:"https://www.halmed.hr/en/Lijekovi/pretrazivanje-lijekova/" },
         { cc:"GB", name:"Anh", tag:"dump", how:"NHS dm+d XML đã nạp (MHRA/EMA licensed AMPs).", url:"https://products.mhra.gov.uk/" },
         { cc:"JP", name:"Nhật", tag:"dump", how:"PMDA List of Approved Drugs PDF đã nạp.", url:"https://www.pmda.go.jp/PmdaSearch/iyakuSearch/" },
-        { cc:"CY", name:"Síp", tag:"skip", how:"Không dump NCA; đang dùng EMA Article 57 theo nước.", url:"https://www.phs.moh.gov.cy/human-search/home.xhtml?lang=en" },
-        { cc:"GR", name:"Hy Lạp", tag:"dump", how:"EOF human medicines search xlsx đã nạp.", url:"https://eof.gr/en/anazitisi-proionton/" },
+        { cc:"CY", name:"Síp", tag:"dump", how:"Pricelist Excel (INN + MAH) đã nạp.", url:"https://www.phs.moh.gov.cy/human-search/home.xhtml?lang=en" },
+        { cc:"GR", name:"Hy Lạp", tag:"dump", how:"EOF search + bảng giá Hy Lạp (2) đã nạp.", url:"https://eof.gr/en/anazitisi-proionton/" },
         { cc:"MT", name:"Malta", tag:"dump", how:"Medicines Authority CSV đã nạp từ data/raw/add.", url:"https://www.medicinesauthority.gov.mt/advanced-search" },
         { cc:"SI", name:"Slovenia", tag:"dump", how:"JAZMP/CBZ CSV đã nạp từ data/raw/add.", url:"https://www.cbz.si/" },
         { cc:"LI", name:"Liechtenstein", tag:"skip", how:"Không CSDL riêng — Article 57 + Áo + Swissmedic + EMA.", url:"https://medikamente.basg.gv.at/de/" }
@@ -217,6 +219,7 @@
       let HEALTH = null;
       let SITES = {};
       let INNS = [];
+      let searchTerms = [];
       let dumpCc = new Set();
       let srcSel = new Set();
       let hasSearched = false;
@@ -230,6 +233,7 @@
       try { pageSize = Number(localStorage.getItem("sra-page") || 50); } catch (e) {}
       const store = new WeakMap();
       const shownN = new WeakMap();
+      const allRows = new WeakMap();
 
       const mapSvg = document.getElementById('country-map');
       let countryView = 'globe';
@@ -249,10 +253,20 @@
         activeCountry = cc || '';
         focusCountry(activeCountry);
         paintCountries();
-        if (hasSearched) searchMed({ keepPeek: true });
+        searchMed({ keepPeek: true });
         if (window.matchMedia('(max-width: 680px)').matches) {
           document.querySelector('.tra-main').scrollIntoView({block:'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
         }
+      }
+      function syncTraHeights() {
+        const left = document.querySelector('.country-panel');
+        const main = document.querySelector('.tra-main');
+        if (!left || !main) return;
+        if (window.matchMedia('(max-width: 680px)').matches) {
+          main.style.height = '';
+          return;
+        }
+        main.style.height = left.offsetHeight + 'px';
       }
       function paintCountries() {
         const listEl = document.getElementById('country-list');
@@ -267,6 +281,7 @@
         const allBtn = document.getElementById('country-all');
         if (allBtn) allBtn.hidden = !activeCountry;
         drawMap();
+        syncTraHeights();
       }
       function drawMap() { countryMap.render(); }
       function focusCountry(cc) {
@@ -274,6 +289,7 @@
         const listEl = document.getElementById('country-list');
         if (listEl) listEl.querySelectorAll('[data-country]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.country === focusedCountry)));
         countryMap.focus(focusedCountry);
+        syncTraHeights();
       }
       document.getElementById('country-list').addEventListener('click', ev => {
         const b = ev.target.closest('[data-country]');
@@ -351,11 +367,16 @@
       function searchHref(company) {
         return "https://www.google.com/search?q=" + encodeURIComponent(company);
       }
+      function companyLink(company) {
+        const link = SITES[company];
+        if (link && typeof link === 'object' && /^https:\/\//i.test(link.url || '') && ['official', 'profile', 'search'].includes(link.kind)) return link;
+        return { url: searchHref(company), kind: 'search' };
+      }
       function coCell(company) {
         if (!company) return "—";
-        const official = /^https?:\/\//i.test(SITES[company] || "") && !/wikipedia\.org/i.test(SITES[company]) ? SITES[company] : "";
-        const href = official || searchHref(company);
-        return "<a class=\"co" + (official ? "" : " g") + "\" href=\"" + esc(href) + "\" target=\"_blank\" rel=\"noopener\">" + esc(company) + "</a>";
+        const link = companyLink(company);
+        const label = {official: 'Website công ty', profile: 'Giới thiệu công ty', search: 'Google Search'}[link.kind];
+        return `<a class="co${link.kind === 'search' ? ' g' : ''}" href="${esc(link.url)}" target="_blank" rel="noopener" title="${label}">${esc(company)}<span class="co-kind">${label} ↗</span></a>`;
       }
       function rowSrc(r) {
         return r[6] === "e" || r[0] === "EMA" ? "e" : "d";
@@ -413,7 +434,7 @@
         if (!items.length) { hideSuggest(); return; }
         suggest.hidden = false;
         suggest.innerHTML = items.map((it, i) => {
-          return "<button type=\"button\" class=\"" + (i === sugIx ? "on" : "") + "\"><span class=\"inn\">" + esc(it.inn) + "</span><span class=\"n\">" + it.n + " · " + it.ccs + "</span></button>";
+          return "<button type=\"button\" class=\"" + (i === sugIx ? "on" : "") + "\"><span class=\"inn\">" + esc(it.inn) + "</span><span class=\"n\">" + esc(it.kind) + " · " + it.n + " dòng · " + it.ccs + "</span></button>";
         }).join("");
       }
       function matchInns(qstr) {
@@ -426,12 +447,49 @@
           if (ix === 0) start.push(it);
           else if (ix > 0) mid.push(it);
         }
-        return start.concat(mid).slice(0, 3);
+        return start.concat(mid).filter(it => !searchTerms.some(t => searchText(t) === searchText(it.inn))).slice(0, 8);
       }
       function rowHtml(r, idx, code, src) {
         const k = rowKey(code, r);
         const on = selected[k] ? " checked" : "";
         return "<tr data-k=\"" + esc(k) + "\"><td class=\"ck\"><input type=\"checkbox\" data-k=\"" + esc(k) + "\"" + on + "></td><td class=\"num\">" + (idx + 1) + "</td><td class=\"inn\">" + esc(r[1]) + "</td><td class=\"nm\">" + esc(r[2]) + "</td><td class=\"fm\">" + esc(formText(r[3])) + "</td><td class=\"st\">" + esc(r[4] || "—") + "</td><td class=\"co\">" + coCell(r[5]) + "</td><td class=\"src\">" + (r._sources || [src]).map(k => srcChip(k, code, (r._inns || {})[k] || r[1])).join(" ") + "</td></tr>";
+      }
+      function bindCardSearch(d) {
+        const inp = d.querySelector('.cg-q');
+        if (!inp) return;
+        const stop = (ev) => ev.stopPropagation();
+        inp.addEventListener('click', (ev) => { ev.preventDefault(); ev.stopPropagation(); inp.focus(); });
+        inp.addEventListener('mousedown', stop);
+        inp.addEventListener('pointerdown', stop);
+        inp.addEventListener('keydown', (ev) => {
+          ev.stopPropagation();
+          if (ev.key === 'Enter' || ev.key === ' ') ev.preventDefault();
+        });
+        let t = 0;
+        inp.addEventListener('input', () => {
+          window.clearTimeout(t);
+          t = window.setTimeout(() => filterCard(d), 50);
+        });
+      }
+      function filterCard(d) {
+        const inp = d.querySelector('.cg-q');
+        const all = allRows.get(d) || store.get(d) || [];
+        const bits = searchText((inp && inp.value) || '').split(/\s+/).filter(Boolean);
+        const list = bits.length ? all.filter((r) => bits.every((bit) => r._search.includes(bit))) : all;
+        store.set(d, list);
+        shownN.set(d, 0);
+        const tb = d.querySelector('tbody');
+        if (tb) tb.innerHTML = '';
+        const more = d.querySelector('.more');
+        if (more) more.remove();
+        delete d.dataset.ready;
+        const nEl = d.querySelector('.cg-n');
+        if (nEl) nEl.textContent = list.length.toLocaleString('vi-VN') + ' dòng';
+        if (!d.open) d.open = true;
+        else {
+          d.dataset.ready = '1';
+          fillRows(d, d.dataset.cc);
+        }
       }
       function fillRows(d, code) {
         const list = store.get(d) || [];
@@ -492,9 +550,8 @@
         hideSuggest();
         mnone.style.display = "none";
         mhit.textContent = "Đang lọc…";
-        const v = searchText(mq.value);
-        const bits = v.split(/\s+/).filter(Boolean);
-        const needFilter = bits.length > 0 || extraFiltersOn();
+        const queries = searchTerms.map(term => searchText(term).split(/\s+/).filter(Boolean));
+        const needFilter = queries.length > 0 || extraFiltersOn();
         const gen = (searchMed._gen = (searchMed._gen || 0) + 1);
         const run = () => {
           if (gen !== searchMed._gen) return;
@@ -506,7 +563,7 @@
           for (const cc of eligibleCountries()) {
             const rows = countryData[cc] || [];
             const matches = needFilter
-              ? rows.filter((r) => bits.every((bit) => r._search.includes(bit)) && passes(r, rowSrc(r)))
+              ? rows.filter((r) => (!queries.length || queries.some(bits => bits.every(bit => r._search.includes(bit)))) && passes(r, rowSrc(r)))
               : rows;
             countryCounts[cc] = matches.length;
             if ((!activeCountry || activeCountry === cc) && matches.length) {
@@ -535,10 +592,12 @@
               "<span class=\"cg-n\">" + list.length.toLocaleString("vi-VN") + " dòng</span>" +
               (hasDump ? '<span class="src-label">Nguồn quốc gia</span>' : "") +
               (hasEma ? '<span class="src-label">EMA</span>' : "") +
-              "</summary>" +
+              "<input class=\"cg-q\" type=\"search\" placeholder=\"Lọc…\" aria-label=\"Lọc thuốc " + esc(countryName(code)) + "\" autocomplete=\"off\" /></summary>" +
               "<div class=\"cg-body\"><table class=\"med\"><colgroup><col class=\"ck\" /><col class=\"num\" /><col class=\"inn\" /><col class=\"nm\" /><col class=\"fm\" /><col class=\"st\" /><col class=\"co\" /><col class=\"src\" /></colgroup><thead><tr><th></th><th>#</th><th>Hoạt chất (INN)</th><th>Tên thuốc</th><th>Dạng</th><th>Hàm lượng</th><th>Công ty</th><th>Nguồn</th></tr></thead><tbody></tbody></table></div>";
             store.set(d, list);
+            allRows.set(d, list);
             shownN.set(d, 0);
+            bindCardSearch(d);
             d.addEventListener("toggle", function () {
               if (!d.open || !d.isConnected) return;
               focusCountry(code);
@@ -555,14 +614,29 @@
           });
           mnone.style.display = n ? "none" : "block";
           mhit.textContent = n ? (n.toLocaleString("vi-VN") + " dòng · " + order.length + " nước") : "Không có kết quả.";
+          syncTraHeights();
         };
         window.setTimeout(run, 0);
       }
-      function pickSuggest(inn) {
-        mq.value = inn;
+      function paintSearchTerms() {
+        document.getElementById('search-terms').innerHTML = searchTerms.map((term, i) => `<span class="search-term"><span>${esc(term)}</span><button type="button" data-remove-term="${i}" aria-label="Xoá ${esc(term)}">×</button></span>`).join('');
+        document.getElementById('search-terms').hidden = !searchTerms.length;
+      }
+      function pickSuggest(term) {
+        term = String(term || '').trim();
+        if (term && !searchTerms.some(t => searchText(t) === searchText(term))) searchTerms.push(term);
+        mq.value = '';
+        paintSearchTerms();
         hideSuggest();
         searchMed();
+        mq.focus();
       }
+      document.getElementById('search-terms').addEventListener('click', ev => {
+        const button = ev.target.closest('[data-remove-term]');
+        if (!button) return;
+        searchTerms.splice(Number(button.dataset.removeTerm), 1);
+        paintSearchTerms(); searchMed(); mq.focus();
+      });
       function remember(code, r, on, persist = true) {
         const k = rowKey(code, r);
         if (on) selected[k] = [code, r[1], r[2], r[3], r[4], r[5], (r._sources || [r[6] || "d"]).join("+")];
@@ -584,7 +658,7 @@
           const r = selected[k];
           const cc = r[0] || "";
           const company = r[5] || "";
-          const coUrl = (/^https?:\/\//i.test(SITES[company] || "") && !/wikipedia\.org/i.test(SITES[company] || "") ? SITES[company] : "") || searchHref(company);
+          const coUrl = companyLink(company).url;
           const src = r[6] || "d";
           const dumpUrl = srcHref(cc, src);
           const labels = String(src).split("+").filter(Boolean);
@@ -625,53 +699,79 @@
         const full = s.full || 0;
         const lean = s.lean || 0;
         const mid = Math.max(tot - full - lean, 0);
-        return { tot, full, lean, mid, fullPct: pct(full, tot || 1) };
+        const p = s.pct || {};
+        const fillPct = Math.round(((p.inn || 0) + (p.form || 0) + (p.strength || 0) + (p.company || 0)) / 4);
+        return { tot, full, lean, mid, fullPct: pct(full, tot || 1), fillPct };
       }
       function greenScore(s) {
         const m = fieldMix(s);
         if (!m.tot) return -1;
         return m.fullPct * 10 + pct(m.mid, m.tot);
       }
-      let healthCc = "";
-      function paintCountryDonut(cc) {
-        const card = document.getElementById("hcdonut-card");
-        const pie = document.getElementById("hcdonut");
-        const leg = document.getElementById("hcleg");
-        const hint = document.getElementById("hcdonut-hint");
-        const title = document.getElementById("hcdonut-title");
-        const s = (HEALTH && HEALTH.sources || []).find((x) => x.cc === cc);
-        document.querySelectorAll("#hcov button[data-cc]").forEach((el) => {
-          el.classList.toggle("on", el.getAttribute("data-cc") === cc);
-          el.setAttribute("aria-pressed", el.getAttribute("data-cc") === cc ? "true" : "false");
+      function allQuality() {
+        const acc = { tot: 0, full: 0, lean: 0, mid: 0 };
+        ((HEALTH && HEALTH.sources) || []).forEach((s) => {
+          if (s.cc === "EMA") return;
+          const m = fieldMix(s);
+          acc.tot += m.tot;
+          acc.full += m.full;
+          acc.lean += m.lean;
+          acc.mid += m.mid;
         });
-        if (!s || !cc) {
-          healthCc = "";
-          if (title) title.textContent = "Từng nước";
-          if (pie) { pie.classList.add("idle"); pie.style.removeProperty("--d1"); pie.style.removeProperty("--d2"); }
-          if (leg) leg.innerHTML = "";
-          if (hint) { hint.hidden = false; hint.textContent = "Bấm một ô nước bên trái để xem tỷ lệ đủ trường."; }
-          if (card) card.classList.remove("on");
-          return;
-        }
-        healthCc = cc;
-        const m = fieldMix(s);
+        acc.fullPct = pct(acc.full, acc.tot || 1);
+        return acc;
+      }
+      let healthCc = "";
+      function applyQualityPie(pieId, mixId, legId, m) {
+        const pie = document.getElementById(pieId);
+        const mix = document.getElementById(mixId);
+        const leg = document.getElementById(legId);
         const d1 = pct(m.full, m.tot || 1) * 3.6;
         const d2 = d1 + pct(m.mid, m.tot || 1) * 3.6;
-        if (title) title.textContent = s.name;
         if (pie) {
           pie.classList.remove("idle");
           pie.classList.add("country");
           pie.style.setProperty("--d1", d1 + "deg");
           pie.style.setProperty("--d2", d2 + "deg");
         }
-        if (leg) {
-          leg.innerHTML =
-            "<li><span class=\"sw\" style=\"background:var(--teal)\"></span>Đủ 4 trường · " + m.full.toLocaleString("vi-VN") + " (" + m.fullPct + "%)</li>" +
-            "<li><span class=\"sw\" style=\"background:#C4841D\"></span>Thiếu một phần · " + m.mid.toLocaleString("vi-VN") + " (" + pct(m.mid, m.tot || 1) + "%)</li>" +
-            "<li><span class=\"sw\" style=\"background:var(--warn)\"></span>Thiếu nặng · " + m.lean.toLocaleString("vi-VN") + " (" + pct(m.lean, m.tot || 1) + "%)</li>";
+        if (mix) {
+          mix.innerHTML =
+            "<div class=\"qs ok\"><b>" + m.full.toLocaleString("vi-VN") + "</b><span>Đủ</span></div>" +
+            "<div class=\"qs mid\"><b>" + m.mid.toLocaleString("vi-VN") + "</b><span>Thiếu</span></div>" +
+            "<div class=\"qs bad\"><b>" + m.lean.toLocaleString("vi-VN") + "</b><span>Thiếu nặng</span></div>";
         }
-        if (hint) hint.hidden = true;
+        if (leg) {
+          const tot = m.tot || 1;
+          leg.innerHTML =
+            "<li><span class=\"sw\" style=\"background:var(--teal)\"></span>Đủ hoạt chất · mg · dạng · công ty · " + m.full.toLocaleString("vi-VN") + " (" + pct(m.full, tot) + "%)</li>" +
+            "<li><span class=\"sw\" style=\"background:#C4841D\"></span>Thiếu 1–2 trường · " + m.mid.toLocaleString("vi-VN") + " (" + pct(m.mid, tot) + "%)</li>" +
+            "<li><span class=\"sw\" style=\"background:var(--warn)\"></span>Thiếu ≥3 trường · " + m.lean.toLocaleString("vi-VN") + " (" + pct(m.lean, tot) + "%)</li>";
+        }
+      }
+      function paintCountryDonut(cc) {
+        const s = (HEALTH && HEALTH.sources || []).find((x) => x.cc === cc);
+        document.querySelectorAll("#hcov button[data-cc]").forEach((el) => {
+          el.classList.toggle("on", el.getAttribute("data-cc") === cc);
+          el.setAttribute("aria-pressed", el.getAttribute("data-cc") === cc ? "true" : "false");
+        });
+        const card = document.getElementById("hcdonut-card");
+        const body = document.getElementById("hcdonut-body");
+        const hint = document.getElementById("hcdonut-hint");
+        const title = document.getElementById("hcdonut-title");
+        if (!s || !cc) {
+          healthCc = "";
+          if (card) card.classList.remove("on");
+          if (body) body.hidden = true;
+          if (hint) hint.hidden = false;
+          if (title) title.textContent = "Theo nước";
+          return;
+        }
+        healthCc = cc;
         if (card) card.classList.add("on");
+        if (body) body.hidden = false;
+        if (hint) hint.hidden = true;
+        if (title) title.textContent = s.name;
+        applyQualityPie("hcdonut", "hcmix", "hcleg", fieldMix(s));
       }
       function paintHealth() {
         const h = HEALTH;
@@ -710,7 +810,7 @@
         if (track) {
           const bits = (h.sources || []).filter((s) => s.cc !== "EMA").slice().sort((a, b) => greenScore(b) - greenScore(a) || a.name.localeCompare(b.name, "vi"));
           track.innerHTML = bits.map((s, i) => {
-            return "<i class=\"" + covClass(s) + "\" style=\"animation-delay:" + (i * 0.025) + "s\" title=\"" + esc(s.name) + " · " + fieldMix(s).fullPct + "%\"></i>";
+            return "<i class=\"" + covClass(s) + "\" style=\"animation-delay:" + (i * 0.025) + "s\" title=\"" + esc(s.name) + " · " + fieldMix(s).fillPct + "%\"></i>";
           }).join("");
         }
         const st = document.getElementById("hst");
@@ -726,6 +826,7 @@
         document.getElementById("hleg").innerHTML =
           "<li><span class=\"sw\" style=\"background:var(--teal)\"></span>Dump quốc gia · " + natRows.toLocaleString("vi-VN") + " dòng (" + pct(natRows, rowsN || 1) + "%)</li>" +
           "<li><span class=\"sw\" style=\"background:#1e3a8a\"></span>EMA tập trung · " + emaRows.toLocaleString("vi-VN") + " dòng (" + pct(emaRows, rowsN || 1) + "%)</li>";
+        applyQualityPie("hqdonut", "hqmix", "hqleg", allQuality());
         const cov = document.getElementById("hcov");
         const covBits = (h.sources || []).filter((s) => s.cc !== "EMA").slice().sort((a, b) => greenScore(b) - greenScore(a) || a.name.localeCompare(b.name, "vi"));
         cov.innerHTML = covBits.map((s, i) => {
@@ -733,10 +834,9 @@
           const m = fieldMix(s);
           const full = m.fullPct;
           const midEnd = full + pct(m.mid, m.tot || 1);
-          const fade = (m.tot ? m.full / m.tot : 0).toFixed(3);
-          const extra = m.tot ? (full + "% đủ trường") : (cls === "ema" ? "phủ EMA" : "không dump / EMA");
-          const hot = full >= 55 ? " hot" : "";
-          return "<button type=\"button\" class=\"" + cls + hot + "\" data-cc=\"" + esc(s.cc) + "\" aria-pressed=\"false\" style=\"--full:" + full + "%;--mid-end:" + midEnd + "%;--fade:" + fade + ";--hue:" + (cls === "ema" ? "#1e3a8a" : (cls === "m" ? "var(--warn)" : "var(--teal)")) + ";animation-delay:" + (i * 0.03) + "s\"><b>" + flagImg(s.cc) + " " + esc(s.name) + "</b><small>" + extra + "</small></button>";
+          const fade = (m.fullPct / 100).toFixed(3);
+          const hot = m.fullPct >= 55 ? " hot" : "";
+          return "<button type=\"button\" class=\"" + cls + hot + "\" data-cc=\"" + esc(s.cc) + "\" aria-pressed=\"false\" title=\"" + esc(s.name) + " · đủ " + m.fullPct + "%\" style=\"--full:" + full + "%;--mid-end:" + midEnd + "%;--fade:" + fade + ";--hue:" + (cls === "ema" ? "#1e3a8a" : (cls === "m" ? "var(--warn)" : "var(--teal)")) + ";animation-delay:" + (i * 0.03) + "s\"><b>" + flagImg(s.cc) + " " + esc(s.name) + "</b></button>";
         }).join("");
         if (!cov.dataset.bound) {
           cov.dataset.bound = "1";
@@ -753,12 +853,12 @@
         const crawl = document.getElementById("hcrawl");
         if (crawl) {
           const miss = PACK.filter((p) => !have.has(p.cc));
-          crawl.innerHTML = "<p class=\"side-lab\" style=\"margin:12px 0 8px\">Còn thiếu dump — HAR / API</p>" +
+          crawl.innerHTML = miss.length ? ("<p class=\"side-lab\" style=\"margin:12px 0 8px\">Còn thiếu dump — HAR / API</p>" +
             "<p class=\"hint\">AccessMedicina / Vidal (HAR sếp hay dùng): HTML monograph ATC (FT_*.html), không có JSON dump. Nội dung bản quyền McGraw Hill — không nhét vào ô tra SRA. Dùng để đọc ATC, không thay register nước.</p>" +
             "<table class=\"db\"><thead><tr><th>Nước</th><th>Việc</th><th></th></tr></thead><tbody>" +
             miss.map((p) => {
               return "<tr><td>" + flagImg(p.cc) + " <strong>" + esc(p.name) + "</strong></td><td class=\"how\">" + p.how + "</td><td><a class=\"go\" href=\"" + esc(p.url) + "\" target=\"_blank\" rel=\"noopener\">Mở</a></td></tr>";
-            }).join("") + "</tbody></table>";
+            }).join("") + "</tbody></table>") : "";
         }
         const hsum = document.getElementById("hsum");
         if (hsum) hsum.textContent = "Sức khỏe dữ liệu · " + nat + "/36 dump quốc gia";
@@ -790,17 +890,19 @@
           const r = MED[i];
           const src = r[6] || (r[0] === "EMA" ? "e" : "d");
           if (src === "d" && r[0] !== "EMA") dumpCc.add(r[0]);
-          const inn = (r[1] || "").trim();
-          if (!inn) continue;
-          const key = inn.toLowerCase();
-          let it = map[key];
-          if (!it) { it = { inn: inn, key: key, n: 0, cc: new Set() }; map[key] = it; }
-          it.n++;
-          it.cc.add(r[0]);
+          for (const [field, kind] of [[1, 'Hoạt chất'], [5, 'Công ty']]) {
+            const inn = (r[field] || '').trim();
+            if (!inn) continue;
+            const key = kind + ':' + searchText(inn);
+            let it = map[key];
+            if (!it) { it = { inn: inn, key: searchText(inn), kind, n: 0, cc: new Set() }; map[key] = it; }
+            it.n++;
+            it.cc.add(r[0]);
+          }
         }
         INNS = Object.keys(map).map((k) => {
           const it = map[k];
-          return { inn: it.inn, key: it.key, n: it.n, ccs: it.cc.size };
+          return { inn: it.inn, key: it.key, kind: it.kind, n: it.n, ccs: it.cc.size };
         }).sort((a, b) => b.n - a.n);
       }
       function loadMed() {
@@ -833,7 +935,7 @@
       window.addEventListener("beforeprint", () => paintUi(root.dataset.guide, true));
       window.addEventListener("afterprint", () => paintUi(root.dataset.guide, false));
 
-      if (mgo) mgo.addEventListener("click", searchMed);
+      if (mgo) mgo.addEventListener("click", () => pickSuggest(mq.value));
       if (msrc) msrc.addEventListener("click", (ev) => {
         const b = ev.target.closest("button[data-src]");
         if (!b) return;
@@ -911,7 +1013,8 @@
       });
       function snapshotFilter() {
         return {
-          v: 1,
+          v: 2,
+          terms: [...searchTerms],
           q: mq.value || "",
           countries: [...selCountries],
           forms: [...selForms],
@@ -925,7 +1028,10 @@
       }
       function applyFilter(f) {
         if (!f || typeof f !== "object") return;
-        mq.value = f.q || "";
+        mq.value = typeof f.q === 'string' ? f.q : '';
+        searchTerms = [...new Map((Array.isArray(f.terms) ? f.terms : [mq.value]).filter(t => typeof t === 'string' && t.trim()).map(t => [searchText(t), t.trim()])).values()];
+        if (!Array.isArray(f.terms)) mq.value = '';
+        paintSearchTerms();
         selCountries.clear();
         (f.countries || []).forEach((cc) => { if (SRA36.includes(cc)) selCountries.add(cc); });
         selForms.clear();
@@ -1045,6 +1151,7 @@
           }, 80);
         });
         mq.addEventListener("keydown", (ev) => {
+          if (ev.isComposing) return;
           const items = suggest && !suggest.hidden ? [...suggest.querySelectorAll("button")] : [];
           if (ev.key === "ArrowDown" && items.length) {
             ev.preventDefault();
@@ -1059,12 +1166,12 @@
             if (sugIx >= 0 && items[sugIx]) {
               ev.preventDefault();
               pickSuggest(items[sugIx].querySelector(".inn").textContent);
-            } else searchMed();
+            } else { ev.preventDefault(); pickSuggest(mq.value); }
           }
         });
       }
       if (suggest) {
-        suggest.addEventListener("mousedown", (ev) => {
+        suggest.addEventListener("click", (ev) => {
           const b = ev.target.closest("button");
           if (!b) return;
           ev.preventDefault();
@@ -1074,4 +1181,8 @@
       document.addEventListener("click", (ev) => {
         if (suggest && !suggest.contains(ev.target) && ev.target !== mq) hideSuggest();
       });
+      const countryPanel = document.querySelector(".country-panel");
+      if (countryPanel && window.ResizeObserver) new ResizeObserver(() => syncTraHeights()).observe(countryPanel);
+      window.addEventListener("resize", syncTraHeights);
+      syncTraHeights();
     })();

@@ -1,11 +1,13 @@
     <section id="tra">
-      <div class="tra-head"><div><p class="kicker">Tra cứu thuốc · 36 quốc gia SRA</p><h2>Tìm thuốc theo hoạt chất</h2></div></div>
+      <div class="tra-head"><div><p class="kicker">Tra cứu thuốc · 36 quốc gia SRA</p><h2>Tìm thuốc & công ty</h2></div></div>
       <p class="search-intro">Tìm trong dữ liệu đã nạp. Chọn một nước để xem thuốc từ nguồn quốc gia và EMA.</p>
       <div class="search-filters no-print">
         <div class="search-bar"><div class="qwrap">
-          <input id="mq" type="search" aria-label="Hoạt chất hoặc tên thuốc" placeholder="Hoạt chất hoặc tên thuốc — để trống rồi bấm Tìm để xem hết" autocomplete="off" spellcheck="false" />
+          <input id="mq" type="search" aria-label="Hoạt chất, tên thuốc hoặc công ty" placeholder="Hoạt chất, tên thuốc hoặc công ty" autocomplete="off" spellcheck="false" />
           <div id="suggest" hidden></div></div><button type="button" id="mgo">Tìm thuốc</button>
         </div>
+        <div id="search-terms" class="search-terms" aria-label="Từ khoá đã chọn" hidden></div>
+        <p class="search-help">Nhập tên rồi bấm Tìm hoặc chọn gợi ý để thêm thẻ. Kết quả khớp ít nhất một thẻ; có thể thêm nhiều cách viết của hoạt chất. Bấm × để bỏ thẻ.</p>
         <div class="filter-row">
           <div class="strength-filter">
             <div class="strength-top"><label for="strength-mode">Hàm lượng</label>
@@ -26,7 +28,7 @@
       </div>
       <div class="tra-layout">
         <aside class="country-panel no-print" aria-label="Chọn quốc gia">
-          <header><h3>Chọn quốc gia</h3><p>Địa cầu / bản đồ / danh sách chỉ để xem. Bộ lọc quốc gia ở trên mới giữ khi tìm lại.</p><div class="view-switch" role="group" aria-label="Chế độ xem quốc gia"><button type="button" data-view="globe" aria-pressed="true">Địa cầu</button><button type="button" data-view="map" aria-pressed="false">Bản đồ</button><button type="button" data-view="list" aria-pressed="false">Danh sách</button></div><button type="button" id="country-all" class="quiet-button" hidden>Tất cả</button></header>
+          <header><div class="view-switch" role="group" aria-label="Chế độ xem quốc gia"><button type="button" data-view="globe" aria-pressed="true">Địa cầu</button><button type="button" data-view="map" aria-pressed="false">Bản đồ</button><button type="button" data-view="list" aria-pressed="false">Danh sách</button></div><button type="button" id="country-all" class="quiet-button" hidden>Tất cả</button></header>
           <div class="map-wrap" id="map-wrap"><svg id="country-map" viewBox="0 0 400 330" aria-label="Bản đồ các nước SRA"></svg>          <div class="map-tools"><button type="button" id="map-left" aria-label="Xoay địa cầu sang trái">←</button><select id="map-region" aria-label="Vùng bản đồ"><option value="europe">Châu Âu</option><option value="america">Bắc Mỹ</option><option value="asia">Nhật Bản · Úc</option><option value="world">Thế giới</option></select><button type="button" id="map-right" aria-label="Xoay địa cầu sang phải">→</button></div><p id="map-caption" class="map-caption">Kéo để xoay · Bấm một nước để xem thuốc.</p></div>
           <div id="country-list" hidden></div>
         </aside>

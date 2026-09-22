@@ -257,25 +257,34 @@ HEALTH_HTML = """    <details class="fold health" id="health">
         <p class="hint" id="hfunnel-cap"></p>
         <div id="hfunnel"></div>
         <div class="health-cov">
-          <div>
-            <p class="hint" id="hcov-cap">Ô càng xanh = dữ liệu càng đủ trường. Bấm một nước để xem biểu đồ tròn.</p>
+            <p class="hint" id="hcov-cap">Màu ô = đủ / thiếu / thiếu nặng. Bấm một nước để mở biểu đồ bên phải.</p>
             <div class="cov" id="hcov"></div>
-          </div>
           <aside class="health-pies" aria-label="Biểu đồ dữ liệu">
             <div class="donut-card">
-              <p class="side-lab">Tổng nguồn</p>
+              <p class="side-lab">Dump · EMA</p>
               <div class="donut-wrap">
                 <div class="donut" id="hdonut"></div>
                 <ul class="donut-leg" id="hleg"></ul>
               </div>
             </div>
-            <div class="donut-card" id="hcdonut-card">
-              <p class="side-lab" id="hcdonut-title">Từng nước</p>
+            <div class="donut-card">
+              <p class="side-lab">Chất lượng</p>
+              <div class="qmix" id="hqmix"></div>
               <div class="donut-wrap">
-                <div class="donut idle country" id="hcdonut"></div>
-                <ul class="donut-leg" id="hcleg"></ul>
+                <div class="donut country" id="hqdonut"></div>
+                <ul class="donut-leg" id="hqleg"></ul>
               </div>
-              <p class="hint" id="hcdonut-hint">Bấm một ô nước bên trái để xem tỷ lệ đủ trường.</p>
+            </div>
+            <div class="donut-card donut-ph" id="hcdonut-card">
+              <p class="side-lab" id="hcdonut-title">Theo nước</p>
+              <div id="hcdonut-body" hidden>
+                <div class="qmix" id="hcmix"></div>
+                <div class="donut-wrap">
+                  <div class="donut country" id="hcdonut"></div>
+                  <ul class="donut-leg" id="hcleg"></ul>
+                </div>
+              </div>
+              <p class="hint donut-ph-hint" id="hcdonut-hint">Bấm một nước ở trên — biểu đồ đủ / thiếu / thiếu nặng hiện ở đây.</p>
             </div>
           </aside>
         </div>

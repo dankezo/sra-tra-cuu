@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import re
+from _sites import company_sites
 from pathlib import Path
 
 root = Path(__file__).resolve().parent
@@ -40,7 +41,7 @@ blob = json.dumps(
         "t": table,
         "r": packed,
         "h": src.get("h") or {},
-        "c": src.get("c") or {},
+        "c": company_sites({"company": r[5]} for r in rows),
     },
     ensure_ascii=False,
     separators=(",", ":"),

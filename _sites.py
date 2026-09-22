@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Official company websites for MAH names (longest-needle match)."""
+"""Audited company destinations, matched by normalized whole name tokens."""
 from __future__ import annotations
 
 import re
+import json
+import unicodedata
+from pathlib import Path
 from urllib.parse import quote_plus
 
 BRANDS = [
@@ -10,8 +13,8 @@ BRANDS = [
     ("arrow génériques", "https://www.arrowgeneriques.com"),
     ("jamp pharma", "https://www.jamppharma.com"),
     ("eg sa-nv", "https://www.eurogenerics.com"),
-    ("eg s.p.a", "https://www.eurogenerics.com"),
-    ("eg spa", "https://www.eurogenerics.com"),
+    ("eg s.p.a", "https://egstada.it/azienda"),
+    ("eg spa", "https://egstada.it/azienda"),
     ("eg sa", "https://www.eurogenerics.com"),
     ("alembic pharmaceuticals", "https://alembicpharmaceuticals.com"),
     ("alembic", "https://alembicpharmaceuticals.com"),
@@ -47,7 +50,7 @@ BRANDS = [
     ("laboratorios normon", "https://www.normon.es"),
     ("normon", "https://www.normon.es"),
     ("msn laboratories", "https://www.msnlabs.com"),
-    ("gm pharma", "https://www.gmpharma.com.au"),
+    ("gm pharma international", "https://www.gmpharma.com.au"),
     ("hering s.r.l", "https://www.labhering.com.br"),
     ("haleon australia", "https://www.haleon.com"),
     ("haleon", "https://www.haleon.com"),
@@ -293,7 +296,9 @@ BRANDS = [
     ("bayer", "https://www.bayer.com"),
     ("gsk", "https://www.gsk.com"),
     ("msd", "https://www.msd.com"),
-    ("merck", "https://www.merck.com"),
+    ("merck kgaa", "https://www.merck.com"),
+    ("merck serono", "https://www.merck.com"),
+    ("merck sante", "https://www.merck.com"),
     ("novartis", "https://www.novartis.com"),
     ("hikma farmaceutica", "https://www.hikma.com"),
     ("hikma", "https://www.hikma.com"),
@@ -413,6 +418,7 @@ BRANDS = [
     ("trb chemedica", "https://www.trbchemedica.com"),
     ("macleods", "https://www.macleodspharma.com"),
     ("strides", "https://www.strides.com"),
+    ("micro labs gmbh", "https://www.microlabsgmbh.de/"),
     ("micro labs", "https://www.microlabs.com"),
     ("arrotex pharmaceuticals", "https://arrotex.com.au"),
     ("arrotex", "https://arrotex.com.au"),
@@ -496,32 +502,25 @@ BRANDS = [
 
 
 def fallback_company_url(name: str) -> str:
-    """Working lookup: official brand, then a live registry search, else Google."""
-    q = quote_plus(name)
-    key = name.lower()
-    if re.search(r"\b(ltd|plc|llp|limited)\b", key):
-        return "https://find-and-update.company-information.service.gov.uk/search?q=" + q
-    if "sp. z o.o" in key or "sp z o.o" in key or "sp. z o. o" in key:
-        return "https://www.google.com/search?q=" + quote_plus(f'"{name}" KRS')
-    if re.search(r"\buab\b", key):
-        return "https://www.google.com/search?q=" + quote_plus(f"site:rekvizitai.vz.lt {name}")
-    if re.search(r"\bgmbh\b", key):
-        return "https://www.google.com/search?q=" + quote_plus(f'"{name}" Unternehmensregister')
-    return "https://www.google.com/search?q=" + q
+    """Never guess jurisdiction or invent a company profile URL."""
+    return "https://www.google.com/search?q=" + quote_plus(name)
 
 
-def company_sites(rows) -> dict[str, str]:
-    brands = sorted(BRANDS, key=lambda x: len(x[0]), reverse=True)
+def normalize_name(name):
+    return " ".join(re.sub(r"[^\w]+", " ", "".join(c for c in unicodedata.normalize("NFKD", name.casefold()) if not unicodedata.combining(c))).split())
+
+
+def company_sites(rows) -> dict:
+    path = Path(__file__).parent / "data/company-link-resolutions.json"
+    verified = json.loads(path.read_text(encoding="utf-8"))["links"] if path.exists() else {}
+    brands = sorted([(normalize_name(n), u) for n, u in BRANDS], key=lambda x: len(x[0]), reverse=True)
     out = {}
     for r in rows:
         name = r.get("company") or ""
         if not name or name in out:
             continue
-        key = name.lower()
-        url = ""
-        for needle, site in brands:
-            if needle in key:
-                url = site
-                break
-        out[name] = url or fallback_company_url(name)
+        key = " " + normalize_name(name) + " "
+        match = next((site for needle, site in brands if " " + needle + " " in key), None)
+        link = verified.get(match)
+        out[name] = dict(link) if link else {"url": fallback_company_url(name), "kind": "search"}
     return out

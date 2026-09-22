@@ -6,12 +6,14 @@ import csv
 import io
 import json
 import re
+import ssl
 import time
 import zipfile
 import xml.etree.ElementTree as ET
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+from urllib.request import Request, urlopen
 
 from _sites import company_sites
 
@@ -79,7 +81,7 @@ def add_row(rows, country, inn, name, form, strength, company="", extra="", src=
     inn = clean(inn, 240)
     name = clean(name, 240)
     form = clean(form, 160)
-    strength = clean(strength, 80)
+    strength = clean(strength, 80) or strength_from(name) or strength_from(inn)
     company = clean(company, 180)
     extra = clean(extra, 120)
     if not inn and not name:
@@ -128,44 +130,105 @@ def col_index(ref: str) -> int:
     return max(n - 1, 0)
 
 
+NS_REL = "{http://schemas.openxmlformats.org/officeDocument/2006/relationships}"
+
+
+def _xlsx_shared_strings(z: zipfile.ZipFile) -> list[str]:
+    ss = []
+    if "xl/sharedStrings.xml" not in z.namelist():
+        return ss
+    root = ET.fromstring(z.read("xl/sharedStrings.xml"))
+    for si in root.findall("m:si", NS_SS):
+        ss.append("".join(t.text or "" for t in si.iter(SS_T)))
+    return ss
+
+
+def _xlsx_row_vals(row, ss: list[str]) -> list[str] | None:
+    cells = {}
+    maxc = -1
+    i = 0
+    for c in row.findall("m:c", NS_SS):
+        ref = c.get("r") or ""
+        idx = col_index(ref) if ref else i
+        t = c.get("t")
+        val = ""
+        if t == "inlineStr":
+            val = "".join(x.text or "" for x in c.iter() if local(x.tag) == "t")
+        else:
+            v = c.find("m:v", NS_SS)
+            val = v.text if v is not None else ""
+            if t == "s" and val and val.isdigit() and int(val) < len(ss):
+                val = ss[int(val)]
+        cells[idx] = val or ""
+        maxc = max(maxc, idx)
+        i += 1
+    if maxc < 0:
+        return None
+    return [cells.get(j, "") for j in range(maxc + 1)]
+
+
+def _xlsx_zip_path(z: zipfile.ZipFile, target: str) -> str | None:
+    t = (target or "").lstrip("/")
+    for cand in (t, "xl/" + t, t.replace("xl/xl/", "xl/")):
+        if cand in z.namelist():
+            return cand
+    leaf = t.split("/")[-1]
+    for n in z.namelist():
+        if n.endswith("/" + leaf) and "worksheets" in n:
+            return n
+    return None
+
+
+def xlsx_worksheets(path: Path) -> list[tuple[str, str]]:
+    if not path.exists() or not zipfile.is_zipfile(path):
+        return []
+    with zipfile.ZipFile(path) as z:
+        wb = ET.fromstring(z.read("xl/workbook.xml"))
+        rels = ET.fromstring(z.read("xl/_rels/workbook.xml.rels"))
+        rid = {el.get("Id"): el.get("Target") for el in rels}
+        out = []
+        for sh in wb.findall("{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheets/{http://schemas.openxmlformats.org/spreadsheetml/2006/main}sheet"):
+            title = sh.get("name") or ""
+            zp = _xlsx_zip_path(z, rid.get(sh.get(NS_REL + "id") or "") or "")
+            if zp:
+                out.append((title, zp))
+        return out
+
+
 def xlsx_rows(path: Path, sheet_name: str | None = None):
     if not path.exists() or not zipfile.is_zipfile(path):
         return
     with zipfile.ZipFile(path) as z:
-        ss = []
-        if "xl/sharedStrings.xml" in z.namelist():
-            root = ET.fromstring(z.read("xl/sharedStrings.xml"))
-            for si in root.findall("m:si", NS_SS):
-                ss.append("".join(t.text or "" for t in si.iter(SS_T)))
-        sheets = [n for n in z.namelist() if n.startswith("xl/worksheets/sheet") and n.endswith(".xml")]
-        sheets.sort()
+        ss = _xlsx_shared_strings(z)
+        named = xlsx_worksheets(path)
         if sheet_name:
-            sheets = [n for n in sheets if sheet_name in n] or sheets
-        sheets.sort(key=lambda n: z.getinfo(n).file_size, reverse=True)
+            match = [zp for title, zp in named if sheet_name.lower() in (title or "").lower() or sheet_name in zp]
+            sheets = match or [zp for _, zp in named]
+        else:
+            sheets = [n for n in z.namelist() if n.startswith("xl/worksheets/sheet") and n.endswith(".xml")]
+            sheets.sort(key=lambda n: z.getinfo(n).file_size, reverse=True)
+        if not sheets:
+            return
         target = sheets[0]
         root = ET.fromstring(z.read(target))
         for row in root.findall("m:sheetData/m:row", NS_SS):
-            cells = {}
-            maxc = -1
-            i = 0
-            for c in row.findall("m:c", NS_SS):
-                ref = c.get("r") or ""
-                idx = col_index(ref) if ref else i
-                t = c.get("t")
-                val = ""
-                if t == "inlineStr":
-                    val = "".join(x.text or "" for x in c.iter() if local(x.tag) == "t")
-                else:
-                    v = c.find("m:v", NS_SS)
-                    val = v.text if v is not None else ""
-                    if t == "s" and val and val.isdigit() and int(val) < len(ss):
-                        val = ss[int(val)]
-                cells[idx] = val or ""
-                maxc = max(maxc, idx)
-                i += 1
-            if maxc < 0:
-                continue
-            yield [cells.get(j, "") for j in range(maxc + 1)]
+            vals = _xlsx_row_vals(row, ss)
+            if vals:
+                yield vals
+
+
+def xlsx_rows_all(path: Path):
+    """Yield (sheet_title, row) for every worksheet."""
+    if not path.exists() or not zipfile.is_zipfile(path):
+        return
+    with zipfile.ZipFile(path) as z:
+        ss = _xlsx_shared_strings(z)
+        for title, zp in xlsx_worksheets(path):
+            root = ET.fromstring(z.read(zp))
+            for row in root.findall("m:sheetData/m:row", NS_SS):
+                vals = _xlsx_row_vals(row, ss)
+                if vals:
+                    yield title, vals
 
 
 def parse_en_date(s: str) -> datetime | None:
@@ -624,6 +687,13 @@ def parse_lu(rows):
 
 
 def parse_es(rows):
+    cima = RAW / "ES" / "cima_all.json"
+    if not cima.exists() or cima.stat().st_size < 80:
+        fetch_cima()
+    cima = RAW / "ES" / "cima_all.json"
+    if cima.exists() and cima.stat().st_size >= 80:
+        parse_es_cima(rows)
+        return
     p = RAW / "ES" / "Medicamentos.xls"
     n = 0
     header = []
@@ -661,7 +731,139 @@ def parse_es(rows):
     log(f"parse ES {n}")
 
 
+def fetch_cima() -> None:
+    dest_all = RAW / "ES" / "cima_all.json"
+    dest_all.parent.mkdir(parents=True, exist_ok=True)
+    ua = {"User-Agent": "Mozilla/5.0 (SRA medicine lookup)"}
+    ctx = ssl.create_default_context()
+    items = []
+    page = 1
+    pages = None
+    while page <= 400:
+        dest = RAW / "ES" / f"cima_{page:03d}.json"
+        payload = None
+        if dest.exists() and dest.stat().st_size > 80:
+            try:
+                payload = json.loads(dest.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                payload = None
+        if payload is None:
+            url = f"https://cima.aemps.es/cima/rest/medicamentos?pagina={page}"
+            try:
+                with urlopen(Request(url, headers=ua), timeout=40, context=ctx) as r:
+                    blob = r.read()
+            except Exception as e:
+                log(f"FAIL CIMA p{page}: {e}")
+                break
+            dest.write_bytes(blob)
+            try:
+                payload = json.loads(blob.decode("utf-8", "replace"))
+            except json.JSONDecodeError:
+                log(f"FAIL CIMA p{page}: not json")
+                break
+        batch = payload.get("resultados") or []
+        if not batch:
+            break
+        items.extend(batch)
+        total = int(payload.get("totalFilas") or 0)
+        size = int(payload.get("tamanioPagina") or len(batch) or 200)
+        if total and size:
+            pages = (total + size - 1) // size
+        if pages and page >= pages:
+            break
+        page += 1
+        if page % 20 == 0:
+            log(f"CIMA page {page}/{pages or '?'} items={len(items)}")
+    dest_all.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+    log(f"OK   CIMA {len(items)} rows, pages={page}")
+
+
+def parse_es_cima(rows):
+    p = RAW / "ES" / "cima_all.json"
+    try:
+        cima = json.loads(p.read_text(encoding="utf-8"))
+    except Exception as e:
+        log(f"parse ES CIMA fail {e}")
+        return
+    n = 0
+    for it in cima:
+        if not isinstance(it, dict):
+            continue
+        if it.get("comerc") is False:
+            reject("ES", "not_marketed")
+            continue
+        vtm = it.get("vtm")
+        inn = it.get("pactivos") or ""
+        if not inn and isinstance(vtm, dict):
+            inn = vtm.get("nombre") or ""
+        elif not inn and isinstance(vtm, str):
+            inn = vtm
+        form = it.get("formaFarmaceutica")
+        if isinstance(form, dict):
+            form = form.get("nombre") or ""
+        company = it.get("labtitular") or it.get("labcomercializador") or ""
+        name = it.get("nombre") or ""
+        if not inn and not name:
+            continue
+        accept_prod("ES")
+        add_row(rows, "ES", str(inn), name, str(form or ""), it.get("dosis") or "", str(company), str(it.get("nregistro") or ""))
+        n += 1
+    log(f"parse ES CIMA {n}")
+
+
+def parse_ch_swiss(rows, path: Path):
+    header = None
+    n = 0
+    for vals in xlsx_rows(path) or []:
+        joined = " ".join((v or "").lower() for v in vals)
+        if header is None:
+            if "zulassungs" in joined and "wirkstoff" in joined:
+                header = [(h or "").strip() for h in vals]
+            continue
+        hl = [(h or "").lower() for h in header]
+
+        def hg(*needles):
+            for needle in needles:
+                nlow = needle.lower()
+                for i, h in enumerate(hl):
+                    if nlow in h:
+                        return vals[i] if i < len(vals) else ""
+            return ""
+
+        status = (hg("zulassungsstatus", "statut d'autorisation") or "").lower()
+        if status and "zugelassen" not in status and "autorise" not in status:
+            reject("CH", "not_authorised")
+            continue
+        name = hg("bezeichnung", "dénomination", "denomination")
+        inn = hg("wirkstoff", "principe")
+        company = hg("zulassungsinhaber", "inhaberin", "titulaire")
+        extra = hg("zulassungs-\nnummer", "zulassungsnummer", "n° d'autorisation")
+        strength = strength_from(name) or strength_from(hg("zusammensetzung", "composition"))
+        if not name and not inn:
+            continue
+        accept_prod("CH")
+        add_row(rows, "CH", inn, name, "", strength, company, extra)
+        n += 1
+    log(f"parse CH swiss {n}")
+
+
 def parse_ch(rows):
+    swiss = pick_file(RAW / "CH", "swiss.xlsx")
+    if not swiss:
+        from _parse_add import find_add
+
+        src = find_add("swiss")
+        if src:
+            RAW.joinpath("CH").mkdir(parents=True, exist_ok=True)
+            dest = RAW / "CH" / "swiss.xlsx"
+            if not dest.exists() or dest.stat().st_size < src.stat().st_size:
+                import shutil
+
+                shutil.copy2(src, dest)
+            swiss = dest
+    if swiss:
+        parse_ch_swiss(rows, swiss)
+        return
     chz = RAW / "CH" / "OGD.zip"
     if not chz.exists() or not zipfile.is_zipfile(chz):
         return
@@ -891,14 +1093,25 @@ def parse_dot_dmy(s: str) -> datetime | None:
         return None
 
 
+STRENGTH_RE = re.compile(
+    r"(\d[\d.,]*(?:\s*[-–/]\s*\d[\d.,]*)*\s*"
+    r"(?:milligrammes?|microgrammes?|m(?:illi)?grams?|m(?:icro)?grams?|mikrogramm?(?:es?)?|"
+    r"mg|mcg|µg|ug|μg|g|ml|i\.?u\.?|ie|ui|units?|mmol|meq|mbq|gbq|bq|%)\b"
+    r"(?:\s*/\s*\d*[\d.,]*\s*(?:ml|g|h|kg|24\s*h|h))*)",
+    re.I,
+)
+
+
 def strength_from(text: str) -> str:
     s = text or ""
-    m = re.search(
-        r"(\d[\d.,]*/?\d*[\d.,]*\s*(?:mg|µg|mcg|µg|g|ml|iu|ie|%|mikrogram|microgrammes?)\b(?:\s*/\s*\d*\s*(?:ml|g|h))*)",
-        s,
-        re.I,
-    )
-    return clean(m.group(1), 80) if m else ""
+    best = ""
+    for m in STRENGTH_RE.finditer(s):
+        bit = clean(m.group(1), 80)
+        if re.fullmatch(r"\d{4}", bit):
+            continue
+        if len(bit) > len(best):
+            best = bit
+    return best
 
 
 def parse_at(rows):
@@ -1204,7 +1417,7 @@ def build_health(rows):
     kept = Counter(r["country"] for r in rows)
     dump_files = {
         "FR": RAW / "FR" / "CIS_bdpm.txt",
-        "ES": RAW / "ES" / "Medicamentos.xls",
+        "ES": pick_file(RAW / "ES", "cima_all.json") or RAW / "ES" / "Medicamentos.xls",
         "CA": RAW / "CA" / "allfiles.zip",
         "US": RAW / "US" / "drugsfda.zip",
         "IE": RAW / "IE" / "latestHumanlist.xml",
@@ -1212,7 +1425,7 @@ def build_health(rows):
         "RO": RAW / "RO" / "nomenclator.xlsx",
         "LV": RAW / "LV" / "HumanProducts.json",
         "LU": RAW / "LU" / "liste-des-medicaments.xlsx",
-        "CH": RAW / "CH" / "OGD.zip",
+        "CH": pick_file(RAW / "CH", "swiss.xlsx") or RAW / "CH" / "OGD.zip",
         "FI": RAW / "FI" / "Perusrekisteri.xml",
         "IS": RAW / "IS" / "medicine.json",
         "AT": RAW / "AT" / "medicinal-products.csv",
@@ -1233,11 +1446,11 @@ def build_health(rows):
         "GB": next(iter((RAW / "add" / "Anh").rglob("f_amp2_*.xml")), RAW / "GB"),
         "JP": RAW / "JP" / "pmda-approved.pdf",
         "DE": RAW / "EMA" / "article57.xlsx",
-        "DK": RAW / "EMA" / "article57.xlsx",
-        "CY": RAW / "EMA" / "article57.xlsx",
-        "GR": RAW / "GR" / "eof.xlsx",
-        "HU": RAW / "EMA" / "article57.xlsx",
-        "SE": RAW / "SE" / "produktdokument.xml",
+        "DK": pick_file(RAW / "DK", "dkma.xlsx") or RAW / "EMA" / "article57.xlsx",
+        "CY": pick_file(RAW / "CY", "cyprus.xlsx") or RAW / "EMA" / "article57.xlsx",
+        "GR": pick_file(RAW / "GR", "eof.xlsx", "eof_price.xlsx") or RAW / "GR" / "eof.xlsx",
+        "HU": pick_file(RAW / "HU", "tk_lista.csv", "ogyi.csv") or RAW / "HU" / "tk_lista.csv",
+        "SE": pick_file(RAW / "SE", "lakemedel.xlsx", "produktdokument.xml") or RAW / "SE" / "produktdokument.xml",
         "LI": RAW / "EMA" / "article57.xlsx",
         "EMA": next(iter((RAW / "BG").glob("Centrally*.xlsx")), RAW / "EMA" / "medicines.json"),
     }
@@ -1319,8 +1532,8 @@ def build_health(rows):
             "no_local_dump": "Chưa có dump chính thức — tra trên web, tạm dùng EMA nếu là thuốc centralised",
             "updated": "File dump lấy trong 180 ngày",
             "aging": "File dump cũ hơn 180 ngày",
-            "full": "Đủ 4 trường: INN + dạng + hàm lượng + công ty",
-            "lean": "Thiếu nặng (≤1/4 trường)",
+            "full": "Đủ 4 trường: hoạt chất + dạng + hàm lượng + công ty",
+            "lean": "Thiếu ≥3 trong 4 trường (hoạt chất / dạng / hàm lượng / công ty)",
             "filter": "Chỉ giữ thuốc đang lưu hành (authorised + marketed). Bỏ cancelled / anulado / withdrawn / discontinued / not marketed.",
         },
     }

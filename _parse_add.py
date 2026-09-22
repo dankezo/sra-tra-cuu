@@ -17,6 +17,9 @@ import _parse as P
 
 ADD = P.RAW / "add"
 
+def add_dir() -> Path:
+    return P.RAW / "add"
+
 A57_MAP = {
     "austria": "AT",
     "belgium": "BE",
@@ -69,20 +72,29 @@ SI_DROP_MARKET = {
 
 def fold_name(s: str) -> str:
     s = (s or "").replace("đ", "d").replace("Đ", "d").replace("ð", "d")
+    s = s.replace("æ", "ae").replace("Æ", "ae").replace("ø", "oe").replace("Ø", "oe")
     s = unicodedata.normalize("NFKD", s).lower()
     return "".join(ch for ch in s if unicodedata.category(ch) != "Mn")
 
 
-def find_add(*needles: str) -> Path | None:
-    if not ADD.exists():
-        return None
+def find_add_all(*needles: str) -> list[Path]:
+    folder = P.RAW / "add"
+    if not folder.exists():
+        return []
     want = [fold_name(n) for n in needles]
-    files = [p for p in ADD.iterdir() if p.is_file()]
-    for p in files:
+    out = []
+    for p in folder.iterdir():
+        if not p.is_file():
+            continue
         key = fold_name(p.name)
         if all(n in key for n in want):
-            return p
-    return None
+            out.append(p)
+    return out
+
+
+def find_add(*needles: str) -> Path | None:
+    files = find_add_all(*needles)
+    return max(files, key=lambda p: p.stat().st_size) if files else None
 
 
 def copy_if(src: Path | None, dest: Path) -> Path | None:
@@ -99,8 +111,10 @@ def stage_add_files() -> None:
     mapping = [
         (("croatia",), "HR", "halmed.xlsx"),
         (("bo dao nha",), "PT", "infomed.xlsx"),
-        (("hungary",), "HU", "ogyi.csv"),
+        (("hungary",), "HU", "tk_lista.csv"),
+        (("tk_lista",), "HU", "tk_lista.csv"),
         (("human_medicines_search",), "GR", "eof.xlsx"),
+        (("hy lap (2)",), "GR", "eof_price.xlsx"),
         (("hy lap",), "GR", "eof.xlsx"),
         (("ha lan",), "NL", "cbg.csv"),
         (("japan",), "JP", "pmda-approved.pdf"),
@@ -109,6 +123,10 @@ def stage_add_files() -> None:
         (("poland",), "PL", "rpl.xlsx"),
         (("slovenia",), "SI", "cbz.csv"),
         (("union register",), "EMA", "union_register.xlsx"),
+        (("swiss",), "CH", "swiss.xlsx"),
+        (("lakemedelsprodukter",), "SE", "lakemedel.xlsx"),
+        (("dan mach",), "DK", "dkma.xlsx"),
+        (("sip",), "CY", "cyprus.xlsx"),
     ]
     for needles, cc, dest_name in mapping:
         copy_if(find_add(*needles), P.RAW / cc / dest_name)
@@ -143,9 +161,11 @@ def csv_dicts(path: Path, delimiter: str | None = None):
 
 
 def col(header, vals, *cands):
-    hl = [(h or "").strip().lower() for h in header]
+    hl = [fold_name(h) for h in header]
     for cand in cands:
-        c = cand.lower()
+        c = fold_name(cand)
+        if not c:
+            continue
         for i, h in enumerate(hl):
             if c in h:
                 return vals[i] if i < len(vals) else ""
@@ -154,14 +174,32 @@ def col(header, vals, *cands):
 
 def xlsx_after_header(path: Path, *needles: str):
     header = None
+    want = [fold_name(n) for n in needles]
     for vals in P.xlsx_rows(path):
         if header is None:
-            joined = " ".join((v or "").lower() for v in vals)
-            if all(n.lower() in joined for n in needles):
+            joined = fold_name(" ".join(v or "" for v in vals))
+            if all(n in joined for n in want):
                 header = [(h or "").strip() for h in vals]
             continue
         if any(str(v).strip() for v in vals):
             yield header, vals
+
+
+def xlsx_after_header_all(path: Path, *needles: str):
+    header = None
+    last = None
+    want = [fold_name(n) for n in needles]
+    for title, vals in P.xlsx_rows_all(path):
+        if title != last:
+            header = None
+            last = title
+        if header is None:
+            joined = fold_name(" ".join(v or "" for v in vals))
+            if all(n in joined for n in want):
+                header = [(h or "").strip() for h in vals]
+            continue
+        if any(str(v).strip() for v in vals):
+            yield title, header, vals
 
 
 def parse_iso_date(s: str) -> datetime | None:
@@ -185,6 +223,28 @@ def form_from(text: str) -> str:
         re.I,
     )
     return P.clean(m.group(1), 160) if m else ""
+
+
+def form_from_hu(text: str) -> str:
+    s = text or ""
+    m = re.search(
+        r"(filmtabletta|bevont tabletta|szájban diszpergálódó tabletta|tabletta|kemény kapszula|"
+        r"lágy kapszula|kapszula|oldatos infúzió|oldatos injekció|injekció|infúzió|szuszpenzió|"
+        r"oldat|szirup|krém|kenőcs|gél|cseppek|spray|granulátum|por|tapasz|kúp)",
+        s,
+        re.I,
+    )
+    return P.clean(m.group(1), 160) if m else form_from(s)
+
+
+def rec_get(it: dict, *names: str) -> str:
+    keys = {(k or "").strip().strip("'\"").lower(): k for k in it}
+    for name in names:
+        orig = keys.get(name.lower())
+        if orig is None:
+            continue
+        return (it.get(orig) or "").strip().strip("'\"").strip()
+    return ""
 
 
 def split_jp_brand(cell: str) -> tuple[list[str], str]:
@@ -485,7 +545,7 @@ def parse_sk_sidc(rows):
 
 
 def dmd_folder() -> Path | None:
-    for base in (P.RAW / "GB", ADD / "Anh"):
+    for base in (P.RAW / "GB", P.RAW / "add" / "Anh"):
         if not base.exists():
             continue
         hits = sorted(base.rglob("f_amp2_*.xml"), key=lambda x: x.stat().st_size, reverse=True)
@@ -684,42 +744,152 @@ def parse_article57_gaps(rows):
         if not name and not inn:
             continue
         P.accept_prod(cc)
-        P.add_row(rows, cc, inn, name, route, "", company, "", src="d")
+        P.add_row(rows, cc, inn, name, route, P.strength_from(name), company, "", src="d")
         n += 1
         by[cc] += 1
     P.log("parse A57 gaps " + ", ".join(f"{k}:{v}" for k, v in sorted(by.items())) + f" total={n}")
 
 
 def parse_gr(rows):
-    p = P.pick_file(P.RAW / "GR", "eof.xlsx") or find_add("human_medicines_search") or find_add("hy lap")
+    p = P.pick_file(P.RAW / "GR", "eof.xlsx") or find_add("human_medicines_search")
+    if not p:
+        cands = [x for x in find_add_all("hy lap") if "(2)" not in fold_name(x.name)]
+        p = max(cands, key=lambda x: x.stat().st_size) if cands else None
+    if p:
+        n = 0
+        for header, vals in xlsx_after_header(p, "name", "status"):
+            status = fold_name(col(header, vals, "m.a. status", "status", "κατάσταση"))
+            if status and "valid" not in status and "enisch" not in status:
+                P.reject("GR", "not_authorised")
+                continue
+            name = col(header, vals, "name / strength", "name", "ονομασία")
+            if not name or name.lower().startswith("name"):
+                continue
+            P.accept_prod("GR")
+            P.add_row(
+                rows,
+                "GR",
+                "",
+                name,
+                "",
+                P.strength_from(name),
+                "",
+                col(header, vals, "code", "κωδικός"),
+                src="d",
+            )
+            n += 1
+        P.log(f"parse GR {n}")
+    parse_gr_price(rows)
+
+
+def parse_gr_price(rows):
+    p = P.pick_file(P.RAW / "GR", "eof_price.xlsx") or find_add("hy lap (2)")
     if not p:
         return
     n = 0
-    for header, vals in xlsx_after_header(p, "name", "status"):
-        status = fold_name(col(header, vals, "m.a. status", "status", "κατάσταση"))
-        if status and "valid" not in status and "enisch" not in status:
-            P.reject("GR", "not_authorised")
+    for _title, header, vals in xlsx_after_header_all(p, "atc"):
+        name = col(header, vals, "περιγραφή", "προϊόν", "προιον")
+        if not name or name.lower().startswith("κωδικ"):
             continue
-        name = col(header, vals, "name / strength", "name", "ονομασία")
+        inn = col(header, vals, "δραστικ")
+        company = col(header, vals, "κάτοχος", "κατοχος", "kak")
+        extra = col(header, vals, "κωδικός", "κωδικος", "barcode")
+        P.accept_prod("GR")
+        P.add_row(rows, "GR", inn, name, "", P.strength_from(name), company, extra, src="d")
+        n += 1
+    P.log(f"parse GR price {n}")
+
+
+def parse_se_xlsx(rows, path: Path):
+    seen_url = set()
+    n = 0
+    for title, header, vals in xlsx_after_header_all(path, "namn", "styrka"):
+        hv = fold_name(col(header, vals, "h/v"))
+        if hv.startswith("v") or "vet" in hv:
+            P.reject("SE", "not_human")
+            continue
+        st = fold_name(col(header, vals, "registrerings-status"))
+        if "avregistr" in st or "aterkall" in st:
+            P.reject("SE", "withdrawn")
+            continue
+        if "godkand" not in st and "registrerad" not in st:
+            P.reject("SE", "not_authorised")
+            continue
+        sale = fold_name(col(header, vals, "forsaljningsstatus"))
+        if sale and "finns till" not in sale:
+            P.reject("SE", "not_marketed")
+            continue
+        name = re.sub(r"https?://\S+", "", col(header, vals, "namn") or "").strip()
+        inn = col(header, vals, "verksamt amne (forenklat)", "verksamt")
+        form = col(header, vals, "form")
+        if form.lower() == "form":
+            form = ""
+        strength = col(header, vals, "styrka") or P.strength_from(name)
+        company = col(header, vals, "innehavare")
+        extra = col(header, vals, "npl-id", "mt-nummer")
+        if not name and not inn:
+            continue
+        P.accept_prod("SE")
+        P.add_row(rows, "SE", inn, name, form, strength, company, extra, src="d")
+        n += 1
+    for sheet in ("Information", "Filter"):
+        for vals in P.xlsx_rows(path, sheet) or []:
+            blob = " ".join(str(v) for v in vals)
+            for m in re.findall(r"https?://[^\s|<>\"]+", blob):
+                cleaned = re.sub(r"System\.Threading\.Tasks\.Task[^/]*", "", m)
+                if cleaned not in seen_url:
+                    seen_url.add(cleaned)
+                    P.log("SE sheet " + sheet + " URL " + cleaned[:220])
+    P.log(f"parse SE xlsx {n}")
+
+
+def parse_dk(rows):
+    p = P.pick_file(P.RAW / "DK", "dkma.xlsx") or find_add("dan mach")
+    if not p:
+        return
+    n = 0
+    for _title, header, vals in xlsx_after_header_all(p, "navn"):
+        name = col(header, vals, "navn")
+        if not name:
+            continue
+        atc = (col(header, vals, "atc-kode", "atc") or "").upper()
+        if atc.startswith("Q"):
+            P.reject("DK", "not_human")
+            continue
+        form = col(header, vals, "laegemiddelform", "lægemiddelform")
+        strength = col(header, vals, "styrketekst", "styrke") or P.strength_from(name)
+        inn = col(header, vals, "aktivesubstanser", "aktive")
+        company = col(header, vals, "mftindehaver", "virksomhedsnavn")
+        extra = col(header, vals, "drugid")
+        P.accept_prod("DK")
+        P.add_row(rows, "DK", inn, name, form, strength, company, extra, src="d")
+        n += 1
+    P.log(f"parse DK {n}")
+
+
+def parse_cy(rows):
+    p = P.pick_file(P.RAW / "CY", "cyprus.xlsx") or find_add("sip")
+    if not p:
+        return
+    n = 0
+    for header, vals in xlsx_after_header(p, "name", "active"):
+        name = col(header, vals, "name of pharmaceutical", "name")
         if not name or name.lower().startswith("name"):
             continue
-        P.accept_prod("GR")
-        P.add_row(
-            rows,
-            "GR",
-            "",
-            name,
-            form_from(name),
-            P.strength_from(name),
-            "",
-            col(header, vals, "code", "κωδικός"),
-            src="d",
-        )
+        inn = col(header, vals, "active substance")
+        company = col(header, vals, "marketing authorisation holder")
+        extra = col(header, vals, "pricing code")
+        P.accept_prod("CY")
+        P.add_row(rows, "CY", inn, name, "", P.strength_from(name), company, extra, src="d")
         n += 1
-    P.log(f"parse GR {n}")
+    P.log(f"parse CY {n}")
 
 
 def parse_se_lmf(rows):
+    xlsx = P.pick_file(P.RAW / "SE", "lakemedel.xlsx") or find_add("lakemedelsprodukter")
+    if xlsx:
+        parse_se_xlsx(rows, xlsx)
+        return
     p = P.pick_file(P.RAW / "SE", "produktdokument.xml")
     if not p:
         return
@@ -742,9 +912,9 @@ def parse_se_lmf(rows):
         by[npl] = {
             "name": name,
             "company": rec.get("Företag") or rec.get("Foretag") or "",
-            "form": form_from(name),
+            "form": "",
             "strength": P.strength_from(name),
-            "inn": re.split(r"\s+\d", name, 1)[0].strip() if name else "",
+            "inn": "",
             "extra": npl,
         }
     n = 0
@@ -755,6 +925,39 @@ def parse_se_lmf(rows):
         P.add_row(rows, "SE", rec["inn"], rec["name"], rec["form"], rec["strength"], rec["company"], rec["extra"], src="d")
         n += 1
     P.log(f"parse SE {n}")
+
+
+def parse_hu(rows):
+    p = None
+    for name in ("tk_lista.csv", "ogyi.csv"):
+        cand = P.RAW / "HU" / name
+        if cand.exists() and cand.stat().st_size > 80:
+            p = cand
+            break
+    if not p:
+        p = find_add("tk_lista") or find_add("hungary")
+    if not p or p.stat().st_size < 80:
+        return
+    n = 0
+    seen = set()
+    for it in csv_dicts(p, delimiter=";") or []:
+        name = rec_get(it, "Név", "Nev", "name")
+        if not name:
+            P.reject("HU", "empty")
+            continue
+        inn = rec_get(it, "INN")
+        company = rec_get(it, "Forg_Eng_Jog", "forgalomba hozatali engedély jogosultja")
+        extra = rec_get(it, "TK-szám", "TK-szam")
+        form = form_from_hu(name)
+        strength = P.strength_from(name) or P.strength_from(rec_get(it, "Kiszerelés"))
+        key = (name.lower(), inn.lower(), form.lower(), strength.lower(), company.lower())
+        if key in seen:
+            continue
+        seen.add(key)
+        P.accept_prod("HU")
+        P.add_row(rows, "HU", inn, name, form, strength, company, extra, src="d")
+        n += 1
+    P.log(f"parse HU {n}")
 
 
 def parse_added(rows):
@@ -771,4 +974,7 @@ def parse_added(rows):
     parse_jp(rows)
     parse_gr(rows)
     parse_se_lmf(rows)
+    parse_hu(rows)
+    parse_dk(rows)
+    parse_cy(rows)
     parse_article57_gaps(rows)

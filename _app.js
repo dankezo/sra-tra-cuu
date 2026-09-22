@@ -381,11 +381,11 @@
       function rowSrc(r) {
         return r[6] === "e" || r[0] === "EMA" ? "e" : "d";
       }
-      function srcChip(src, cc, inn) {
+      function srcChip(src, cc, product) {
         const ema = src === "e";
         const s = ema ? SRC.EMA : srcOf(cc);
         const hint = s.searchDomain ? 'Mở danh mục/file gốc của ' + s.agency : 'Mở trang tra cứu ' + s.agency;
-        return `<a class="src${ema ? ' ema' : ''}" href="${esc(s.url)}" data-source="${ema ? 'ema' : 'dump'}" data-copy-inn="${esc(inn || '')}" title="${esc(hint)}; sao chép hoạt chất gốc" target="_blank" rel="noopener">${ema ? 'EMA' : 'dump'} ↗</a>`;
+        return `<a class="src${ema ? ' ema' : ''}" href="${esc(s.url)}" data-source="${ema ? 'ema' : 'dump'}" data-copy-product="${esc(product || '')}" title="${esc(hint)}; sao chép tên thuốc" target="_blank" rel="noopener">${ema ? 'EMA' : 'dump'} ↗</a>`;
       }
 
       function rowKey(cc, r) {
@@ -440,19 +440,16 @@
       function matchInns(qstr) {
         const v = searchText(qstr);
         if (v.length < 2) return [];
-        const start = [], mid = [];
-        for (let i = 0; i < INNS.length && start.length + mid.length < 12; i++) {
-          const it = INNS[i];
-          const ix = searchText(it.key).indexOf(v);
-          if (ix === 0) start.push(it);
-          else if (ix > 0) mid.push(it);
-        }
-        return start.concat(mid).filter(it => !searchTerms.some(t => searchText(t) === searchText(it.inn))).slice(0, 8);
+        const priority = { 'Hoạt chất': 0, 'Tên thuốc': 1, 'Công ty': 2 };
+        const selectedTerms = new Set(searchTerms.map(searchText));
+        return INNS.filter(it => it.key.includes(v) && !selectedTerms.has(searchText(it.inn)))
+          .sort((a,b) => priority[a.kind] - priority[b.kind] || Number(b.key.startsWith(v)) - Number(a.key.startsWith(v)) || b.n - a.n)
+          .slice(0, 12);
       }
       function rowHtml(r, idx, code, src) {
         const k = rowKey(code, r);
         const on = selected[k] ? " checked" : "";
-        return "<tr data-k=\"" + esc(k) + "\"><td class=\"ck\"><input type=\"checkbox\" data-k=\"" + esc(k) + "\"" + on + "></td><td class=\"num\">" + (idx + 1) + "</td><td class=\"inn\">" + esc(r[1]) + "</td><td class=\"nm\">" + esc(r[2]) + "</td><td class=\"fm\">" + esc(formText(r[3])) + "</td><td class=\"st\">" + esc(r[4] || "—") + "</td><td class=\"co\">" + coCell(r[5]) + "</td><td class=\"src\">" + (r._sources || [src]).map(k => srcChip(k, code, (r._inns || {})[k] || r[1])).join(" ") + "</td></tr>";
+        return "<tr data-k=\"" + esc(k) + "\"><td class=\"ck\"><input type=\"checkbox\" data-k=\"" + esc(k) + "\"" + on + "></td><td class=\"num\">" + (idx + 1) + "</td><td class=\"inn\">" + esc(r[1]) + "</td><td class=\"nm\">" + esc(r[2]) + "</td><td class=\"fm\">" + esc(formText(r[3])) + "</td><td class=\"st\">" + esc(r[4] || "—") + "</td><td class=\"co\">" + coCell(r[5]) + "</td><td class=\"src\">" + (r._sources || [src]).map(k => srcChip(k, code, r[2])).join(" ") + "</td></tr>";
       }
       function bindCardSearch(d) {
         const inp = d.querySelector('.cg-q');
@@ -802,6 +799,7 @@
           "<div class=\"row\"><span>Dòng INN duy nhất</span><div class=\"bar\"><i style=\"--w:" + pct(rowsN, raw) + "%\"></i></div><b>" + rowsN.toLocaleString("vi-VN") + "</b></div></div>";
         const emaRows = h.ema_rows || 0;
         const natRows = rowsN - emaRows;
+        document.getElementById('hsource-mix').innerHTML = `<div class="qs ok"><b>${natRows.toLocaleString('vi-VN')}</b><span>Dump quốc gia</span></div><div class="qs"><b>${emaRows.toLocaleString('vi-VN')}</b><span>EMA</span></div>`;
         const deg = pct(natRows, rowsN || 1) * 3.6;
         const donut = document.getElementById("hdonut");
         const heroCap = document.getElementById("hhero-cap");
@@ -890,7 +888,7 @@
           const r = MED[i];
           const src = r[6] || (r[0] === "EMA" ? "e" : "d");
           if (src === "d" && r[0] !== "EMA") dumpCc.add(r[0]);
-          for (const [field, kind] of [[1, 'Hoạt chất'], [5, 'Công ty']]) {
+          for (const [field, kind] of [[1, 'Hoạt chất'], [2, 'Tên thuốc'], [5, 'Công ty']]) {
             const inn = (r[field] || '').trim();
             if (!inn) continue;
             const key = kind + ':' + searchText(inn);
@@ -1080,14 +1078,14 @@
       }
       let toastTimer;
       document.addEventListener('click', ev => {
-        const link = ev.target.closest('a[data-copy-inn]');
+        const link = ev.target.closest('a[data-copy-product]');
         if (!link) return;
         // Preserve native new-tab navigation and start copying in the same user gesture.
         ev.stopPropagation();
-        const text = link.dataset.copyInn;
+        const text = link.dataset.copyProduct;
         const report = ok => {
           const toast = document.getElementById('source-toast');
-          toast.textContent = ok ? 'Đã sao chép: ' + text + '. Dán vào ô tìm kiếm của nguồn.' : 'Không thể tự sao chép. Hoạt chất gốc: ' + text;
+          toast.textContent = ok ? 'Đã sao chép: ' + text + '. Dán vào ô tìm kiếm của nguồn.' : 'Không thể tự sao chép. Tên thuốc: ' + text;
           toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 7000);
         };
         if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(() => report(true)).catch(() => report(copyFallback(text)));

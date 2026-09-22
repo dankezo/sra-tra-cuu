@@ -262,6 +262,7 @@ HEALTH_HTML = """    <details class="fold health" id="health">
           <aside class="health-pies" aria-label="Biểu đồ dữ liệu">
             <div class="donut-card">
               <p class="side-lab">Dump · EMA</p>
+              <div class="qmix source-mix" id="hsource-mix"></div>
               <div class="donut-wrap">
                 <div class="donut" id="hdonut"></div>
                 <ul class="donut-leg" id="hleg"></ul>

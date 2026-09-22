@@ -299,3 +299,36 @@ details.cg > summary::after { margin-left: 4px; flex: 0 0 auto; }
   #tra details.cg > summary::after { position:absolute; right:14px; top:12px; }
   #tra .cg-q { flex-basis:100%; width:100%; margin-top:2px; }
 }
+
+/* Keep dense medicine rows readable without overlapping adjacent columns. */
+#tra table.med td { white-space:normal; overflow-wrap:anywhere; min-width:0; }
+#hcov { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); overflow:visible; padding:3px; gap:8px; }
+#hcov button { min-width:0; width:100%; padding:8px 4px; min-height:40px; }
+#hcov button b { white-space:nowrap; font-size:11px; gap:3px; }
+.health-pies .source-mix { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.health-pies .qmix { height:54px; box-sizing:border-box; }
+.health-pies .donut-wrap { justify-content:flex-start; }
+@media(max-width:1400px) { #hcov { grid-template-columns:repeat(9,minmax(0,1fr)); } }
+@media(max-width:1100px) { #hcov { grid-template-columns:repeat(6,minmax(0,1fr)); } }
+
+@media(max-width:960px) {
+  #tra table.med, #tra table.med tbody { display:block; width:100%; }
+  #tra table.med colgroup, #tra table.med thead { display:none; }
+  #tra table.med tbody tr { display:grid; grid-template-columns:22px minmax(0,1fr) minmax(0,1fr); gap:3px 8px; padding:10px; width:100%; box-sizing:border-box; }
+  #tra table.med td { display:block; width:auto; padding:0; border:0; font-size:12px; line-height:1.45; }
+  #tra table.med td.num { display:none; }
+  #tra table.med td.ck { grid-column:1; grid-row:1; width:auto; }
+  #tra table.med td.inn { grid-column:2 / 4; grid-row:1; font-size:13px; }
+  #tra table.med td.nm { grid-column:2 / 4; grid-row:2; font-weight:600; }
+  #tra table.med td.fm { grid-column:2; grid-row:3; color:var(--muted); }
+  #tra table.med td.st { grid-column:3; grid-row:3; }
+  #tra table.med td.co { grid-column:2; grid-row:4; }
+  #tra table.med td.src { grid-column:3; grid-row:4; display:flex; flex-wrap:wrap; align-items:flex-start; gap:4px; }
+  #tra .co-kind { font-size:10px; line-height:1.3; }
+}
+@media(max-width:600px) { #hcov { grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; } }
+.health-pies .qmix, .health-pies .side-lab, .health-pies .donut-wrap { flex-shrink:0; }
+
+.health-pies .donut { animation:none !important; transform:none !important; }
+#hcov button { animation:none !important; }
+@media(max-width:420px) { #hcov { grid-template-columns:repeat(2,minmax(0,1fr)); } }

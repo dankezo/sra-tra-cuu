@@ -45,7 +45,7 @@
         });
         root.lang = mode === "en" ? "en" : "vi";
         if (typeof paintFormChips === "function") paintFormChips();
-        if (typeof searchMed === "function" && mq && (mq.value || "").trim().length >= 2) searchMed();
+        if (typeof searchMed === "function" && hasSearched) searchMed();
       }
       function setGuide(mode) {
         root.dataset.guide = mode;
@@ -120,23 +120,40 @@
         FR:{agency:"ANSM",url:"https://base-donnees-publique.medicaments.gouv.fr/"},
         ES:{agency:"AEMPS",url:"https://cima.aemps.es/"},
         EMA:{agency:"EMA",url:"https://www.ema.europa.eu/en/medicines"},
-        CA:{agency:"Health Canada",url:"https://health-products.canada.ca/dpd-bdpp/"},
+        CA:{agency:"Health Canada",url:"https://health-products.canada.ca/dpd-bdpp/index-eng.jsp"},
         US:{agency:"FDA",url:"https://www.accessdata.fda.gov/scripts/cder/daf/"},
-        IE:{agency:"HPRA",url:"https://www.hpra.ie/homepage/medicines/medicines-information/find-a-medicine"},
+        IE:{agency:"HPRA",url:"https://www.hpra.ie/find-a-medicine"},
         CZ:{agency:"SÚKL",url:"https://prehledy.sukl.cz/index_en.html"},
         RO:{agency:"ANM",url:"https://www.anm.ro/nomenclator/medicamente"},
-        LV:{agency:"ZVA",url:"https://dati.zva.gov.lv"},
-        LU:{agency:"Santé LU",url:"https://santesecu.public.lu/fr/espace-professionnel/departement-sante/pharmacies-et-medicaments/medicaments-humains.html"},
+        LV:{agency:"ZVA",url:"https://dati.zva.gov.lv/zalu-registrs/en"},
+        LU:{agency:"Santé LU",url:"https://santesecu.public.lu/fr/espace-professionnel/departement-sante/pharmacies-et-medicaments/medicaments-humains.html",searchDomain:"santesecu.public.lu"},
         CH:{agency:"Swissmedic",url:"https://www.swissmedicinfo.ch/"},
         FI:{agency:"FIMEA",url:"https://fimea.fi/en/databases_and_registers/fimeaweb"},
         IS:{agency:"IMA",url:"https://www.serlyfjaskra.is/"},
-        AT:{agency:"BASG",url:"https://medikamente.basg.gv.at/de/medicinal-products"},
+        AT:{agency:"BASG",url:"https://medikamente.basg.gv.at/en/medicinal-products"},
         EE:{agency:"SAM",url:"https://ravimiregister.ee/en/default.aspx"},
         BE:{agency:"AFMPS",url:"https://banquededonneesmedicaments.fagg-afmps.be/usage-humain"},
-        IT:{agency:"AIFA",url:"https://www.aifa.gov.it/liste-dei-farmaci"},
+        IT:{agency:"AIFA",url:"https://medicinali.aifa.gov.it/en/#/en/"},
         NO:{agency:"NOMA",url:"https://www.legemiddelsok.no/"},
         AU:{agency:"TGA",url:"https://www.tga.gov.au/resources/artg"},
-        BG:{agency:"BDA",url:"https://bda.bg/bg/"}
+        BG:{agency:"BDA",url:"https://www.bda.bg/en/registers",searchDomain:"bda.bg"},
+        HR:{agency:"HALMED",url:"https://www.halmed.hr/en/Lijekovi/pretrazivanje-lijekova/"},
+        CY:{agency:"CyPHS",url:"https://www.phs.moh.gov.cy/human-search/home.xhtml?lang=en"},
+        DK:{agency:"DKMA",url:"https://www.produktresume.dk/AppBuilder/search"},
+        DE:{agency:"BfArM",url:"https://portal.bfarm.de/amguifree/am/search.xhtml"},
+        GR:{agency:"EOF",url:"https://eof.gr/en/anazitisi-proionton/"},
+        HU:{agency:"NNGYK",url:"https://ogyei.gov.hu/gyogyszeradatbazis"},
+        LT:{agency:"VVKT",url:"https://vapris.vvkt.lt/vvkt-web/public/medications"},
+        MT:{agency:"MAM",url:"https://www.medicinesauthority.gov.mt/advanced-search"},
+        NL:{agency:"CBG-MEB",url:"https://www.geneesmiddeleninformatiebank.nl/"},
+        PL:{agency:"RPL",url:"https://rejestrymedyczne.ezdrowie.gov.pl/rpl/search/public"},
+        PT:{agency:"INFARMED",url:"https://extranet.infarmed.pt/INFOMED-fo/index.xhtml"},
+        SK:{agency:"SIDC",url:"https://www.sukl.sk/en/servis/search/searching-on-the-database-of-medicinal-products?page_id=410"},
+        SI:{agency:"JAZMP",url:"https://www.cbz.si/"},
+        SE:{agency:"MPA",url:"https://www.lakemedelsverket.se/sv/sok-lakemedelsfakta"},
+        GB:{agency:"MHRA",url:"https://products.mhra.gov.uk/"},
+        JP:{agency:"PMDA",url:"https://www.pmda.go.jp/PmdaSearch/iyakuSearch/"},
+        LI:{agency:"BASG",url:"https://medikamente.basg.gv.at/en/medicinal-products"}
       };
       const FORM_RULES = [
         ["tablet", ["film-coated", "filmtablette", "pellicul", "kalvopäällysteinen", "filmdrasjert", "tbl flm", "compr. film", "compressa rivestita", "film coated"]],
@@ -177,23 +194,23 @@
         other: { en: "other", vi: "khác" }
       };
       const PACK = [
-        { cc:"LT", name:"Lithuania", tag:"dump", how:"data.gov.lt → PreparatasPakuote → CSV. Máy hay 500 — tải bằng trình duyệt, thả vào data/raw/LT/.", url:"https://get.data.gov.lt/datasets/gov/vvkt/vaistiniai_preparatai/PreparatasPakuote" },
-        { cc:"PL", name:"Ba Lan", tag:"dump", how:"RPL overall.xml rất lớn. Tải nền / Save as, thả data/raw/PL/.", url:"https://rejestry.ezdrowie.gov.pl/registry/rpl" },
-        { cc:"SE", name:"Thụy Điển", tag:"ask", how:"Mail nplcentral@lakemedelsverket.se xin NPL ZIP. HAR không có dump công.", url:"https://www.lakemedelsverket.se/en/e-services-and-forms/substance-register-and-product-register/national-register-for-medicinal-products-npl" },
-        { cc:"NL", name:"Hà Lan", tag:"ask", how:"Mail Geneesmiddelgebruik@cbg-meb.nl xin databestand. Không crawl OpenState 2017.", url:"https://www.geneesmiddeleninformatiebank.nl/" },
-        { cc:"HU", name:"Hungary", tag:"ask", how:"Form OGYÉI xin CSV authorised. HAR nếu có thì gửi.", url:"https://ogyei.gov.hu/kozerdeku_adatok_igenylese" },
-        { cc:"DE", name:"Đức", tag:"skip", how:"HAR portal.bfarm.de = JSF POST search.xhtml → HTML từng trang, không JSON dump. AMIce chỉ xuất CSV sau khi tìm. Tạm EMA.", url:"https://portal.bfarm.de/amguifree/am/search.xhtml" },
-        { cc:"DK", name:"Đan Mạch", tag:"skip", how:"API medicinpriser theo INN ≤100/lần; bulk /v1/produkter 500. Không dump cả CSDL.", url:"https://www.produktresume.dk/AppBuilder/search" },
-        { cc:"PT", name:"Bồ Đào Nha", tag:"skip", how:"Infomed không dump. CITS 150€/năm — không mua. Tạm EMA.", url:"https://extranet.infarmed.pt/INFOMED-fo/index.xhtml" },
-        { cc:"SK", name:"Slovakia", tag:"skip", how:"lieky_all.json hiện rỗng/HTML. Tra SIDC + EMA.", url:"https://www.sukl.sk/en/servis/search/searching-on-the-database-of-medicinal-products?page_id=410" },
-        { cc:"HR", name:"Croatia", tag:"skip", how:"Excel sau từng INN, không dump cả CSDL.", url:"https://www.halmed.hr/en/Lijekovi/pretrazivanje-lijekova/" },
-        { cc:"GB", name:"Anh", tag:"skip", how:"MHRA = mục lục PDF. Không dump. Không EMA (sau Brexit).", url:"https://products.mhra.gov.uk/" },
-        { cc:"JP", name:"Nhật", tag:"skip", how:"PMDA không dump. JAPIC trả phí. Không EMA.", url:"https://www.pmda.go.jp/PmdaSearch/iyakuSearch/" },
-        { cc:"CY", name:"Síp", tag:"skip", how:"Không dump công. Tạm EMA.", url:"https://www.phs.moh.gov.cy/human-search/home.xhtml?lang=en" },
-        { cc:"GR", name:"Hy Lạp", tag:"skip", how:"Không dump công. Tạm EMA.", url:"https://eof.gr/en/anazitisi-proionton/" },
-        { cc:"MT", name:"Malta", tag:"skip", how:"Không dump công. Tạm EMA.", url:"https://www.medicinesauthority.gov.mt/advanced-search" },
-        { cc:"SI", name:"Slovenia", tag:"skip", how:"Không dump công. Tạm EMA.", url:"https://www.cbz.si/" },
-        { cc:"LI", name:"Liechtenstein", tag:"skip", how:"Không CSDL riêng — Áo + Swissmedic + EMA.", url:"https://medikamente.basg.gv.at/de/" }
+        { cc:"LT", name:"Lithuania", tag:"dump", how:"VVKT CSV đã nạp từ data/raw/add.", url:"https://vapris.vvkt.lt/vvkt-web/public/medications" },
+        { cc:"PL", name:"Ba Lan", tag:"dump", how:"RPL xlsx đã nạp từ data/raw/add.", url:"https://rejestrymedyczne.ezdrowie.gov.pl/rpl/search/public" },
+        { cc:"SE", name:"Thụy Điển", tag:"ask", how:"NPL ZIP chưa có; đang dùng EMA Article 57 theo nước.", url:"https://www.lakemedelsverket.se/sv/sok-lakemedelsfakta" },
+        { cc:"NL", name:"Hà Lan", tag:"dump", how:"CBG-MEB CSV đã nạp từ data/raw/add.", url:"https://www.geneesmiddeleninformatiebank.nl/" },
+        { cc:"HU", name:"Hungary", tag:"ask", how:"CSV header-only; đang dùng EMA Article 57 theo nước.", url:"https://ogyei.gov.hu/gyogyszeradatbazis" },
+        { cc:"DE", name:"Đức", tag:"skip", how:"BfArM không dump công; đang dùng EMA Article 57 theo nước.", url:"https://portal.bfarm.de/amguifree/am/search.xhtml" },
+        { cc:"DK", name:"Đan Mạch", tag:"skip", how:"Không dump cả CSDL; đang dùng EMA Article 57 theo nước.", url:"https://www.produktresume.dk/AppBuilder/search" },
+        { cc:"PT", name:"Bồ Đào Nha", tag:"dump", how:"INFARMED list đã nạp từ data/raw/add.", url:"https://extranet.infarmed.pt/INFOMED-fo/index.xhtml" },
+        { cc:"SK", name:"Slovakia", tag:"dump", how:"SIDC JSON (p00000) đã nạp.", url:"https://www.sukl.sk/en/servis/search/searching-on-the-database-of-medicinal-products?page_id=410" },
+        { cc:"HR", name:"Croatia", tag:"dump", how:"HALMED Excel đã nạp từ data/raw/add.", url:"https://www.halmed.hr/en/Lijekovi/pretrazivanje-lijekova/" },
+        { cc:"GB", name:"Anh", tag:"dump", how:"NHS dm+d XML đã nạp (MHRA/EMA licensed AMPs).", url:"https://products.mhra.gov.uk/" },
+        { cc:"JP", name:"Nhật", tag:"dump", how:"PMDA List of Approved Drugs PDF đã nạp.", url:"https://www.pmda.go.jp/PmdaSearch/iyakuSearch/" },
+        { cc:"CY", name:"Síp", tag:"skip", how:"Không dump NCA; đang dùng EMA Article 57 theo nước.", url:"https://www.phs.moh.gov.cy/human-search/home.xhtml?lang=en" },
+        { cc:"GR", name:"Hy Lạp", tag:"skip", how:"EOF xlsx trống; đang dùng EMA Article 57 theo nước.", url:"https://eof.gr/en/anazitisi-proionton/" },
+        { cc:"MT", name:"Malta", tag:"dump", how:"Medicines Authority CSV đã nạp từ data/raw/add.", url:"https://www.medicinesauthority.gov.mt/advanced-search" },
+        { cc:"SI", name:"Slovenia", tag:"dump", how:"JAZMP/CBZ CSV đã nạp từ data/raw/add.", url:"https://www.cbz.si/" },
+        { cc:"LI", name:"Liechtenstein", tag:"skip", how:"Không CSDL riêng — Article 57 + Áo + Swissmedic + EMA.", url:"https://medikamente.basg.gv.at/de/" }
       ];
 
       let MED = [];
@@ -201,16 +218,77 @@
       let SITES = {};
       let INNS = [];
       let dumpCc = new Set();
-      let srcKind = "all";
-      const selCc = new Set();
+      let srcSel = new Set();
+      let hasSearched = false;
+
       const selForms = new Set();
       let sugIx = -1;
+      let sugTimer = 0;
       let pageSize = 50;
       let selected = {};
       try { selected = JSON.parse(localStorage.getItem("sra-sel") || "{}") || {}; } catch (e) { selected = {}; }
       try { pageSize = Number(localStorage.getItem("sra-page") || 50); } catch (e) {}
       const store = new WeakMap();
       const shownN = new WeakMap();
+
+      const countryList = document.getElementById('country-list');
+      const mapSvg = document.getElementById('country-map');
+      let countryView = 'globe';
+      let activeCountry = '';
+      let countryCounts = {};
+      let countryData = {};
+      let focusedCountry = '';
+      let resultScrollFrame = 0;
+      const selCountries = new Set();
+      const WORLD = JSON.parse(document.getElementById('sra-world').textContent);
+      const countryMap = SraCountryMap(mapSvg, WORLD, {eligible:eligibleCountries, selected:()=>focusedCountry, label:countryName, onSelect:selectCountry});
+      function eligibleCountries() {
+        return SRA36.filter(c => !selCountries.size || selCountries.has(c));
+      }
+      function selectCountry(cc) {
+        activeCountry = cc;
+        focusCountry(cc);
+        paintCountries();
+        searchMed();
+        if (window.matchMedia('(max-width: 680px)').matches) {
+          document.querySelector('.tra-main').scrollIntoView({block:'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
+        }
+      }
+      function paintCountries() {
+        const eligible = eligibleCountries();
+        const list = eligible.slice().sort((a,b) => countryName(a).localeCompare(countryName(b), 'vi'));
+        list.sort((a,b) => countryName(a).localeCompare(countryName(b), 'vi'));
+        countryList.innerHTML = list.map(c => `<button type="button" data-country="${c}" aria-pressed="${focusedCountry === c}">${flagImg(c)}<span>${esc(countryName(c))}</span><span class="country-total">${countryCounts[c] == null ? '' : countryCounts[c].toLocaleString('vi-VN')}</span></button>`).join('') || '<p style="padding:12px">Không tìm thấy quốc gia.</p>';
+        document.getElementById('country-count').textContent = list.length + ' quốc gia';
+        document.getElementById('country-all').setAttribute('aria-pressed', String(!activeCountry));
+        drawMap();
+      }
+      function drawMap() { countryMap.render(); }
+      function focusCountry(cc) {
+        if (focusedCountry === cc) return;
+        focusedCountry = cc;
+        countryList.querySelectorAll('[data-country]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.country === cc)));
+        countryMap.focus(cc);
+      }
+      countryList.addEventListener('click', ev => { const b = ev.target.closest('[data-country]'); if (b) selectCountry(b.dataset.country); });
+      document.getElementById('country-all').addEventListener('click', () => selectCountry(''));
+      document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
+        countryView = b.dataset.view;
+        countryMap.setView(countryView);
+        document.querySelectorAll('[data-view]').forEach(el => el.setAttribute('aria-pressed', String(el === b)));
+        paintCountries();
+      }));
+      function buildCountryData() {
+        const ema = MED.filter(r => rowSrc(r) === 'e');
+        const local = {};
+        for (const r of MED) if (rowSrc(r) !== 'e') (local[r[0]] ||= []).push(r);
+        for (const cc of SRA36) {
+          countryData[cc] = SraData.mergeRows([...(local[cc] || []), ...(EEA.has(cc) ? ema : [])]);
+          for (const r of countryData[cc]) r._search = searchText(r.slice(1, 6).join(' '));
+        }
+      }
+
+      function searchText(text) { return SraData.norm(text).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd'); }
 
       function countryName(cc) { return CC[cc] || cc; }
       function flagIso(cc) { return cc === "EMA" ? "eu" : String(cc || "").toLowerCase(); }
@@ -232,7 +310,8 @@
       function esc(s) {
         return String(s || "").replace(/[&<>"]/g, (ch) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[ch]));
       }
-      function srcOf(cc) { return SRC[cc] || { agency: cc, url: "#" }; }
+      function srcOf(cc) { return SRC[cc] || { agency: cc, url: "https://www.google.com/search?q=" + encodeURIComponent((EN[cc] || cc) + " official medicines register") }; }
+
       function formKey(s) {
         const t = " " + String(s || "").toLowerCase() + " ";
         for (let i = 0; i < FORM_RULES.length; i++) {
@@ -261,25 +340,27 @@
         if (u === "mcg" || u === "ug" || u === "µg") return n / 1000;
         return n;
       }
-      function wikiHref(company) {
-        return "https://en.wikipedia.org/wiki/Special:Search?go=Go&search=" + encodeURIComponent(company);
+      function searchHref(company) {
+        return "https://www.google.com/search?q=" + encodeURIComponent(company);
       }
       function coCell(company) {
         if (!company) return "—";
-        const official = SITES[company];
-        const href = official || wikiHref(company);
+        const official = /^https?:\/\//i.test(SITES[company] || "") && !/wikipedia\.org/i.test(SITES[company]) ? SITES[company] : "";
+        const href = official || searchHref(company);
         return "<a class=\"co" + (official ? "" : " g") + "\" href=\"" + esc(href) + "\" target=\"_blank\" rel=\"noopener\">" + esc(company) + "</a>";
       }
       function rowSrc(r) {
         return r[6] === "e" || r[0] === "EMA" ? "e" : "d";
       }
-      function srcChip(src, cc) {
+      function srcChip(src, cc, inn) {
         const ema = src === "e";
         const s = ema ? SRC.EMA : srcOf(cc);
-        return "<a class=\"src" + (ema ? " ema" : "") + "\" href=\"" + esc(s.url || "#") + "\" target=\"_blank\" rel=\"noopener\">" + (ema ? "EMA" : "dump") + "</a>";
+        const hint = s.searchDomain ? 'Mở danh mục/file gốc của ' + s.agency : 'Mở trang tra cứu ' + s.agency;
+        return `<a class="src${ema ? ' ema' : ''}" href="${esc(s.url)}" data-source="${ema ? 'ema' : 'dump'}" data-copy-inn="${esc(inn || '')}" title="${esc(hint)}; sao chép hoạt chất gốc" target="_blank" rel="noopener">${ema ? 'EMA' : 'dump'} ↗</a>`;
       }
+
       function rowKey(cc, r) {
-        return cc + "\t" + (r[1] || "") + "\t" + (r[3] || "") + "\t" + (r[4] || "") + "\t" + (r[5] || "") + "\t" + (r[6] || "d");
+        return cc + "\t" + (r[1] || "") + "\t" + (r[2] || "") + "\t" + (r[3] || "") + "\t" + (r[4] || "") + "\t" + (r[5] || "") + "\t" + (r[6] || "d");
       }
       function saveSel() {
         try { localStorage.setItem("sra-sel", JSON.stringify(selected)); } catch (e) {}
@@ -287,43 +368,31 @@
       }
       function paintSrc() {
         if (!msrc) return;
-        msrc.innerHTML = [["all","Tất cả"],["dump","dump"],["ema","EMA"]].map(([k, lab]) => {
-          return "<button type=\"button\" data-src=\"" + k + "\" class=\"" + (srcKind === k ? "on" : "") + "\">" + lab + "</button>";
-        }).join("");
+        msrc.innerHTML = [["d","dump"],["e","EMA"]].map(([k, lab]) => {
+          return "<button type=\"button\" data-src=\"" + k + "\" class=\"" + (srcSel.has(k) ? "on" : "") + "\" aria-pressed=\"" + srcSel.has(k) + "\">" + lab + "</button>";
+        }).join("") + (srcSel.has("d") && srcSel.has("e") ? "<p class=\"src-hint\">Đang lọc thuốc có cả dump và EMA</p>" : "");
       }
       function paintFlags() {
-        if (!mflags) return;
-        const dumpN = dumpCc.size;
-        mflags.innerHTML =
-          "<div class=\"src-mini\" style=\"margin-bottom:6px\">" +
-          "<button type=\"button\" data-reg=\"all\" class=\"" + (selCc.size ? "" : "on") + "\">Mọi nước</button>" +
-          "<button type=\"button\" data-reg=\"eea\">EEA</button>" +
-          "<button type=\"button\" data-reg=\"dump\">Có dump (" + dumpN + ")</button>" +
-          "</div>" +
-          SRA36.map((c) => {
-            const on = selCc.has(c);
-            let dot = "m";
-            if (dumpCc.has(c)) dot = "n";
-            else if (EEA.has(c)) dot = "ema";
-            return "<button type=\"button\" data-cc=\"" + c + "\" class=\"" + (on ? "on" : "") + "\">" +
-              flagImg(c) + " <i class=\"dot " + dot + "\"></i> " + esc(countryName(c)) + "</button>";
-          }).join("");
+        const query = searchText(document.getElementById('filter-country-query').value);
+        mflags.innerHTML = SRA36.slice().sort((a,b)=>countryName(a).localeCompare(countryName(b),'vi')).filter(c=>searchText(c+' '+CC[c]+' '+EN[c]).includes(query)).map(c => `<label><input type="checkbox" data-country-filter="${c}" ${selCountries.has(c) ? 'checked' : ''} />${flagImg(c)}${esc(countryName(c))}</label>`).join('') || '<p>Không tìm thấy quốc gia.</p>';
+        document.getElementById('region-count').textContent = selCountries.size ? '(' + selCountries.size + ')' : '';
       }
       function paintFormChips() {
-        if (!mforms) return;
-        const mode = root.dataset.guide === "en" ? "en" : "vi";
-        const keys = Object.keys(FORM_LBL);
-        mforms.innerHTML = keys.map((k) => {
-          const lab = FORM_LBL[k][mode];
-          return "<button type=\"button\" data-form=\"" + k + "\" class=\"" + (selForms.has(k) ? "on" : "") + "\">" + esc(lab) + "</button>";
-        }).join("");
+        const mode = root.dataset.guide === 'en' ? 'en' : 'vi';
+        mforms.innerHTML = Object.keys(FORM_LBL).map(k => `<label><input type="checkbox" data-form="${k}" ${selForms.has(k) ? 'checked' : ''} />${esc(FORM_LBL[k][mode])}</label>`).join('');
+        document.getElementById('form-count').textContent = selForms.size ? '(' + selForms.size + ')' : '';
       }
       function paintMg() {
-        if (!mgVal) return;
-        const a = Number(mgMinEl.value || 0);
-        const b = Number(mgMaxEl.value || 1000);
-        mgVal.textContent = a + " – " + (b >= 1000 ? "1000+" : b) + " mg";
+        const lo = mgMinEl.value, hi = mgMaxEl.value;
+        const invalid = (lo !== '' && (!mgMinEl.validity.valid || Number(lo) < 0)) || (hi !== '' && (!mgMaxEl.validity.valid || Number(hi) < 0)) || (lo !== '' && hi !== '' && Number(lo) > Number(hi));
+        mgVal.textContent = invalid ? 'Khoảng chưa hợp lệ: đầu dưới phải nhỏ hơn hoặc bằng đầu trên.' : (!lo && !hi ? 'Mọi hàm lượng' : (lo || '0') + ' – ' + (hi || 'không giới hạn') + ' mg');
+        mgVal.style.color = invalid ? 'var(--warn)' : '';
+        const cap = Math.max(1000, Number(lo) || 0, Number(hi) || 0);
+        for (const [id, value] of [['mg-low-slider', lo || 0], ['mg-high-slider', hi || cap]]) {
+          const slider = document.getElementById(id); slider.max = cap; slider.value = value;
+        }
       }
+
       function hideSuggest() {
         window.clearTimeout(sugTimer);
         if (!suggest) return;
@@ -340,12 +409,12 @@
         }).join("");
       }
       function matchInns(qstr) {
-        const v = qstr.trim().toLowerCase();
+        const v = searchText(qstr);
         if (v.length < 2) return [];
         const start = [], mid = [];
         for (let i = 0; i < INNS.length && start.length + mid.length < 12; i++) {
           const it = INNS[i];
-          const ix = it.key.indexOf(v);
+          const ix = searchText(it.key).indexOf(v);
           if (ix === 0) start.push(it);
           else if (ix > 0) mid.push(it);
         }
@@ -354,7 +423,7 @@
       function rowHtml(r, idx, code, src) {
         const k = rowKey(code, r);
         const on = selected[k] ? " checked" : "";
-        return "<tr data-k=\"" + esc(k) + "\"><td class=\"ck\"><input type=\"checkbox\" data-k=\"" + esc(k) + "\"" + on + "></td><td class=\"num\">" + (idx + 1) + "</td><td class=\"inn\">" + esc(r[1]) + "</td><td class=\"nm\">" + esc(r[2]) + "</td><td class=\"fm\">" + esc(formText(r[3])) + "</td><td class=\"st\">" + esc(r[4] || "—") + "</td><td class=\"co\">" + coCell(r[5]) + "</td><td class=\"src\">" + srcChip(src, code) + "</td></tr>";
+        return "<tr data-k=\"" + esc(k) + "\"><td class=\"ck\"><input type=\"checkbox\" data-k=\"" + esc(k) + "\"" + on + "></td><td class=\"num\">" + (idx + 1) + "</td><td class=\"inn\">" + esc(r[1]) + "</td><td class=\"nm\">" + esc(r[2]) + "</td><td class=\"fm\">" + esc(formText(r[3])) + "</td><td class=\"st\">" + esc(r[4] || "—") + "</td><td class=\"co\">" + coCell(r[5]) + "</td><td class=\"src\">" + (r._sources || [src]).map(k => srcChip(k, code, (r._inns || {})[k] || r[1])).join(" ") + "</td></tr>";
       }
       function fillRows(d, code) {
         const list = store.get(d) || [];
@@ -379,59 +448,49 @@
         } else if (more) more.hidden = true;
       }
       function passes(r, src) {
-        if (srcKind === "dump" && src === "e") return false;
-        if (srcKind === "ema" && src !== "e") return false;
-        if (selForms.size) {
-          const fk = formKey(r[3]);
-          if (!selForms.has(fk || "other")) return false;
-        }
-        const a = Number(mgMinEl && mgMinEl.value || 0);
-        const b = Number(mgMaxEl && mgMaxEl.value || 1000);
-        if (a > 0 || b < 1000) {
-          const mg = mgOf(r[4]);
-          if (mg == null) return false;
-          if (mg < a || (b < 1000 && mg > b)) return false;
+        const sources = r._sources || [src];
+        if (srcSel.has("d") && srcSel.has("e")) {
+          if (!(sources.includes("d") && sources.includes("e"))) return false;
+        } else if (srcSel.has("d") && !sources.includes("d")) return false;
+        else if (srcSel.has("e") && !sources.includes("e")) return false;
+        if (selForms.size && !selForms.has(formKey(r[3]) || 'other')) return false;
+        if (document.getElementById('strength-mode').value === 'exact') return SraData.strengthMatches(r[4], document.getElementById('mg-exact').value);
+        const lo = mgMinEl.value, hi = mgMaxEl.value;
+        if (!mgMinEl.validity.valid || !mgMaxEl.validity.valid || (lo !== '' && hi !== '' && Number(lo) > Number(hi))) return false;
+        if (lo !== '' || hi !== '') {
+          // A range is comparable only for a single mass, not combinations or mg/ml.
+          const key = SraData.strengthKey(r[4]);
+          if (!/^\d+(?:\.\d+)?mg$/.test(key)) return false;
+          const mg = parseFloat(key);
+          if (mg < Number(lo || 0) || (hi !== '' && mg > Number(hi))) return false;
         }
         return true;
       }
+
       function searchMed() {
-        const v = (mq.value || "").trim().toLowerCase();
+        hasSearched = true;
+        const v = searchText(mq.value);
         mgroups.innerHTML = "";
+        document.getElementById('sel-page').checked = false;
+        document.getElementById('search-start').hidden = true;
         hideSuggest();
-        if (v.length < 2) {
-          mhit.textContent = "Gõ ít nhất 2 ký tự.";
-          mnone.style.display = "none";
-          return;
-        }
         const bits = v.split(/\s+/).filter(Boolean);
         const buckets = {};
-        const srcOfRow = {};
         const order = [];
+        countryCounts = {};
         let n = 0;
-        for (let i = 0; i < MED.length; i++) {
-          const r = MED[i];
-          const src = rowSrc(r);
-          const hay = (r[1] + " " + r[2] + " " + r[3] + " " + r[4] + " " + r[5]).toLowerCase();
-          let ok = true;
-          for (let b = 0; b < bits.length; b++) {
-            if (hay.indexOf(bits[b]) === -1) { ok = false; break; }
-          }
-          if (!ok || !passes(r, src)) continue;
-          const targets = [];
-          if (src === "e") {
-            EEA.forEach((cc) => {
-              if (!selCc.size || selCc.has(cc)) targets.push(cc);
-            });
-          } else if (!selCc.size || selCc.has(r[0])) {
-            targets.push(r[0]);
-          }
-          for (let t = 0; t < targets.length; t++) {
-            const cc = targets[t];
-            n++;
-            if (!buckets[cc]) { buckets[cc] = []; order.push(cc); srcOfRow[cc] = srcOfRow[cc] || {}; }
-            buckets[cc].push(r);
+        for (const cc of eligibleCountries()) {
+          const matches = (countryData[cc] || []).filter(r => {
+            const hay = r._search;
+            return bits.every(bit => hay.includes(bit)) && passes(r, rowSrc(r));
+          });
+          countryCounts[cc] = matches.length;
+          if ((!activeCountry || activeCountry === cc) && matches.length) {
+            buckets[cc] = matches; order.push(cc); n += matches.length;
           }
         }
+        paintCountries();
+
         order.sort((a, b) => {
           const ra = dumpCc.has(a) ? 0 : (EEA.has(a) ? 1 : 2);
           const rb = dumpCc.has(b) ? 0 : (EEA.has(b) ? 1 : 2);
@@ -440,29 +499,32 @@
         });
         order.forEach((code) => {
           const list = buckets[code];
-          const hasEma = list.some((r) => rowSrc(r) === "e");
-          const hasDump = list.some((r) => rowSrc(r) === "d");
+          const hasEma = list.some(r => r._sources.includes("e"));
+          const hasDump = list.some(r => r._sources.includes("d"));
           const d = document.createElement("details");
           d.className = "cg";
           d.dataset.cc = code;
-          d.dataset.src = hasDump && srcKind !== "ema" ? "d" : (hasEma ? "e" : "d");
+          d.dataset.src = hasDump && !(srcSel.has("e") && !srcSel.has("d")) ? "d" : (hasEma ? "e" : "d");
           const prev = list.slice(0, 2).map((r) => "<div>" + esc(r[1]) + " · " + esc(r[2]) + (r[5] ? " · " + esc(r[5]) : "") + "</div>").join("");
           const src = srcOf(code);
           d.innerHTML =
             "<summary>" + flagImg(code) + "<span>" + esc(countryName(code)) + "</span>" +
             "<span class=\"cg-n\">" + list.length + " dòng</span>" +
-            (hasDump ? "<a class=\"src\" href=\"" + esc(src.url) + "\" target=\"_blank\" rel=\"noopener\" onclick=\"event.stopPropagation()\">dump</a>" : "") +
-            (hasEma ? "<a class=\"src ema\" href=\"" + esc(SRC.EMA.url) + "\" target=\"_blank\" rel=\"noopener\" onclick=\"event.stopPropagation()\">EMA</a>" : "") +
+            (hasDump ? '<span class="src-label">Nguồn quốc gia</span>' : '') +
+            (hasEma ? '<span class="src-label">EMA</span>' : '') +
             "<div class=\"cg-prev\">" + prev + "</div></summary>" +
             "<div class=\"cg-body\"><table class=\"med\"><thead><tr><th></th><th>#</th><th>Hoạt chất (INN)</th><th>Tên thuốc</th><th>Dạng</th><th>Hàm lượng</th><th>Công ty</th><th>Nguồn</th></tr></thead><tbody></tbody></table></div>";
           store.set(d, list);
           shownN.set(d, 0);
           d.addEventListener("toggle", function () {
-            if (!d.open || d.dataset.ready) return;
+            if (!d.open || !d.isConnected) return;
+            focusCountry(code);
+            if (d.dataset.ready) return;
             d.dataset.ready = "1";
             fillRows(d, code);
           });
           mgroups.appendChild(d);
+          if (activeCountry || order.length === 1 || code === focusedCountry) { d.open = true; d.dataset.ready = '1'; fillRows(d, code); }
         });
         mnone.style.display = n ? "none" : "block";
         mhit.textContent = n ? (n.toLocaleString("vi-VN") + " dòng · " + order.length + " nước") : "";
@@ -472,11 +534,11 @@
         hideSuggest();
         searchMed();
       }
-      function remember(code, r, on) {
+      function remember(code, r, on, persist = true) {
         const k = rowKey(code, r);
-        if (on) selected[k] = [code, r[1], r[2], r[3], r[4], r[5], r[6] || "d"];
+        if (on) selected[k] = [code, r[1], r[2], r[3], r[4], r[5], (r._sources || [r[6] || "d"]).join("+")];
         else delete selected[k];
-        saveSel();
+        if (persist) saveSel();
       }
       function exportSel() {
         const keys = Object.keys(selected);
@@ -542,7 +604,7 @@
         const deg = pct(natRows, rowsN || 1) * 3.6;
         const donut = document.getElementById("hdonut");
         const heroCap = document.getElementById("hhero-cap");
-        if (heroCap) heroCap.textContent = "Thanh ngang xếp xanh (dump) → navy (EMA) → đỏ (không dump, không EMA) → trắng.";
+        if (heroCap) { heroCap.textContent = ""; heroCap.hidden = true; }
         const rank = { n: 0, ema: 1, m: 2, w: 3 };
         const track = document.getElementById("htrack");
         if (track) {
@@ -642,12 +704,14 @@
           HEALTH = d.h || null;
           SITES = d.c || {};
           buildInns();
+          buildCountryData();
+          paintCountries();
           paintSrc();
           paintFlags();
           paintFormChips();
           paintMg();
           saveSel();
-          mmeta.textContent = (d.n || MED.length).toLocaleString("vi-VN") + " dòng đang lưu hành · " + (d.u || "");
+          mmeta.textContent = (d.n || MED.length).toLocaleString("vi-VN") + " dòng từ các nguồn đã nạp · " + (d.u || "");
           paintHealth();
           hydrateFlags();
         } catch (e) {
@@ -664,50 +728,107 @@
       if (msrc) msrc.addEventListener("click", (ev) => {
         const b = ev.target.closest("button[data-src]");
         if (!b) return;
-        srcKind = b.getAttribute("data-src");
+        const k = b.getAttribute("data-src");
+        if (srcSel.has(k)) srcSel.delete(k); else srcSel.add(k);
         paintSrc();
-        if ((mq.value || "").trim().length >= 2) searchMed();
+        searchMed();
       });
-      if (mflags) mflags.addEventListener("click", (ev) => {
-        const reg = ev.target.closest("button[data-reg]");
-        if (reg) {
-          const k = reg.getAttribute("data-reg");
-          selCc.clear();
-          if (k === "eea") EEA.forEach((c) => { if (SRA36.indexOf(c) !== -1) selCc.add(c); });
-          else if (k === "dump") dumpCc.forEach((c) => selCc.add(c));
-          paintFlags();
-          if ((mq.value || "").trim().length >= 2) searchMed();
-          return;
-        }
-        const b = ev.target.closest("button[data-cc]");
-        if (!b) return;
-        const cc = b.getAttribute("data-cc");
-        if (selCc.has(cc)) selCc.delete(cc); else selCc.add(cc);
-        paintFlags();
-        if ((mq.value || "").trim().length >= 2) searchMed();
+      mflags.addEventListener('change', ev => {
+        const input = ev.target.closest('[data-country-filter]');
+        if (!input) return;
+        const cc = input.dataset.countryFilter;
+        if (input.checked) selCountries.add(cc); else selCountries.delete(cc);
+        activeCountry = selCountries.size === 1 ? [...selCountries][0] : '';
+        focusCountry(input.checked ? cc : activeCountry || [...selCountries].at(-1) || '');
+        document.getElementById('region-count').textContent = selCountries.size ? '(' + selCountries.size + ')' : '';
+        paintCountries(); searchMed();
       });
-      if (mforms) mforms.addEventListener("click", (ev) => {
-        const b = ev.target.closest("button[data-form]");
-        if (!b) return;
-        const k = b.getAttribute("data-form");
-        if (selForms.has(k)) selForms.delete(k); else selForms.add(k);
-        paintFormChips();
-        if ((mq.value || "").trim().length >= 2) searchMed();
+      document.getElementById('filter-country-query').addEventListener('input', paintFlags);
+      document.getElementById('filter-countries-clear').addEventListener('click', () => {
+        selCountries.clear(); activeCountry = ''; focusCountry(''); paintFlags(); paintCountries(); searchMed();
       });
-      function onMg() {
-        let a = Number(mgMinEl.value), b = Number(mgMaxEl.value);
-        if (a > b) { const t = a; a = b; b = t; mgMinEl.value = a; mgMaxEl.value = b; }
-        paintMg();
-        if ((mq.value || "").trim().length >= 2) searchMed();
+      const filterDropdowns = [...document.querySelectorAll('.filter-dropdown')];
+      filterDropdowns.forEach(dropdown => dropdown.addEventListener('toggle', () => {
+        if (dropdown.open) filterDropdowns.forEach(other => { if(other !== dropdown) other.open = false; });
+      }));
+      document.addEventListener('click', ev => filterDropdowns.forEach(dropdown => { if(!dropdown.contains(ev.target)) dropdown.open = false; }));
+      document.addEventListener('keydown', ev => {
+        if (ev.key !== 'Escape') return;
+        const open = filterDropdowns.find(dropdown => dropdown.open);
+        if (open) { open.open = false; open.querySelector('summary').focus(); }
+      });
+      document.getElementById('med-clip').addEventListener('scroll', () => {
+        if (resultScrollFrame) return;
+        resultScrollFrame = requestAnimationFrame(() => {
+          resultScrollFrame = 0;
+          const bounds = document.getElementById('med-clip').getBoundingClientRect();
+          const visible = [...mgroups.querySelectorAll('details[open]')].find(el => {
+            const rect = el.getBoundingClientRect(); return rect.bottom > bounds.top + 60 && rect.top < bounds.bottom;
+          });
+          if (visible) focusCountry(visible.dataset.cc);
+        });
+      });
+      mforms.addEventListener('change', ev => {
+        const input = ev.target.closest('[data-form]');
+        if (!input) return;
+        if (input.checked) selForms.add(input.dataset.form); else selForms.delete(input.dataset.form);
+        document.getElementById('form-count').textContent = selForms.size ? '(' + selForms.size + ')' : '';
+        searchMed();
+      });
+      function onMg() { paintMg(); searchMed(); }
+      mgMinEl.addEventListener('input', onMg);
+      mgMaxEl.addEventListener('input', onMg);
+      document.getElementById('mg-exact').addEventListener('input', searchMed);
+      document.getElementById('strength-mode').addEventListener('change', ev => {
+        const range = ev.target.value === 'range';
+        document.getElementById('strength-range').hidden = !range;
+        document.getElementById('mg-exact').hidden = range;
+        onMg();
+      });
+      for (const [id, input] of [['mg-low-slider', mgMinEl], ['mg-high-slider', mgMaxEl]]) {
+        document.getElementById(id).addEventListener('input', ev => {
+          input.value = ev.target.value;
+          if (mgMinEl.value && mgMaxEl.value && Number(mgMinEl.value) > Number(mgMaxEl.value)) {
+            (input === mgMinEl ? mgMaxEl : mgMinEl).value = input.value;
+          }
+          onMg();
+        });
       }
-      if (mgMinEl) mgMinEl.addEventListener("input", onMg);
-      if (mgMaxEl) mgMaxEl.addEventListener("input", onMg);
+      document.getElementById('filter-reset').addEventListener('click', () => {
+        selForms.clear(); selCountries.clear(); activeCountry = ''; focusCountry(''); srcSel.clear();
+        document.getElementById('filter-country-query').value = '';
+        mgMinEl.value = ''; mgMaxEl.value = ''; document.getElementById('mg-exact').value = '';
+        paintFormChips(); paintFlags(); paintSrc(); paintMg(); searchMed();
+      });
+      function copyFallback(text) {
+        const input = document.createElement('textarea'); input.value = text;
+        input.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(input);
+        const previous = document.activeElement; input.select();
+        let ok = false; try { ok = document.execCommand('copy'); } catch (_) {}
+        input.remove(); if (previous) previous.focus(); return ok;
+      }
+      let toastTimer;
+      document.addEventListener('click', ev => {
+        const link = ev.target.closest('a[data-copy-inn]');
+        if (!link) return;
+        // Preserve native new-tab navigation and start copying in the same user gesture.
+        ev.stopPropagation();
+        const text = link.dataset.copyInn;
+        const report = ok => {
+          const toast = document.getElementById('source-toast');
+          toast.textContent = ok ? 'Đã sao chép: ' + text + '. Dán vào ô tìm kiếm của nguồn.' : 'Không thể tự sao chép. Hoạt chất gốc: ' + text;
+          toast.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => { toast.hidden = true; }, 7000);
+        };
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(text).then(() => report(true)).catch(() => report(copyFallback(text)));
+        else report(copyFallback(text));
+      });
+
       if (pageSizeEl) {
         pageSizeEl.value = String(pageSize);
         pageSizeEl.addEventListener("change", () => {
           pageSize = Number(pageSizeEl.value || 50);
           try { localStorage.setItem("sra-page", String(pageSize)); } catch (e) {}
-          if ((mq.value || "").trim().length >= 2) searchMed();
+          searchMed();
         });
       }
       if (mgroups) {
@@ -735,8 +856,9 @@
         document.querySelectorAll("#med-groups details.cg").forEach((d) => {
           const list = store.get(d) || [];
           const cc = d.dataset.cc || "";
-          list.forEach((r) => remember(cc || r[0], r, true));
+          list.forEach((r) => remember(cc || r[0], r, true, false));
         });
+        saveSel();
         document.querySelectorAll("#med-groups input[type=checkbox][data-k]").forEach((inp) => { inp.checked = true; });
       });
       const selExport = document.getElementById("sel-export");
@@ -749,7 +871,6 @@
         if (selPage) selPage.checked = false;
       });
 
-      let sugTimer = 0;
       if (mq) {
         mq.addEventListener("input", () => {
           window.clearTimeout(sugTimer);

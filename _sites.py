@@ -2,6 +2,9 @@
 """Official company websites for MAH names (longest-needle match)."""
 from __future__ import annotations
 
+import re
+from urllib.parse import quote_plus
+
 BRANDS = [
     ("arrow generiques", "https://www.arrowgeneriques.com"),
     ("arrow génériques", "https://www.arrowgeneriques.com"),
@@ -435,7 +438,76 @@ BRANDS = [
     ("apotex pty", "https://www.apotex.com"),
     ("accord", "https://www.accord-healthcare.com"),
     ("bms", "https://www.bms.com"),
+    ("chugai pharmaceutical", "https://www.chugai-pharm.co.jp"),
+    ("chugai", "https://www.chugai-pharm.co.jp"),
+    ("shionogi", "https://www.shionogi.com"),
+    ("santen pharmaceutical", "https://www.santen.com"),
+    ("santen", "https://www.santen.com"),
+    ("aska pharmaceutical", "https://www.aska-pharma.co.jp"),
+    ("moderna japan", "https://www.modernatx.com"),
+    ("moderna", "https://www.modernatx.com"),
+    ("eisai", "https://www.eisai.com"),
+    ("otsuka pharmaceutical", "https://www.otsuka.com"),
+    ("otsuka", "https://www.otsuka.com"),
+    ("kyowa kirin", "https://www.kyowakirin.com"),
+    ("ono pharmaceutical", "https://www.ono-pharma.com"),
+    ("mitsubishi tanabe", "https://www.mt-pharma.co.jp"),
+    ("sumitomo pharma", "https://www.sumitomo-pharma.com"),
+    ("taisho pharmaceutical", "https://www.taisho.co.jp"),
+    ("hisamitsu", "https://global.hisamitsu.com"),
+    ("kyorin", "https://www.kyorin-pharm.co.jp"),
+    ("meiji seika", "https://www.meiji.com"),
+    ("fujifilm", "https://www.fujifilm.com"),
+    ("terumo", "https://www.terumo.com"),
+    ("nippon kayaku", "https://www.nipponkayaku.com"),
+    ("ptc therapeutics", "https://www.ptcbio.com"),
+    ("krka", "https://www.krka.biz"),
+    ("polpharma", "https://www.polpharma.com"),
+    ("alkaloid", "https://alkaloid.com.mk"),
+    ("bial - portela", "https://www.bial.com"),
+    ("bial", "https://www.bial.com"),
+    ("cheplapharm", "https://www.cheplapharm.com"),
+    ("fresenius kabi", "https://www.fresenius-kabi.com"),
+    ("orion corporation", "https://www.orionpharma.com"),
+    ("medcor pharmaceuticals", "https://www.medcor.nl"),
+    ("eureco-pharma", "https://www.eureco-pharma.nl"),
+    ("pharmadia", "https://www.pharmadia.lt"),
+    ("ardeypharm", "https://www.ardeypharm.de"),
+    ("alliance healthcare", "https://www.alliance-healthcare.com"),
+    ("a a h pharmaceuticals", "https://www.aah.co.uk"),
+    ("aah pharmaceuticals", "https://www.aah.co.uk"),
+    ("sigma pharmaceuticals", "https://www.sigmapharmaceuticals.co.uk"),
+    ("deutsche homöopathie-union", "https://www.dhu.com"),
+    ("deutsche homoopathie-union", "https://www.dhu.com"),
+    ("inpharm", "https://inpharm.com.pl"),
+    ("delfarma", "https://www.delfarma.pl"),
+    ("generis farmaceutica", "https://www.generis.pt"),
+    ("generis farmace", "https://www.generis.pt"),
+    ("laboratorios cinfa", "https://www.cinfa.com"),
+    ("cinfa", "https://www.cinfa.com"),
+    ("stallergenes", "https://www.stallergenesgreer.com"),
+    ("phoenix healthcare", "https://www.phoenixmedical.co.uk"),
+    ("kern pharma", "https://www.kernpharma.com"),
+    ("aliud pharma", "https://www.aliud.de"),
+    ("medochemie", "https://www.medochemie.com"),
+    ("wala heilmittel", "https://www.wala.ch"),
+    ("aurovitas", "https://www.aurobindo.com"),
 ]
+
+
+def fallback_company_url(name: str) -> str:
+    """Working lookup: official brand, then a live registry search, else Google."""
+    q = quote_plus(name)
+    key = name.lower()
+    if re.search(r"\b(ltd|plc|llp|limited)\b", key):
+        return "https://find-and-update.company-information.service.gov.uk/search?q=" + q
+    if "sp. z o.o" in key or "sp z o.o" in key or "sp. z o. o" in key:
+        return "https://www.google.com/search?q=" + quote_plus(f'"{name}" KRS')
+    if re.search(r"\buab\b", key):
+        return "https://www.google.com/search?q=" + quote_plus(f"site:rekvizitai.vz.lt {name}")
+    if re.search(r"\bgmbh\b", key):
+        return "https://www.google.com/search?q=" + quote_plus(f'"{name}" Unternehmensregister')
+    return "https://www.google.com/search?q=" + q
 
 
 def company_sites(rows) -> dict[str, str]:
@@ -446,8 +518,10 @@ def company_sites(rows) -> dict[str, str]:
         if not name or name in out:
             continue
         key = name.lower()
-        for needle, url in brands:
+        url = ""
+        for needle, site in brands:
             if needle in key:
-                out[name] = url
+                url = site
                 break
+        out[name] = url or fallback_company_url(name)
     return out

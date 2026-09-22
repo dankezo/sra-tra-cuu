@@ -1,0 +1,63 @@
+    <section id="tra">
+      <div class="tra-head"><div><p class="kicker">Tra cứu thuốc · 36 quốc gia SRA</p><h2>Tìm thuốc theo hoạt chất</h2></div></div>
+      <p class="search-intro">Tìm trong dữ liệu đã nạp. Chọn một nước để xem thuốc từ nguồn quốc gia và EMA.</p>
+      <div class="search-filters no-print">
+        <div class="search-bar"><div class="qwrap">
+          <input id="mq" type="search" aria-label="Hoạt chất hoặc tên thuốc" placeholder="Hoạt chất hoặc tên thuốc — để trống rồi bấm Tìm để xem hết" autocomplete="off" spellcheck="false" />
+          <div id="suggest" hidden></div></div><button type="button" id="mgo">Tìm thuốc</button>
+        </div>
+        <div class="filter-row">
+          <div class="strength-filter">
+            <div class="strength-top"><label for="strength-mode">Hàm lượng</label>
+              <select id="strength-mode"><option value="exact">Nhập trực tiếp</option><option value="range">Khoảng (mg)</option></select>
+              <input id="mg-exact" type="text" aria-label="Hàm lượng cần tìm" placeholder="Ví dụ: 10 mg" />
+            </div>
+            <div id="strength-range" hidden>
+              <div class="range-values"><label>Từ (mg)<input id="mg-min" type="number" min="0" step="any" placeholder="0" /></label><span>—</span><label>Đến (mg)<input id="mg-max" type="number" min="0" step="any" placeholder="Không giới hạn" /></label></div>
+              <div class="range-sliders"><input id="mg-low-slider" type="range" min="0" max="1000" step="0.1" value="0" aria-label="Kéo hàm lượng tối thiểu" /><input id="mg-high-slider" type="range" min="0" max="1000" step="0.1" value="1000" aria-label="Kéo hàm lượng tối đa" /></div>
+              <div id="mg-val" role="status">Mọi hàm lượng</div>
+            </div>
+          </div>
+          <details class="filter-dropdown"><summary>Dạng bào chế <span id="form-count"></span></summary><div class="filter-menu"><div id="mforms" class="check-grid"></div></div></details>
+          <details class="filter-dropdown"><summary>Quốc gia <span id="region-count"></span></summary><div class="filter-menu"><input id="filter-country-query" type="search" aria-label="Tìm trong bộ lọc quốc gia" placeholder="Tìm quốc gia…" /><button type="button" class="quiet-button" id="filter-countries-clear">Bỏ lọc quốc gia</button><div id="mflags" class="check-grid"></div></div></details>
+          <details class="filter-dropdown"><summary>Nguồn dữ liệu</summary><div class="filter-menu"><div id="msrc" class="src-mini"></div></div></details>
+        </div>
+        <div class="filter-footer"><div class="lang-mini" role="group" aria-label="Ngôn ngữ dạng bào chế"><button type="button" data-guide="orig" class="on">Gốc</button><button type="button" data-guide="en">EN</button><button type="button" data-guide="vi">VI</button></div><button id="filter-reset" class="quiet-button" type="button">Xóa bộ lọc</button></div>
+      </div>
+      <div class="tra-layout">
+        <aside class="country-panel no-print" aria-label="Chọn quốc gia">
+          <header><h3>Chọn quốc gia</h3><p>Bấm một nước để xem danh sách thuốc.</p><div class="view-switch" role="group" aria-label="Chế độ xem quốc gia"><button type="button" data-view="globe" aria-pressed="true">Địa cầu</button><button type="button" data-view="map" aria-pressed="false">Bản đồ</button><button type="button" data-view="list" aria-pressed="false">Danh sách</button></div></header>
+          <div class="map-wrap" id="map-wrap"><svg id="country-map" viewBox="0 0 400 330" aria-label="Bản đồ các nước SRA"></svg>          <div class="map-tools"><button type="button" id="map-left" aria-label="Xoay địa cầu sang trái">←</button><select id="map-region" aria-label="Vùng bản đồ"><option value="europe">Châu Âu</option><option value="america">Bắc Mỹ</option><option value="asia">Nhật Bản · Úc</option><option value="world">Thế giới</option></select><button type="button" id="map-right" aria-label="Xoay địa cầu sang phải">→</button></div><p id="map-caption" class="map-caption">Chọn vùng để xem các quốc gia.</p></div>
+          <div class="country-all"><button id="country-all" class="quiet-button" type="button">Tất cả quốc gia</button><span id="country-count"></span></div>
+          <div id="country-list"></div>
+        </aside>
+        <div class="tra-main">
+          <div class="tra-toolbar no-print">
+            <p id="tra-meta">Đang nạp dữ liệu thuốc…</p>
+            <p id="tra-hit" aria-live="polite"></p>
+            <p class="source-help">Có thể để trống ô tìm rồi bấm Tìm để xem hết. Chọn cả dump và EMA để chỉ còn thuốc có đủ hai nguồn. dump mở cổng quốc gia; EMA mở trang EMA.</p>
+            <div class="picked-bar">
+              <label><input type="checkbox" id="sel-page" /> Chọn trang này</label>
+              <button type="button" id="sel-match">Chọn hết kết quả</button>
+              <span id="sel-n">0 đã chọn</span>
+              <button type="button" id="sel-export">Xuất Excel</button>
+              <button type="button" id="sel-clear">Bỏ chọn</button>
+              <label>Hiện
+                <select id="page-size">
+                  <option value="25">25</option>
+                  <option value="50" selected>50</option>
+                  <option value="100">100</option>
+                  <option value="0">hết</option>
+                </select>
+              </label>
+            </div>
+          </div>
+          <div class="search-empty" id="search-start"><h3>Tìm thuốc, rồi chọn quốc gia</h3><p>Bấm Tìm thuốc — có thể để trống ô tìm để hiện hết kết quả.</p></div>
+          <p class="empty" id="mnone" role="status">Không có kết quả phù hợp. Thử bỏ bớt bộ lọc hoặc đổi từ khóa.</p>
+          <div class="clip" id="med-clip">
+            <div id="med-groups"></div>
+          </div>
+        </div>
+      </div>
+      <div id="source-toast" role="status" hidden></div>
+    </section>

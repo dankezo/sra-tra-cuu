@@ -205,79 +205,14 @@ CSS = r"""/* sra-search-ui */
 /* /sra-search-ui */
 """
 
+CSS = CSS.replace("/* /sra-search-ui */", (root / "_search_ui.css").read_text(encoding="utf-8") + "\n/* /sra-search-ui */")
+
 if "/* sra-search-ui */" in prefix:
     prefix = re.sub(r"/\* sra-search-ui \*/.*?/\* /sra-search-ui \*/", CSS.strip(), prefix, flags=re.S)
 else:
     prefix = prefix.replace("  </style>", CSS + "  </style>", 1)
 
-TRA = r'''    <section id="tra">
-      <div class="tra-head">
-        <div>
-          <p class="kicker">Local · file chính thức đã tải về máy</p>
-          <h2>Tra hoạt chất / tên thuốc</h2>
-        </div>
-      </div>
-      <p>Gõ INN hoặc tên thuốc. Lọc bên trái: khu vực, dạng bào chế, khoảng mg. EMA hiện dưới từng nước EEA (chip EMA). Tick dòng để giữ khi đổi hoạt chất — rồi export Excel.</p>
-      <div class="tra-layout">
-        <aside class="tra-side no-print">
-          <div class="search-bar">
-            <div class="qwrap">
-              <input id="mq" type="search" placeholder="vd. atorvastatin, paracetamol…" autocomplete="off" spellcheck="false" />
-              <div id="suggest" hidden></div>
-            </div>
-            <button type="button" id="mgo">Tìm</button>
-          </div>
-          <div class="lang-mini" role="group" aria-label="Dạng bào chế">
-            <button type="button" data-guide="orig" class="on">Gốc</button>
-            <button type="button" data-guide="en">EN</button>
-            <button type="button" data-guide="vi">VI</button>
-          </div>
-          <div class="side-block">
-            <p class="side-lab">Hàm lượng</p>
-            <div class="mg-lab" id="mg-val">0 – 1000+ mg</div>
-            <div class="mg-sliders">
-              <input id="mg-min" type="range" min="0" max="1000" value="0" />
-              <input id="mg-max" type="range" min="0" max="1000" value="1000" />
-            </div>
-          </div>
-          <div class="side-block">
-            <p class="side-lab">Dạng bào chế</p>
-            <div id="mforms" class="form-filters"></div>
-          </div>
-          <div class="side-block">
-            <p class="side-lab">Khu vực</p>
-            <div id="msrc" class="src-mini"></div>
-            <div id="mflags" class="flag-list"></div>
-          </div>
-        </aside>
-        <div class="tra-main">
-          <div class="tra-toolbar no-print">
-            <p id="tra-meta">Đang nạp dữ liệu thuốc…</p>
-            <p id="tra-hit"></p>
-            <div class="picked-bar">
-              <label><input type="checkbox" id="sel-page" /> Chọn trang này</label>
-              <button type="button" id="sel-match">Chọn hết kết quả</button>
-              <span id="sel-n">0 đã chọn</span>
-              <button type="button" id="sel-export">Export Excel</button>
-              <button type="button" id="sel-clear">Bỏ chọn</button>
-              <label>Hiện
-                <select id="page-size">
-                  <option value="25">25</option>
-                  <option value="50" selected>50</option>
-                  <option value="100">100</option>
-                  <option value="0">hết</option>
-                </select>
-              </label>
-            </div>
-          </div>
-          <p class="empty" id="mnone">Không có dòng khớp. Thử INN tiếng Latin (vd atorvastatin).</p>
-          <div class="clip" id="med-clip">
-            <div id="med-groups"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-'''
+TRA = (root / "_search_ui.html").read_text(encoding="utf-8")
 
 prefix, ntra = re.subn(
     r"    <section id=\"tra\">.*?</section>\r?\n",
@@ -319,7 +254,11 @@ prefix = prefix.rstrip() + "\n"
 out = (
     prefix
     + '  <script type="application/json" id="sra-med">{}</script>\n'
+    + '  <script type="application/json" id="sra-world">' + (root / "vendor/world.geojson").read_text(encoding="utf-8").replace("<", "\\u003c") + "</script>\n"
+    + "<script>/*\n" + (root / "vendor/D3-LICENSE").read_text(encoding="utf-8") + "\n*/\n" + (root / "vendor/d3.min.js").read_text(encoding="utf-8") + "</script>\n"
     + "  <script>\n"
+    + (root / "_data_logic.js").read_text(encoding="utf-8") + "\n"
+    + (root / "_country_map.js").read_text(encoding="utf-8") + "\n"
     + js
     + "  </script>\n"
     + "</body>\n</html>\n"

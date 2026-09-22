@@ -279,8 +279,8 @@ def parse_ema_cap(rows) -> bool:
 
 
 def parse_ema(rows):
-    if parse_ema_cap(rows):
-        return
+    # CAP supplies presentations; the EMA catalogue can contain additional products.
+    parse_ema_cap(rows)
     p = RAW / "EMA" / "medicines.json"
     if not p.exists():
         return
@@ -1166,20 +1166,9 @@ def parse_au(rows):
 
 
 def parse_sk(rows):
-    p = RAW / "SK" / "lieky_all.json"
-    if not p.exists() or p.stat().st_size < 20:
-        return
-    try:
-        items = json.loads(p.read_text(encoding="utf-8"))
-    except json.JSONDecodeError:
-        return
-    if not isinstance(items, list) or not items:
-        log("parse SK empty")
-        return
-    for it in items:
-        accept_prod("SK")
-        add_row(rows, "SK", it.get("liecivo") or it.get("ATC") or "", it.get("nazov") or "", it.get("doplnok") or "", it.get("sila") or "", it.get("drzitel") or "", str(it.get("sukl_kod") or ""))
-    log(f"parse SK {len(items)}")
+    from _parse_add import parse_sk_sidc
+
+    parse_sk_sidc(rows)
 
 
 def file_fresh(path: Path | None) -> str:
@@ -1233,6 +1222,23 @@ def build_health(rows):
         "NO": pick_file(RAW / "NO" / "fest251", "fest251.xml") or RAW / "NO" / "fest251.xml",
         "AU": next(iter(sorted((RAW / "AU").glob("*.xlsx"), key=lambda x: x.stat().st_size, reverse=True)), RAW / "AU"),
         "BG": next(iter(sorted((RAW / "BG").glob("IAL*.xlsx"), key=lambda x: x.stat().st_size, reverse=True)), RAW / "BG"),
+        "HR": RAW / "HR" / "halmed.xlsx",
+        "PT": RAW / "PT" / "infomed.xlsx",
+        "NL": RAW / "NL" / "cbg.csv",
+        "LT": RAW / "LT" / "preparatas.csv",
+        "MT": RAW / "MT" / "medicines.csv",
+        "PL": RAW / "PL" / "rpl.xlsx",
+        "SI": RAW / "SI" / "cbz.csv",
+        "SK": pick_file(RAW / "SK", "p00000.json", "lieky_all.json") or RAW / "SK" / "p00000.json",
+        "GB": next(iter((RAW / "add" / "Anh").rglob("f_amp2_*.xml")), RAW / "GB"),
+        "JP": RAW / "JP" / "pmda-approved.pdf",
+        "DE": RAW / "EMA" / "article57.xlsx",
+        "DK": RAW / "EMA" / "article57.xlsx",
+        "CY": RAW / "EMA" / "article57.xlsx",
+        "GR": RAW / "EMA" / "article57.xlsx",
+        "HU": RAW / "EMA" / "article57.xlsx",
+        "SE": RAW / "EMA" / "article57.xlsx",
+        "LI": RAW / "EMA" / "article57.xlsx",
         "EMA": next(iter((RAW / "BG").glob("Centrally*.xlsx")), RAW / "EMA" / "medicines.json"),
     }
     names = dict(SRA36)
@@ -1323,7 +1329,7 @@ def build_health(rows):
 def dedupe(rows):
     seen, out = set(), []
     for r in rows:
-        key = (r["country"], r["inn"].lower(), r["form"].lower(), r["strength"].lower(), r["company"].lower(), r.get("src") or "d")
+        key = (r["country"], r["inn"].lower(), r["name"].lower(), r["form"].lower(), r["strength"].lower(), r["company"].lower(), r.get("src") or "d")
         if key in seen:
             continue
         seen.add(key)
@@ -1361,10 +1367,12 @@ def write_outputs(rows):
     log("by: " + ", ".join(f"{k}:{v}" for k, v in sorted(by.items())))
     log("dropped: " + ", ".join(f"{k}:{sum(v.values())}" for k, v in sorted(FUNNEL["drop"].items())))
     log(f"sites {len(sites)} unmatched {len(miss)}")
-            log("unmatched top: " + ", ".join(f"{k}:{v}" for k, v in miss.most_common(20)).encode("ascii", "replace").decode("ascii"))
+    log("unmatched top: " + ", ".join(f"{k}:{v}" for k, v in miss.most_common(20)).encode("ascii", "replace").decode("ascii"))
 
 
 def main():
+    from _parse_add import parse_added
+
     t0 = time.time()
     rows = []
     parse_fr(rows)
@@ -1388,9 +1396,11 @@ def main():
     parse_no(rows)
     parse_au(rows)
     parse_bg(rows)
+    parse_added(rows)
     write_outputs(rows)
     log(f"done in {time.time() - t0:.0f}s")
 
 
 if __name__ == "__main__":
-    main()
+    import _parse
+    _parse.main()

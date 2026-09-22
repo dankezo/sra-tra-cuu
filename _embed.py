@@ -12,7 +12,7 @@ for r in src["r"]:
         r.append("")
     if not r[6]:
         r[6] = "e" if r[0] == "EMA" else "d"
-    key = (r[0], r[1].lower(), r[3].lower(), r[4].lower(), r[5].lower(), r[6])
+    key = (r[0], r[1].lower(), r[2].lower(), r[3].lower(), r[4].lower(), r[5].lower(), r[6])
     if key in seen:
         continue
     seen.add(key)

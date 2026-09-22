@@ -2,15 +2,25 @@
 
 Public lookup of **circulating** human medicines from official national dumps and the EMA authorised list. Built for TT 12/2025 SRA / TT 40/2025 nhóm 1 work: search by INN or product name, grouped by country.
 
-**Use it:** type an INN (e.g. `atorvastatin`). Suggestions appear under the box. Results open by country — tap a card to see every matching row.
+**Use it:** type an INN (e.g. `atorvastatin`) or product name in the top search bar. Select a country from the globe, map, or list on the left; its results open on the right. All views share the same country selection. Country and medicine searches ignore accents.
+
+Filters expand into checkboxes for dosage form and region. Strength supports exact input (bare numbers mean mg) or a range with editable endpoints and sliders. A blank upper endpoint is unlimited. The mg range deliberately excludes concentrations and combinations rather than treating them as single doses. Reset clears filters but preserves the search term.
+
+Source links open the register and copy the original INN in the same click, with visible success/failure feedback. English pages are used where supported. Bulgaria and Luxembourg provide lists/files rather than a medicine search form: their links explicitly say `dump · Google` and search within the official domain. Unknown company websites fall back to Google, never Wikipedia. Coverage status appears only in Data health.
 
 | Chip | Meaning |
 | --- | --- |
 | **dump** | National competent-authority dump on this page |
 | **EMA** (navy) | EMA centralised authorisation |
-| Coverage **red** | Country has neither a national dump nor EMA (JP, AU, GB) |
+| Coverage **red** | Country has neither a national dump nor EMA |
 
-Green coverage = national dump in the index. Navy = EEA country with no local dump yet; EMA still applies for centralised products.
+Green coverage = national dump in the index. Navy = EEA country with no local dump yet; EMA still applies for centralised products. These colours appear in Data health, not country selectors.
+
+## Merge rules
+
+Both CAP and the EMA catalogue are loaded; finding CAP no longer skips `medicines.json`. Parse/embed deduplication includes the product name, preserving distinct brands.
+
+Each EEA country receives the entire loaded EMA set plus its national dump. `_data_logic.js` merges rows only when product name/INN match after case/whitespace normalization and known fields do not conflict. More populated fields wins, ties prefer the dump. Both sources and original INNs remain available for links, source filtering and export. Different brands, strengths, forms or known holders remain separate. No fuzzy INN-only merging. Completeness means coverage of the loaded input files, not a live or exhaustive market database.
 
 ## What this is not
 
@@ -24,8 +34,16 @@ Green coverage = national dump in the index. Navy = EEA country with no local du
 python _parse.py      # data/raw/{CC}/ → data/search.json
 python _rebuild.py    # prefix HTML + _app.js
 python _embed.py      # intern search.json into index.html
+node test_data_logic.js
+python -m unittest test_parse.py
 ```
 
-Do not edit `index.html` with a partial search-and-replace — the file is large. Change `_app.js` and rebuild.
+Do not edit `index.html` with a partial search-and-replace — the file is large. Change `_app.js`, `_data_logic.js`, `_search_ui.html` or `_search_ui.css`, then rebuild and embed. The rest of the document is retained from the HTML prefix.
 
-Raw dumps stay in `data/raw/` and are not published (some files are hundreds of MB).
+Raw dumps stay in `data/raw/` and are not published (some files are hundreds of MB). Extra national files in `data/raw/add/` (named by country) are copied into `data/raw/{CC}/` on parse. EMA Article 57 fills remaining EEA gaps (DE, DK, CY, GR, HU, SE, LI) without replacing a real NCA dump.
+
+## Source and map notes
+
+Source URLs were checked against the [EMA national register directory](https://www.ema.europa.eu/en/medicines/national-registers-authorised-medicines), [AIFA](https://www.aifa.gov.it/en/trova-farmaco), [FimeaWeb](https://fimea.fi/en/databases_and_registers/fimeaweb) and register pages on 2026-09-22. Some sources block automated verification; external availability and English support vary.
+
+The standalone HTML embeds D3 7.9.0 (ISC, `vendor/D3-LICENSE`) and [Natural Earth 1:110m country boundaries](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson) (public domain). Small countries have supplemental selectable points. This generalized map is navigation only; the list always includes all 36 countries.

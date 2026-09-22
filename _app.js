@@ -231,7 +231,6 @@
       const store = new WeakMap();
       const shownN = new WeakMap();
 
-      const countryList = document.getElementById('country-list');
       const mapSvg = document.getElementById('country-map');
       let countryView = 'globe';
       let activeCountry = '';
@@ -246,8 +245,9 @@
         return SRA36.filter(c => !selCountries.size || selCountries.has(c));
       }
       function selectCountry(cc) {
-        activeCountry = cc;
-        focusCountry(cc);
+        if (cc && cc === activeCountry) cc = '';
+        activeCountry = cc || '';
+        focusCountry(activeCountry);
         paintCountries();
         searchMed();
         if (window.matchMedia('(max-width: 680px)').matches) {
@@ -255,22 +255,15 @@
         }
       }
       function paintCountries() {
-        const eligible = eligibleCountries();
-        const list = eligible.slice().sort((a,b) => countryName(a).localeCompare(countryName(b), 'vi'));
-        list.sort((a,b) => countryName(a).localeCompare(countryName(b), 'vi'));
-        countryList.innerHTML = list.map(c => `<button type="button" data-country="${c}" aria-pressed="${focusedCountry === c}">${flagImg(c)}<span>${esc(countryName(c))}</span><span class="country-total">${countryCounts[c] == null ? '' : countryCounts[c].toLocaleString('vi-VN')}</span></button>`).join('') || '<p style="padding:12px">Không tìm thấy quốc gia.</p>';
-        document.getElementById('country-count').textContent = list.length + ' quốc gia';
-        document.getElementById('country-all').setAttribute('aria-pressed', String(!activeCountry));
+        const allBtn = document.getElementById('country-all');
+        if (allBtn) allBtn.hidden = !activeCountry;
         drawMap();
       }
       function drawMap() { countryMap.render(); }
       function focusCountry(cc) {
-        if (focusedCountry === cc) return;
-        focusedCountry = cc;
-        countryList.querySelectorAll('[data-country]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.country === cc)));
-        countryMap.focus(cc);
+        focusedCountry = cc || '';
+        countryMap.focus(focusedCountry);
       }
-      countryList.addEventListener('click', ev => { const b = ev.target.closest('[data-country]'); if (b) selectCountry(b.dataset.country); });
       document.getElementById('country-all').addEventListener('click', () => selectCountry(''));
       document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
         countryView = b.dataset.view;
@@ -467,67 +460,83 @@
         return true;
       }
 
+      function extraFiltersOn() {
+        if (srcSel.size || selForms.size) return true;
+        if (document.getElementById("strength-mode").value === "exact" && (document.getElementById("mg-exact").value || "").trim()) return true;
+        return !!(mgMinEl.value || mgMaxEl.value);
+      }
       function searchMed() {
         hasSearched = true;
-        const v = searchText(mq.value);
-        mgroups.innerHTML = "";
-        document.getElementById('sel-page').checked = false;
-        document.getElementById('search-start').hidden = true;
+        document.getElementById("search-start").hidden = true;
+        document.getElementById("sel-page").checked = false;
         hideSuggest();
+        mnone.style.display = "none";
+        mhit.textContent = "Đang lọc…";
+        const v = searchText(mq.value);
         const bits = v.split(/\s+/).filter(Boolean);
-        const buckets = {};
-        const order = [];
-        countryCounts = {};
-        let n = 0;
-        for (const cc of eligibleCountries()) {
-          const matches = (countryData[cc] || []).filter(r => {
-            const hay = r._search;
-            return bits.every(bit => hay.includes(bit)) && passes(r, rowSrc(r));
-          });
-          countryCounts[cc] = matches.length;
-          if ((!activeCountry || activeCountry === cc) && matches.length) {
-            buckets[cc] = matches; order.push(cc); n += matches.length;
+        const needFilter = bits.length > 0 || extraFiltersOn();
+        const gen = (searchMed._gen = (searchMed._gen || 0) + 1);
+        const run = () => {
+          if (gen !== searchMed._gen) return;
+          mgroups.innerHTML = "";
+          const buckets = {};
+          const order = [];
+          countryCounts = {};
+          let n = 0;
+          for (const cc of eligibleCountries()) {
+            const rows = countryData[cc] || [];
+            const matches = needFilter
+              ? rows.filter((r) => bits.every((bit) => r._search.includes(bit)) && passes(r, rowSrc(r)))
+              : rows;
+            countryCounts[cc] = matches.length;
+            if ((!activeCountry || activeCountry === cc) && matches.length) {
+              buckets[cc] = matches;
+              order.push(cc);
+              n += matches.length;
+            }
           }
-        }
-        paintCountries();
-
-        order.sort((a, b) => {
-          const ra = dumpCc.has(a) ? 0 : (EEA.has(a) ? 1 : 2);
-          const rb = dumpCc.has(b) ? 0 : (EEA.has(b) ? 1 : 2);
-          if (ra !== rb) return ra - rb;
-          return (CC[a] || a).localeCompare(CC[b] || b, "vi");
-        });
-        order.forEach((code) => {
-          const list = buckets[code];
-          const hasEma = list.some(r => r._sources.includes("e"));
-          const hasDump = list.some(r => r._sources.includes("d"));
-          const d = document.createElement("details");
-          d.className = "cg";
-          d.dataset.cc = code;
-          d.dataset.src = hasDump && !(srcSel.has("e") && !srcSel.has("d")) ? "d" : (hasEma ? "e" : "d");
-          const prev = list.slice(0, 2).map((r) => "<div>" + esc(r[1]) + " · " + esc(r[2]) + (r[5] ? " · " + esc(r[5]) : "") + "</div>").join("");
-          const src = srcOf(code);
-          d.innerHTML =
-            "<summary>" + flagImg(code) + "<span>" + esc(countryName(code)) + "</span>" +
-            "<span class=\"cg-n\">" + list.length + " dòng</span>" +
-            (hasDump ? '<span class="src-label">Nguồn quốc gia</span>' : '') +
-            (hasEma ? '<span class="src-label">EMA</span>' : '') +
-            "<div class=\"cg-prev\">" + prev + "</div></summary>" +
-            "<div class=\"cg-body\"><table class=\"med\"><thead><tr><th></th><th>#</th><th>Hoạt chất (INN)</th><th>Tên thuốc</th><th>Dạng</th><th>Hàm lượng</th><th>Công ty</th><th>Nguồn</th></tr></thead><tbody></tbody></table></div>";
-          store.set(d, list);
-          shownN.set(d, 0);
-          d.addEventListener("toggle", function () {
-            if (!d.open || !d.isConnected) return;
-            focusCountry(code);
-            if (d.dataset.ready) return;
-            d.dataset.ready = "1";
-            fillRows(d, code);
+          paintCountries();
+          order.sort((a, b) => {
+            const ra = dumpCc.has(a) ? 0 : (EEA.has(a) ? 1 : 2);
+            const rb = dumpCc.has(b) ? 0 : (EEA.has(b) ? 1 : 2);
+            if (ra !== rb) return ra - rb;
+            return (CC[a] || a).localeCompare(CC[b] || b, "vi");
           });
-          mgroups.appendChild(d);
-          if (activeCountry || order.length === 1 || code === focusedCountry) { d.open = true; d.dataset.ready = '1'; fillRows(d, code); }
-        });
-        mnone.style.display = n ? "none" : "block";
-        mhit.textContent = n ? (n.toLocaleString("vi-VN") + " dòng · " + order.length + " nước") : "";
+          order.forEach((code) => {
+            const list = buckets[code];
+            const hasEma = needFilter ? list.some((r) => r._sources.includes("e")) : EEA.has(code);
+            const hasDump = needFilter ? list.some((r) => r._sources.includes("d")) : dumpCc.has(code);
+            const d = document.createElement("details");
+            d.className = "cg";
+            d.dataset.cc = code;
+            d.dataset.src = hasDump && !(srcSel.has("e") && !srcSel.has("d")) ? "d" : (hasEma ? "e" : "d");
+            d.innerHTML =
+              "<summary>" + flagImg(code) + "<span>" + esc(countryName(code)) + "</span>" +
+              "<span class=\"cg-n\">" + list.length.toLocaleString("vi-VN") + " dòng</span>" +
+              (hasDump ? '<span class="src-label">Nguồn quốc gia</span>' : "") +
+              (hasEma ? '<span class="src-label">EMA</span>' : "") +
+              "</summary>" +
+              "<div class=\"cg-body\"><table class=\"med\"><thead><tr><th></th><th>#</th><th>Hoạt chất (INN)</th><th>Tên thuốc</th><th>Dạng</th><th>Hàm lượng</th><th>Công ty</th><th>Nguồn</th></tr></thead><tbody></tbody></table></div>";
+            store.set(d, list);
+            shownN.set(d, 0);
+            d.addEventListener("toggle", function () {
+              if (!d.open || !d.isConnected) return;
+              focusCountry(code);
+              if (d.dataset.ready) return;
+              d.dataset.ready = "1";
+              fillRows(d, code);
+            });
+            mgroups.appendChild(d);
+            if (activeCountry || order.length === 1 || code === focusedCountry) {
+              d.open = true;
+              d.dataset.ready = "1";
+              fillRows(d, code);
+            }
+          });
+          mnone.style.display = n ? "none" : "block";
+          mhit.textContent = n ? (n.toLocaleString("vi-VN") + " dòng · " + order.length + " nước") : "Không có kết quả.";
+        };
+        window.setTimeout(run, 0);
       }
       function pickSuggest(inn) {
         mq.value = inn;

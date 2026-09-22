@@ -26,10 +26,8 @@
       </div>
       <div class="tra-layout">
         <aside class="country-panel no-print" aria-label="Chọn quốc gia">
-          <header><h3>Chọn quốc gia</h3><p>Bấm một nước để xem danh sách thuốc.</p><div class="view-switch" role="group" aria-label="Chế độ xem quốc gia"><button type="button" data-view="globe" aria-pressed="true">Địa cầu</button><button type="button" data-view="map" aria-pressed="false">Bản đồ</button><button type="button" data-view="list" aria-pressed="false">Danh sách</button></div></header>
-          <div class="map-wrap" id="map-wrap"><svg id="country-map" viewBox="0 0 400 330" aria-label="Bản đồ các nước SRA"></svg>          <div class="map-tools"><button type="button" id="map-left" aria-label="Xoay địa cầu sang trái">←</button><select id="map-region" aria-label="Vùng bản đồ"><option value="europe">Châu Âu</option><option value="america">Bắc Mỹ</option><option value="asia">Nhật Bản · Úc</option><option value="world">Thế giới</option></select><button type="button" id="map-right" aria-label="Xoay địa cầu sang phải">→</button></div><p id="map-caption" class="map-caption">Chọn vùng để xem các quốc gia.</p></div>
-          <div class="country-all"><button id="country-all" class="quiet-button" type="button">Tất cả quốc gia</button><span id="country-count"></span></div>
-          <div id="country-list"></div>
+          <header><h3>Chọn quốc gia</h3><p>Bấm một nước trên bản đồ để lọc. Kết quả hiện thành thẻ từng nước bên phải.</p><div class="view-switch" role="group" aria-label="Chế độ xem quốc gia"><button type="button" data-view="globe" aria-pressed="true">Địa cầu</button><button type="button" data-view="map" aria-pressed="false">Bản đồ</button></div></header>
+          <div class="map-wrap" id="map-wrap"><svg id="country-map" viewBox="0 0 400 330" aria-label="Bản đồ các nước SRA"></svg>          <div class="map-tools"><button type="button" id="map-left" aria-label="Xoay địa cầu sang trái">←</button><select id="map-region" aria-label="Vùng bản đồ"><option value="europe">Châu Âu</option><option value="america">Bắc Mỹ</option><option value="asia">Nhật Bản · Úc</option><option value="world">Thế giới</option></select><button type="button" id="map-right" aria-label="Xoay địa cầu sang phải">→</button><button type="button" id="country-all" class="quiet-button" hidden>Tất cả</button></div><p id="map-caption" class="map-caption">Kéo để xoay · Bấm một nước để xem thuốc.</p></div>
         </aside>
         <div class="tra-main">
           <div class="tra-toolbar no-print">
@@ -52,7 +50,7 @@
               </label>
             </div>
           </div>
-          <div class="search-empty" id="search-start"><h3>Tìm thuốc, rồi chọn quốc gia</h3><p>Bấm Tìm thuốc — có thể để trống ô tìm để hiện hết kết quả.</p></div>
+          <div class="search-empty" id="search-start"><h3>Bấm Tìm thuốc để xem thẻ từng nước</h3><p>Có thể để trống ô tìm — kết quả hiện thành thẻ quốc gia bên dưới.</p></div>
           <p class="empty" id="mnone" role="status">Không có kết quả phù hợp. Thử bỏ bớt bộ lọc hoặc đổi từ khóa.</p>
           <div class="clip" id="med-clip">
             <div id="med-groups"></div>

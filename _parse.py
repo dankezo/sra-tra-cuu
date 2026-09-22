@@ -75,7 +75,7 @@ def clean(s: str, n: int) -> str:
     return re.sub(r"\s+", " ", (s or "")).strip()[:n]
 
 
-def add_row(rows, country, inn, name, form, strength, company="", extra=""):
+def add_row(rows, country, inn, name, form, strength, company="", extra="", src=""):
     inn = clean(inn, 240)
     name = clean(name, 240)
     form = clean(form, 160)
@@ -84,6 +84,7 @@ def add_row(rows, country, inn, name, form, strength, company="", extra=""):
     extra = clean(extra, 120)
     if not inn and not name:
         return
+    src = src or ("e" if country == "EMA" else "d")
     rows.append(
         {
             "country": country,
@@ -93,6 +94,7 @@ def add_row(rows, country, inn, name, form, strength, company="", extra=""):
             "strength": strength,
             "company": company,
             "extra": extra,
+            "src": src,
         }
     )
 
@@ -224,7 +226,61 @@ def parse_fr(rows):
     log(f"parse FR {n} rows from {len(cis_map)} marketed CIS")
 
 
+def parse_ema_cap(rows) -> bool:
+    files = list((RAW / "BG").glob("Centrally*.xlsx")) + list((RAW / "EMA").glob("Centrally*.xlsx"))
+    files = [p for p in files if p.stat().st_size > 1000]
+    if not files:
+        return False
+    p = max(files, key=lambda x: x.stat().st_size)
+    n = 0
+    header = None
+    for vals in xlsx_rows(p):
+        if header is None:
+            header = [(h or "").strip().lower() for h in vals]
+            continue
+
+        def col(*cands):
+            for cand in cands:
+                for i, h in enumerate(header):
+                    if cand in h:
+                        return vals[i] if i < len(vals) else ""
+            return ""
+
+        inn_raw = col("active substance", "inn")
+        name = col("invented name", "name of medicine", "name")
+        form = ""
+        for i, h in enumerate(header):
+            if "pharmaceutical form" in h and "eutct" not in h:
+                form = vals[i] if i < len(vals) else ""
+                break
+        strength = col("strength")
+        company = col("mah", "marketing")
+        extra = col("eu number", "ema product")
+        proc = (col("type of procedure") or "").upper()
+        if proc and "CAP" not in proc and "CENTRAL" not in proc:
+            reject("EMA", "not_central")
+            continue
+        inn_parts, seen = [], set()
+        for bit in re.split(r"\s*/\s*", inn_raw or ""):
+            bit = bit.strip()
+            k = bit.lower()
+            if bit and k not in seen:
+                seen.add(k)
+                inn_parts.append(bit)
+        inn = " / ".join(inn_parts)
+        if not inn and not name:
+            reject("EMA", "not_human")
+            continue
+        accept_prod("EMA")
+        add_row(rows, "EMA", inn, name, form, strength, company, extra, src="e")
+        n += 1
+    log(f"parse EMA CAP {p.name} {n}")
+    return n > 0
+
+
 def parse_ema(rows):
+    if parse_ema_cap(rows):
+        return
     p = RAW / "EMA" / "medicines.json"
     if not p.exists():
         return
@@ -251,9 +307,55 @@ def parse_ema(rows):
             "",
             it.get("marketing_authorisation_developer_applicant_holder") or "",
             it.get("ema_product_number") or "",
+            src="e",
         )
         n += 1
     log(f"parse EMA {n}")
+
+
+def parse_bg(rows):
+    folder = RAW / "BG"
+    files = [
+        p
+        for p in folder.glob("*.xlsx")
+        if p.stat().st_size > 1000 and "central" not in p.name.lower()
+    ]
+    if not files:
+        return
+    p = max(files, key=lambda x: x.stat().st_size)
+    n = 0
+    header = None
+    for vals in xlsx_rows(p):
+        if header is None:
+            header = [(h or "").strip().lower() for h in vals]
+            continue
+
+        def col(*cands):
+            for cand in cands:
+                for i, h in enumerate(header):
+                    if cand in h:
+                        return vals[i] if i < len(vals) else ""
+            return ""
+
+        inn = col("inn")
+        name = col("търговско", "invented", "name")
+        form = ""
+        for i, h in enumerate(header):
+            if "форма en" in h or "form en" in h:
+                form = vals[i] if i < len(vals) else ""
+                break
+        if not form:
+            form = col("лек. форма", "форма", "form")
+        strength = col("количество на акт", "quantity")
+        company = col("притежател", "holder", "mah")
+        extra = col("рег. №", "рег", "идентификатор")
+        if not inn and not name:
+            reject("BG", "not_human")
+            continue
+        accept_prod("BG")
+        add_row(rows, "BG", inn, name, form, strength, company, extra, src="d")
+        n += 1
+    log(f"parse BG {p.name} {n}")
 
 
 def parse_ca(rows):
@@ -1130,7 +1232,8 @@ def build_health(rows):
         "IT": RAW / "IT" / "confezioni_fornitura.csv",
         "NO": pick_file(RAW / "NO" / "fest251", "fest251.xml") or RAW / "NO" / "fest251.xml",
         "AU": next(iter(sorted((RAW / "AU").glob("*.xlsx"), key=lambda x: x.stat().st_size, reverse=True)), RAW / "AU"),
-        "EMA": RAW / "EMA" / "medicines.json",
+        "BG": next(iter(sorted((RAW / "BG").glob("IAL*.xlsx"), key=lambda x: x.stat().st_size, reverse=True)), RAW / "BG"),
+        "EMA": next(iter((RAW / "BG").glob("Centrally*.xlsx")), RAW / "EMA" / "medicines.json"),
     }
     names = dict(SRA36)
     names["EMA"] = "EMA"
@@ -1220,7 +1323,7 @@ def build_health(rows):
 def dedupe(rows):
     seen, out = set(), []
     for r in rows:
-        key = (r["country"], r["inn"].lower(), r["form"].lower(), r["strength"].lower(), r["company"].lower())
+        key = (r["country"], r["inn"].lower(), r["form"].lower(), r["strength"].lower(), r["company"].lower(), r.get("src") or "d")
         if key in seen:
             continue
         seen.add(key)
@@ -1232,7 +1335,7 @@ def write_outputs(rows):
     rows = dedupe(rows)
     health = build_health(rows)
     csv_path = OUT / "SRA_thuoc_gop.csv"
-    fields = ["country", "inn", "name", "form", "strength", "company", "extra"]
+    fields = ["country", "inn", "name", "form", "strength", "company", "extra", "src"]
     with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
         w = csv.DictWriter(f, fieldnames=fields)
         w.writeheader()
@@ -1242,7 +1345,7 @@ def write_outputs(rows):
         "v": 2,
         "updated": time.strftime("%Y-%m-%d"),
         "count": len(rows),
-        "r": [[r["country"], r["inn"], r["name"], r["form"], r["strength"], r["company"]] for r in rows],
+        "r": [[r["country"], r["inn"], r["name"], r["form"], r["strength"], r["company"], r.get("src") or "d"] for r in rows],
         "h": health,
         "c": sites,
     }
@@ -1258,7 +1361,7 @@ def write_outputs(rows):
     log("by: " + ", ".join(f"{k}:{v}" for k, v in sorted(by.items())))
     log("dropped: " + ", ".join(f"{k}:{sum(v.values())}" for k, v in sorted(FUNNEL["drop"].items())))
     log(f"sites {len(sites)} unmatched {len(miss)}")
-    log("unmatched top: " + ", ".join(f"{k}:{v}" for k, v in miss.most_common(20)))
+            log("unmatched top: " + ", ".join(f"{k}:{v}" for k, v in miss.most_common(20)).encode("ascii", "replace").decode("ascii"))
 
 
 def main():
@@ -1284,6 +1387,7 @@ def main():
     parse_it(rows)
     parse_no(rows)
     parse_au(rows)
+    parse_bg(rows)
     write_outputs(rows)
     log(f"done in {time.time() - t0:.0f}s")
 

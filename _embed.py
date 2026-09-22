@@ -8,13 +8,15 @@ src = json.loads((root / "data" / "search.json").read_text(encoding="utf-8"))
 seen = set()
 rows = []
 for r in src["r"]:
-    while len(r) < 6:
+    while len(r) < 7:
         r.append("")
-    key = (r[0], r[1].lower(), r[3].lower(), r[4].lower(), r[5].lower())
+    if not r[6]:
+        r[6] = "e" if r[0] == "EMA" else "d"
+    key = (r[0], r[1].lower(), r[3].lower(), r[4].lower(), r[5].lower(), r[6])
     if key in seen:
         continue
     seen.add(key)
-    rows.append(r[:6])
+    rows.append(r[:7])
 
 idx = {}
 table = []
@@ -53,5 +55,7 @@ pat = re.compile(
 if not pat.search(html):
     raise SystemExit("marker missing")
 html = pat.sub(lambda m: m.group(1) + blob + m.group(3), html, count=1)
-html_path.write_text(html, encoding="utf-8")
+tmp = html_path.with_name("_index.embed.html")
+tmp.write_text(html, encoding="utf-8")
+tmp.replace(html_path)
 print("rows", len(packed), "html_mb", round(html_path.stat().st_size / 1e6, 2), "table", len(table))

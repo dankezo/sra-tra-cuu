@@ -32,6 +32,7 @@
 #mg-val { font-size: 12px; color: var(--muted); margin-top: 5px; }
 .filter-footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .filter-footer .lang-mini { margin: 0; }
+.filter-file { display: flex; gap: 4px; }
 .quiet-button { border: 0; color: var(--teal); background: transparent; font: inherit; font-size: 13px; cursor: pointer; padding: 4px 8px; }
 .country-panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; position: sticky; top: 64px; }
 .country-panel header { padding: 16px 16px 10px; }
@@ -57,16 +58,30 @@
 .src-mini button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
 .src-hint { width: 100%; font-size: 12px; color: var(--muted); margin: 8px 0 0; }
 #country-all { font-size: 12px; }
+#country-list { max-height: 360px; overflow-y: auto; padding: 0 8px 8px; }
+#country-list button { width: 100%; display: flex; align-items: center; gap: 8px; text-align: left; padding: 9px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+#country-list button:hover { background: #f0eee6; }
+#country-list button[aria-pressed=true] { background: #e0efeb; color: var(--teal); font-weight: 700; }
+#country-list .country-total { margin-left: auto; color: var(--muted); font-size: 12px; }
 .tra-main { min-width: 0; }
 #tra-hit { font-size: 17px; color: var(--ink); font-weight: 700; }
 #tra-meta { width: 100%; font-size: 12px; }
-.source-help { width: 100%; margin: 0; font-size: 12px; color: var(--muted); }
 .src-label { font-size: 11px; font-weight: 500; color: var(--muted); }
 #med-clip { max-height: 78vh; border: 1px solid var(--line); border-radius: 12px; }
 #med-clip:has(#med-groups:empty) { border: 0; }
-#tra table.med { min-width: 740px; }
+#tra table.med { min-width: 860px; table-layout: fixed; }
+#tra table.med col.ck { width: 28px; }
+#tra table.med col.num { width: 36px; }
+#tra table.med col.inn { width: 24%; }
+#tra table.med col.nm { width: 22%; }
+#tra table.med col.fm { width: 12%; }
+#tra table.med col.st { width: 9%; }
+#tra table.med col.co { width: 16%; }
+#tra table.med col.src { width: 88px; }
 #tra table.med td, #tra table.med th { padding: 10px 8px; font-size: 12px; }
 #tra table.med td.inn { font-weight: 650; }
+#tra table.med td.inn, #tra table.med td.nm { white-space: normal; overflow-wrap: anywhere; }
+#tra table.med td.st { white-space: normal; font-size: 11px; }
 #tra .cg-prev { display: none; }
 .search-empty { border: 1px dashed var(--line); border-radius: 14px; padding: 48px 24px; text-align: center; background: var(--card); }
 .search-empty h3 { font-size: 19px; }
@@ -85,9 +100,119 @@
   .search-filters { padding: 12px; }
   .country-panel header { padding: 12px; }
   #country-map { max-height: 260px; }
+  #country-list { max-height: 220px; }
   #mgo { padding: 9px 16px; }
   #tra .filter-row > details { min-width: 120px; }
   #tra .filter-row > details { position: static; }
   .filter-menu { left: 0; right: 0; width: 100%; top: 100%; }
 }
 @media print { #tra .tra-layout { display: block; } #med-clip { max-height: none; } }
+
+/* Data health — country tiles + dual donuts */
+#hcomp { display: none !important; }
+.health-cov {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(248px, 300px);
+  gap: 16px;
+  align-items: start;
+  margin-top: 14px;
+}
+.health-pies {
+  position: sticky;
+  top: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 300px;
+}
+.health-pies .donut-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 12px 10px;
+}
+.health-pies .side-lab { margin: 0 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.health-pies .donut-wrap { margin-top: 0; flex-direction: column; align-items: center; justify-content: center; gap: 10px; }
+.health-pies .donut-leg { font-size: 12px; }
+.health-pies .hint { margin: 0; text-align: center; font-size: 12px; }
+@property --d1 { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@property --d2 { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.donut.idle { background: conic-gradient(#EFE8DC 0deg 360deg) !important; opacity: .7; }
+.donut.country { background: conic-gradient(var(--teal) 0deg var(--d1, 0deg), #C4841D var(--d1, 0deg) var(--d2, 0deg), var(--warn) var(--d2, 0deg) 360deg); transition: --d1 1s ease, --d2 1s ease; }
+#hdonut { background: conic-gradient(var(--teal) 0deg var(--deg), #1e3a8a var(--deg) 360deg); }
+.cov {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 8px;
+  margin-top: 0;
+}
+.cov button,
+.cov button.n,
+.cov button.ema,
+.cov button.m,
+.cov button.e {
+  appearance: none;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  margin: 0;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.3;
+  text-align: left;
+  padding: 8px 9px 7px;
+  border: 1px solid color-mix(in srgb, var(--hue, var(--teal)) 28%, var(--line));
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--ink);
+  background: #EFE8DC !important;
+  opacity: 1;
+  box-shadow: none;
+  animation: tile-in .45s cubic-bezier(.2,.8,.2,1) both;
+}
+.cov button::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    var(--teal) 0 var(--full, 0%),
+    #C4841D var(--full, 0%) var(--mid-end, 0%),
+    var(--warn) var(--mid-end, 0%) 100%);
+  opacity: calc(0.34 + var(--fade, 0) * 0.66);
+  pointer-events: none;
+}
+.cov button > * { position: relative; z-index: 1; }
+.cov button.hot { color: #fff !important; text-shadow: 0 1px 1px rgba(0,0,0,.22); }
+.cov button:not(.hot) { color: var(--ink) !important; text-shadow: 0 0 6px var(--card), 0 1px 0 var(--card); }
+.cov button b { display: flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 750; }
+.cov button img.flg { width: 16px; height: 12px; }
+.cov button small { font-size: 11px; opacity: .92; }
+.cov button.on {
+  outline: 2px solid var(--teal);
+  outline-offset: 1px;
+  z-index: 1;
+}
+.health.on .cov button.n,
+.health.on .cov button.ema,
+.health.on .cov button.m {
+  animation: tile-in .45s cubic-bezier(.2,.8,.2,1) both;
+  box-shadow: none;
+}
+.health.on .cov button.on { box-shadow: 0 0 0 2px var(--teal); }
+@keyframes tile-in {
+  from { transform: translateY(8px); }
+  to { transform: none; }
+}
+@media (max-width: 860px) {
+  .health-cov { grid-template-columns: 1fr; }
+  .health-pies { position: static; flex-direction: row; flex-wrap: wrap; }
+  .health-pies .donut-card { flex: 1; min-width: 220px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cov button, .health.on .cov button.n, .health.on .cov button.ema, .health.on .cov button.m { animation: none !important; }
+  .donut.country { transition: none !important; }
+}

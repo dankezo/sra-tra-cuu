@@ -77,6 +77,31 @@ class DataTests(unittest.TestCase):
         self.assertTrue(sites["UAB Lex ano"].startswith("https://"))
         self.assertNotIn("wikipedia", sites["UAB Lex ano"])
 
+    def test_sweden_lmf_keeps_smpc_drops_vet(self):
+        import _parse_add as extra
+        with tempfile.TemporaryDirectory() as directory:
+            raw = Path(directory)
+            (raw / "SE").mkdir()
+            (raw / "SE" / "produktdokument.xml").write_text(
+                '<?xml version="1.0" encoding="utf-8"?>'
+                "<ArrayOfDocumentList>"
+                "<DocumentList><ProduktNamn>Atomoxetine Sandoz 18 mg Kapsel, hård</ProduktNamn>"
+                "<Typ>PL</Typ><NplId>1</NplId><Företag>Sandoz A/S</Företag></DocumentList>"
+                "<DocumentList><ProduktNamn>Atomoxetine Sandoz 18 mg Kapsel, hård</ProduktNamn>"
+                "<Typ>SmPC</Typ><NplId>1</NplId><Företag>Sandoz A/S</Företag></DocumentList>"
+                "<DocumentList><ProduktNamn>Ketaminol vet. Solution for injection</ProduktNamn>"
+                "<Typ>SmPC</Typ><NplId>2</NplId><Företag>X</Företag></DocumentList>"
+                "</ArrayOfDocumentList>",
+                encoding="utf-8",
+            )
+            rows = []
+            with patch.object(parser, "RAW", raw):
+                extra.parse_se_lmf(rows)
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["name"], "Atomoxetine Sandoz 18 mg Kapsel, hård")
+            self.assertEqual(rows[0]["company"], "Sandoz A/S")
+            self.assertEqual(rows[0]["strength"], "18 mg")
+
 
 if __name__ == '__main__':
     unittest.main()

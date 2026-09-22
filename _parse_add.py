@@ -100,6 +100,7 @@ def stage_add_files() -> None:
         (("croatia",), "HR", "halmed.xlsx"),
         (("bo dao nha",), "PT", "infomed.xlsx"),
         (("hungary",), "HU", "ogyi.csv"),
+        (("human_medicines_search",), "GR", "eof.xlsx"),
         (("hy lap",), "GR", "eof.xlsx"),
         (("ha lan",), "NL", "cbg.csv"),
         (("japan",), "JP", "pmda-approved.pdf"),
@@ -467,7 +468,7 @@ def parse_sk_sidc(rows):
                 P.reject("SK", "not_authorised")
                 continue
             name = it.get("lie_nazov") or it.get("nazov") or ""
-            inn = it.get("liecivo") or ""
+            inn = it.get("liecivo") or it.get("atc_nazov") or it.get("atc_nazov_sk") or ""
             form = it.get("form_nazov_en") or it.get("form_nazov") or it.get("doplnok") or it.get("lie_doplnok") or ""
             strength = it.get("lie_sila") or it.get("sila") or P.strength_from(form)
             company = it.get("drz_nazov") or it.get("drzitel") or ""
@@ -689,6 +690,73 @@ def parse_article57_gaps(rows):
     P.log("parse A57 gaps " + ", ".join(f"{k}:{v}" for k, v in sorted(by.items())) + f" total={n}")
 
 
+def parse_gr(rows):
+    p = P.pick_file(P.RAW / "GR", "eof.xlsx") or find_add("human_medicines_search") or find_add("hy lap")
+    if not p:
+        return
+    n = 0
+    for header, vals in xlsx_after_header(p, "name", "status"):
+        status = fold_name(col(header, vals, "m.a. status", "status", "κατάσταση"))
+        if status and "valid" not in status and "enisch" not in status:
+            P.reject("GR", "not_authorised")
+            continue
+        name = col(header, vals, "name / strength", "name", "ονομασία")
+        if not name or name.lower().startswith("name"):
+            continue
+        P.accept_prod("GR")
+        P.add_row(
+            rows,
+            "GR",
+            "",
+            name,
+            form_from(name),
+            P.strength_from(name),
+            "",
+            col(header, vals, "code", "κωδικός"),
+            src="d",
+        )
+        n += 1
+    P.log(f"parse GR {n}")
+
+
+def parse_se_lmf(rows):
+    p = P.pick_file(P.RAW / "SE", "produktdokument.xml")
+    if not p:
+        return
+    by = {}
+    for _event, el in ET.iterparse(p, events=("end",)):
+        if P.local(el.tag) != "DocumentList":
+            continue
+        rec = {P.local(c.tag): (c.text or "").strip() for c in list(el)}
+        el.clear()
+        name = rec.get("ProduktNamn") or rec.get("DokumentNamn") or ""
+        blob = " ".join((name, rec.get("DokumentNamn") or "", rec.get("Typ") or "")).lower()
+        if re.search(r"\bvet(?:erinar|\.|erinär|erinary)?\b", blob) or " veterin" in blob:
+            P.reject("SE", "not_human")
+            continue
+        npl = rec.get("NplId") or name
+        typ = (rec.get("Typ") or "").upper()
+        prev = by.get(npl)
+        if prev and typ != "SMPC":
+            continue
+        by[npl] = {
+            "name": name,
+            "company": rec.get("Företag") or rec.get("Foretag") or "",
+            "form": form_from(name),
+            "strength": P.strength_from(name),
+            "inn": re.split(r"\s+\d", name, 1)[0].strip() if name else "",
+            "extra": npl,
+        }
+    n = 0
+    for rec in by.values():
+        if not rec["name"] and not rec["inn"]:
+            continue
+        P.accept_prod("SE")
+        P.add_row(rows, "SE", rec["inn"], rec["name"], rec["form"], rec["strength"], rec["company"], rec["extra"], src="d")
+        n += 1
+    P.log(f"parse SE {n}")
+
+
 def parse_added(rows):
     stage_add_files()
     parse_union_register(rows)
@@ -701,4 +769,6 @@ def parse_added(rows):
     parse_si(rows)
     parse_gb(rows)
     parse_jp(rows)
+    parse_gr(rows)
+    parse_se_lmf(rows)
     parse_article57_gaps(rows)

@@ -196,18 +196,18 @@
       const PACK = [
         { cc:"LT", name:"Lithuania", tag:"dump", how:"VVKT CSV đã nạp từ data/raw/add.", url:"https://vapris.vvkt.lt/vvkt-web/public/medications" },
         { cc:"PL", name:"Ba Lan", tag:"dump", how:"RPL xlsx đã nạp từ data/raw/add.", url:"https://rejestrymedyczne.ezdrowie.gov.pl/rpl/search/public" },
-        { cc:"SE", name:"Thụy Điển", tag:"ask", how:"NPL ZIP chưa có; đang dùng EMA Article 57 theo nước.", url:"https://www.lakemedelsverket.se/sv/sok-lakemedelsfakta" },
+        { cc:"SE", name:"Thụy Điển", tag:"dump", how:"Lakemedelsfakta produktdokument XML đã nạp.", url:"https://www.lakemedelsverket.se/sv/sok-lakemedelsfakta" },
         { cc:"NL", name:"Hà Lan", tag:"dump", how:"CBG-MEB CSV đã nạp từ data/raw/add.", url:"https://www.geneesmiddeleninformatiebank.nl/" },
         { cc:"HU", name:"Hungary", tag:"ask", how:"CSV header-only; đang dùng EMA Article 57 theo nước.", url:"https://ogyei.gov.hu/gyogyszeradatbazis" },
         { cc:"DE", name:"Đức", tag:"skip", how:"BfArM không dump công; đang dùng EMA Article 57 theo nước.", url:"https://portal.bfarm.de/amguifree/am/search.xhtml" },
         { cc:"DK", name:"Đan Mạch", tag:"skip", how:"Không dump cả CSDL; đang dùng EMA Article 57 theo nước.", url:"https://www.produktresume.dk/AppBuilder/search" },
         { cc:"PT", name:"Bồ Đào Nha", tag:"dump", how:"INFARMED list đã nạp từ data/raw/add.", url:"https://extranet.infarmed.pt/INFOMED-fo/index.xhtml" },
-        { cc:"SK", name:"Slovakia", tag:"dump", how:"SIDC JSON (p00000) đã nạp.", url:"https://www.sukl.sk/en/servis/search/searching-on-the-database-of-medicinal-products?page_id=410" },
+        { cc:"SK", name:"Slovakia", tag:"dump", how:"SIDC JSON (lieky_ui42 + atc.php) đã nạp.", url:"https://www.sukl.sk/en/servis/search/searching-on-the-database-of-medicinal-products?page_id=410" },
         { cc:"HR", name:"Croatia", tag:"dump", how:"HALMED Excel đã nạp từ data/raw/add.", url:"https://www.halmed.hr/en/Lijekovi/pretrazivanje-lijekova/" },
         { cc:"GB", name:"Anh", tag:"dump", how:"NHS dm+d XML đã nạp (MHRA/EMA licensed AMPs).", url:"https://products.mhra.gov.uk/" },
         { cc:"JP", name:"Nhật", tag:"dump", how:"PMDA List of Approved Drugs PDF đã nạp.", url:"https://www.pmda.go.jp/PmdaSearch/iyakuSearch/" },
         { cc:"CY", name:"Síp", tag:"skip", how:"Không dump NCA; đang dùng EMA Article 57 theo nước.", url:"https://www.phs.moh.gov.cy/human-search/home.xhtml?lang=en" },
-        { cc:"GR", name:"Hy Lạp", tag:"skip", how:"EOF xlsx trống; đang dùng EMA Article 57 theo nước.", url:"https://eof.gr/en/anazitisi-proionton/" },
+        { cc:"GR", name:"Hy Lạp", tag:"dump", how:"EOF human medicines search xlsx đã nạp.", url:"https://eof.gr/en/anazitisi-proionton/" },
         { cc:"MT", name:"Malta", tag:"dump", how:"Medicines Authority CSV đã nạp từ data/raw/add.", url:"https://www.medicinesauthority.gov.mt/advanced-search" },
         { cc:"SI", name:"Slovenia", tag:"dump", how:"JAZMP/CBZ CSV đã nạp từ data/raw/add.", url:"https://www.cbz.si/" },
         { cc:"LI", name:"Liechtenstein", tag:"skip", how:"Không CSDL riêng — Article 57 + Áo + Swissmedic + EMA.", url:"https://medikamente.basg.gv.at/de/" }
@@ -249,12 +249,21 @@
         activeCountry = cc || '';
         focusCountry(activeCountry);
         paintCountries();
-        searchMed();
+        if (hasSearched) searchMed({ keepPeek: true });
         if (window.matchMedia('(max-width: 680px)').matches) {
           document.querySelector('.tra-main').scrollIntoView({block:'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth'});
         }
       }
       function paintCountries() {
+        const listEl = document.getElementById('country-list');
+        const showList = countryView === 'list';
+        if (listEl) {
+          listEl.hidden = !showList;
+          if (showList) {
+            const list = eligibleCountries().slice().sort((a,b) => countryName(a).localeCompare(countryName(b), 'vi'));
+            listEl.innerHTML = list.map(c => `<button type="button" data-country="${c}" aria-pressed="${focusedCountry === c}">${flagImg(c)}<span>${esc(countryName(c))}</span><span class="country-total">${countryCounts[c] == null ? '' : countryCounts[c].toLocaleString('vi-VN')}</span></button>`).join('') || '<p style="padding:12px">Không tìm thấy quốc gia.</p>';
+          }
+        }
         const allBtn = document.getElementById('country-all');
         if (allBtn) allBtn.hidden = !activeCountry;
         drawMap();
@@ -262,8 +271,14 @@
       function drawMap() { countryMap.render(); }
       function focusCountry(cc) {
         focusedCountry = cc || '';
+        const listEl = document.getElementById('country-list');
+        if (listEl) listEl.querySelectorAll('[data-country]').forEach(el => el.setAttribute('aria-pressed', String(el.dataset.country === focusedCountry)));
         countryMap.focus(focusedCountry);
       }
+      document.getElementById('country-list').addEventListener('click', ev => {
+        const b = ev.target.closest('[data-country]');
+        if (b) selectCountry(b.dataset.country);
+      });
       document.getElementById('country-all').addEventListener('click', () => selectCountry(''));
       document.querySelectorAll('[data-view]').forEach(b => b.addEventListener('click', () => {
         countryView = b.dataset.view;
@@ -461,12 +476,17 @@
       }
 
       function extraFiltersOn() {
-        if (srcSel.size || selForms.size) return true;
+        if (srcSel.size || selForms.size || selCountries.size) return true;
         if (document.getElementById("strength-mode").value === "exact" && (document.getElementById("mg-exact").value || "").trim()) return true;
         return !!(mgMinEl.value || mgMaxEl.value);
       }
-      function searchMed() {
+      function searchMed(opts) {
         hasSearched = true;
+        const keepPeek = !!(opts && opts.keepPeek);
+        if (!keepPeek && activeCountry) {
+          activeCountry = "";
+          focusedCountry = "";
+        }
         document.getElementById("search-start").hidden = true;
         document.getElementById("sel-page").checked = false;
         hideSuggest();
@@ -516,7 +536,7 @@
               (hasDump ? '<span class="src-label">Nguồn quốc gia</span>' : "") +
               (hasEma ? '<span class="src-label">EMA</span>' : "") +
               "</summary>" +
-              "<div class=\"cg-body\"><table class=\"med\"><thead><tr><th></th><th>#</th><th>Hoạt chất (INN)</th><th>Tên thuốc</th><th>Dạng</th><th>Hàm lượng</th><th>Công ty</th><th>Nguồn</th></tr></thead><tbody></tbody></table></div>";
+              "<div class=\"cg-body\"><table class=\"med\"><colgroup><col class=\"ck\" /><col class=\"num\" /><col class=\"inn\" /><col class=\"nm\" /><col class=\"fm\" /><col class=\"st\" /><col class=\"co\" /><col class=\"src\" /></colgroup><thead><tr><th></th><th>#</th><th>Hoạt chất (INN)</th><th>Tên thuốc</th><th>Dạng</th><th>Hàm lượng</th><th>Công ty</th><th>Nguồn</th></tr></thead><tbody></tbody></table></div>";
             store.set(d, list);
             shownN.set(d, 0);
             d.addEventListener("toggle", function () {
@@ -552,15 +572,34 @@
       function exportSel() {
         const keys = Object.keys(selected);
         if (!keys.length) return;
-        const lines = [["country","inn","product","form","strength","company","src"]];
-        keys.forEach((k) => {
+        const srcName = (s) => (!s ? "dump" : (String(s).includes("d") && String(s).includes("e") ? "dump+EMA" : (String(s).includes("e") ? "EMA" : "dump")));
+        const srcHref = (cc, s) => {
+          const bits = String(s || "d").split("+").filter(Boolean);
+          if (bits.includes("e") && !bits.includes("d")) return (SRC.EMA && SRC.EMA.url) || "";
+          return (srcOf(cc) || {}).url || "";
+        };
+        const emaHref = (SRC.EMA && SRC.EMA.url) || "https://www.ema.europa.eu/en/medicines";
+        const head = "<tr><th>country</th><th>inn</th><th>product</th><th>form</th><th>strength</th><th>company</th><th>source</th></tr>";
+        const body = keys.map((k) => {
           const r = selected[k];
-          lines.push(r.map((x) => "\"" + String(x || "").replace(/\"/g, "\"\"") + "\""));
-        });
-        const blob = new Blob(["\uFEFF" + lines.map((a) => a.join(",")).join("\r\n")], { type: "text/csv;charset=utf-8" });
+          const cc = r[0] || "";
+          const company = r[5] || "";
+          const coUrl = (/^https?:\/\//i.test(SITES[company] || "") && !/wikipedia\.org/i.test(SITES[company] || "") ? SITES[company] : "") || searchHref(company);
+          const src = r[6] || "d";
+          const dumpUrl = srcHref(cc, src);
+          const labels = String(src).split("+").filter(Boolean);
+          const srcHtml = labels.map((bit) => {
+            const lab = bit === "e" ? "EMA" : "dump";
+            const href = bit === "e" ? emaHref : dumpUrl;
+            return "<a href=\"" + esc(href) + "\">" + esc(lab) + "</a>";
+          }).join(" · ") || esc(srcName(src));
+          return "<tr><td>" + esc(countryName(cc) || cc) + "</td><td>" + esc(r[1]) + "</td><td>" + esc(r[2]) + "</td><td>" + esc(r[3]) + "</td><td>" + esc(r[4]) + "</td><td>" + (company ? "<a href=\"" + esc(coUrl) + "\">" + esc(company) + "</a>" : "—") + "</td><td>" + srcHtml + "</td></tr>";
+        }).join("");
+        const html = "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">" + head + body + "</table></body></html>";
+        const blob = new Blob(["\uFEFF" + html], { type: "application/vnd.ms-excel;charset=utf-8" });
         const a = document.createElement("a");
         a.href = URL.createObjectURL(blob);
-        a.download = "sra-chon.csv";
+        a.download = "sra-chon.xls";
         a.click();
         URL.revokeObjectURL(a.href);
       }
@@ -581,6 +620,59 @@
         if (EEA.has(s.cc)) return "ema";
         return "m";
       }
+      function fieldMix(s) {
+        const tot = s.rows || 0;
+        const full = s.full || 0;
+        const lean = s.lean || 0;
+        const mid = Math.max(tot - full - lean, 0);
+        return { tot, full, lean, mid, fullPct: pct(full, tot || 1) };
+      }
+      function greenScore(s) {
+        const m = fieldMix(s);
+        if (!m.tot) return -1;
+        return m.fullPct * 10 + pct(m.mid, m.tot);
+      }
+      let healthCc = "";
+      function paintCountryDonut(cc) {
+        const card = document.getElementById("hcdonut-card");
+        const pie = document.getElementById("hcdonut");
+        const leg = document.getElementById("hcleg");
+        const hint = document.getElementById("hcdonut-hint");
+        const title = document.getElementById("hcdonut-title");
+        const s = (HEALTH && HEALTH.sources || []).find((x) => x.cc === cc);
+        document.querySelectorAll("#hcov button[data-cc]").forEach((el) => {
+          el.classList.toggle("on", el.getAttribute("data-cc") === cc);
+          el.setAttribute("aria-pressed", el.getAttribute("data-cc") === cc ? "true" : "false");
+        });
+        if (!s || !cc) {
+          healthCc = "";
+          if (title) title.textContent = "Từng nước";
+          if (pie) { pie.classList.add("idle"); pie.style.removeProperty("--d1"); pie.style.removeProperty("--d2"); }
+          if (leg) leg.innerHTML = "";
+          if (hint) { hint.hidden = false; hint.textContent = "Bấm một ô nước bên trái để xem tỷ lệ đủ trường."; }
+          if (card) card.classList.remove("on");
+          return;
+        }
+        healthCc = cc;
+        const m = fieldMix(s);
+        const d1 = pct(m.full, m.tot || 1) * 3.6;
+        const d2 = d1 + pct(m.mid, m.tot || 1) * 3.6;
+        if (title) title.textContent = s.name;
+        if (pie) {
+          pie.classList.remove("idle");
+          pie.classList.add("country");
+          pie.style.setProperty("--d1", d1 + "deg");
+          pie.style.setProperty("--d2", d2 + "deg");
+        }
+        if (leg) {
+          leg.innerHTML =
+            "<li><span class=\"sw\" style=\"background:var(--teal)\"></span>Đủ 4 trường · " + m.full.toLocaleString("vi-VN") + " (" + m.fullPct + "%)</li>" +
+            "<li><span class=\"sw\" style=\"background:#C4841D\"></span>Thiếu một phần · " + m.mid.toLocaleString("vi-VN") + " (" + pct(m.mid, m.tot || 1) + "%)</li>" +
+            "<li><span class=\"sw\" style=\"background:var(--warn)\"></span>Thiếu nặng · " + m.lean.toLocaleString("vi-VN") + " (" + pct(m.lean, m.tot || 1) + "%)</li>";
+        }
+        if (hint) hint.hidden = true;
+        if (card) card.classList.add("on");
+      }
       function paintHealth() {
         const h = HEALTH;
         if (!h) return;
@@ -592,34 +684,33 @@
         const rowN = f.search_rows || 1;
         const have = new Set(h.have_national || []);
         kpis.innerHTML =
-          "<div class=\"stat\"><b data-count=\"" + (f.search_rows || 0) + "\">0</b><span>circulating rows in search</span></div>" +
-          "<div class=\"stat\"><b data-count=\"" + (f.dropped || 0) + "\">0</b><span>dropped (cancelled / not marketed)</span></div>" +
-          "<div class=\"stat\"><b data-count=\"" + nat + "\" data-suf=\"/36\">0/36</b><span>SRA countries with a national dump</span></div>" +
-          "<div class=\"stat\"><b data-count=\"" + pct(fullN, rowN) + "\" data-suf=\"%\">0%</b><span>rows with INN · form · strength · company</span></div>";
+          "<div class=\"stat\"><b data-count=\"" + (f.search_rows || 0) + "\">0</b><span>dòng đang lưu hành trong ô tra</span></div>" +
+          "<div class=\"stat\"><b data-count=\"" + (f.dropped || 0) + "\">0</b><span>đã loại (hủy / không lưu hành)</span></div>" +
+          "<div class=\"stat\"><b data-count=\"" + nat + "\" data-suf=\"/36\">0/36</b><span>nước SRA có dump quốc gia</span></div>" +
+          "<div class=\"stat\"><b data-count=\"" + pct(fullN, rowN) + "\" data-suf=\"%\">0%</b><span>dòng đủ hoạt chất · dạng · hàm lượng · công ty</span></div>";
         const cap = document.getElementById("hfunnel-cap");
-        if (cap) cap.textContent = "Raw dump → drop cancelled/withdrawn/not marketed → unique rows on this page.";
+        if (cap) cap.textContent = "File gốc → loại hủy / rút / không lưu hành → dòng duy nhất trên trang.";
         const funnel = document.getElementById("hfunnel");
         const raw = f.raw || 1;
         const keptP = f.kept_prod || 0;
         const rowsN = f.search_rows || 0;
         const drop = f.dropped || 0;
         funnel.innerHTML = "<div class=\"funnel\">" +
-          "<div class=\"row\"><span>Products read</span><div class=\"bar\"><i style=\"--w:" + pct(raw, raw) + "%\"></i></div><b>" + (f.raw || 0).toLocaleString("vi-VN") + "</b></div>" +
-          "<div class=\"row\"><span>Not circulating</span><div class=\"bar drop\"><i style=\"--w:" + pct(drop, raw) + "%\"></i></div><b>" + drop.toLocaleString("vi-VN") + "</b></div>" +
-          "<div class=\"row\"><span>Products kept</span><div class=\"bar\"><i style=\"--w:" + pct(keptP, raw) + "%\"></i></div><b>" + keptP.toLocaleString("vi-VN") + "</b></div>" +
-          "<div class=\"row\"><span>Unique INN rows</span><div class=\"bar\"><i style=\"--w:" + pct(rowsN, raw) + "%\"></i></div><b>" + rowsN.toLocaleString("vi-VN") + "</b></div></div>";
+          "<div class=\"row\"><span>Sản phẩm đọc được</span><div class=\"bar\"><i style=\"--w:" + pct(raw, raw) + "%\"></i></div><b>" + (f.raw || 0).toLocaleString("vi-VN") + "</b></div>" +
+          "<div class=\"row\"><span>Không lưu hành</span><div class=\"bar drop\"><i style=\"--w:" + pct(drop, raw) + "%\"></i></div><b>" + drop.toLocaleString("vi-VN") + "</b></div>" +
+          "<div class=\"row\"><span>Sản phẩm giữ lại</span><div class=\"bar\"><i style=\"--w:" + pct(keptP, raw) + "%\"></i></div><b>" + keptP.toLocaleString("vi-VN") + "</b></div>" +
+          "<div class=\"row\"><span>Dòng INN duy nhất</span><div class=\"bar\"><i style=\"--w:" + pct(rowsN, raw) + "%\"></i></div><b>" + rowsN.toLocaleString("vi-VN") + "</b></div></div>";
         const emaRows = h.ema_rows || 0;
         const natRows = rowsN - emaRows;
         const deg = pct(natRows, rowsN || 1) * 3.6;
         const donut = document.getElementById("hdonut");
         const heroCap = document.getElementById("hhero-cap");
         if (heroCap) { heroCap.textContent = ""; heroCap.hidden = true; }
-        const rank = { n: 0, ema: 1, m: 2, w: 3 };
         const track = document.getElementById("htrack");
         if (track) {
-          const bits = (h.sources || []).filter((s) => s.cc !== "EMA").slice().sort((a, b) => rank[covClass(a)] - rank[covClass(b)]);
+          const bits = (h.sources || []).filter((s) => s.cc !== "EMA").slice().sort((a, b) => greenScore(b) - greenScore(a) || a.name.localeCompare(b.name, "vi"));
           track.innerHTML = bits.map((s, i) => {
-            return "<i class=\"" + covClass(s) + "\" style=\"animation-delay:" + (i * 0.025) + "s\" title=\"" + esc(s.name) + "\"></i>";
+            return "<i class=\"" + covClass(s) + "\" style=\"animation-delay:" + (i * 0.025) + "s\" title=\"" + esc(s.name) + " · " + fieldMix(s).fullPct + "%\"></i>";
           }).join("");
         }
         const st = document.getElementById("hst");
@@ -627,29 +718,38 @@
           const redN = (h.sources || []).filter((s) => s.cc !== "EMA" && covClass(s) === "m").length;
           const navyN = (h.sources || []).filter((s) => s.cc !== "EMA" && covClass(s) === "ema").length;
           st.innerHTML =
-            "<span class=\"st ok\">National dump " + nat + "</span>" +
-            "<span class=\"st ema\">EMA cover " + navyN + "</span>" +
-            "<span class=\"st gap\">Neither " + redN + "</span>" +
-            "<span class=\"st ema\">EMA " + emaRows.toLocaleString("vi-VN") + " rows</span>";
+            "<span class=\"st ok\">Dump quốc gia " + nat + "</span>" +
+            "<span class=\"st ema\">Phủ EMA " + navyN + "</span>" +
+            "<span class=\"st gap\">Không có nguồn " + redN + "</span>" +
+            "<span class=\"st ema\">EMA " + emaRows.toLocaleString("vi-VN") + " dòng</span>";
         }
         document.getElementById("hleg").innerHTML =
-          "<li><span class=\"sw\" style=\"background:var(--teal)\"></span>National dump · " + natRows.toLocaleString("vi-VN") + " rows (" + pct(natRows, rowsN || 1) + "%)</li>" +
-          "<li><span class=\"sw\" style=\"background:#1e3a8a\"></span>EMA centralised · " + emaRows.toLocaleString("vi-VN") + " rows (" + pct(emaRows, rowsN || 1) + "%)</li>";
+          "<li><span class=\"sw\" style=\"background:var(--teal)\"></span>Dump quốc gia · " + natRows.toLocaleString("vi-VN") + " dòng (" + pct(natRows, rowsN || 1) + "%)</li>" +
+          "<li><span class=\"sw\" style=\"background:#1e3a8a\"></span>EMA tập trung · " + emaRows.toLocaleString("vi-VN") + " dòng (" + pct(emaRows, rowsN || 1) + "%)</li>";
         const cov = document.getElementById("hcov");
-        const covBits = (h.sources || []).filter((s) => s.cc !== "EMA").slice().sort((a, b) => rank[covClass(a)] - rank[covClass(b)]);
+        const covBits = (h.sources || []).filter((s) => s.cc !== "EMA").slice().sort((a, b) => greenScore(b) - greenScore(a) || a.name.localeCompare(b.name, "vi"));
         cov.innerHTML = covBits.map((s, i) => {
           const cls = covClass(s);
-          let extra = cls === "n" ? s.rows.toLocaleString("vi-VN") + " rows" : (cls === "ema" ? "EMA cover" : "neither dump nor EMA");
-          return "<span class=\"" + cls + "\" style=\"animation-delay:" + (i * 0.03) + "s\"><b>" + esc(s.name) + "</b>" + extra + "</span>";
+          const m = fieldMix(s);
+          const full = m.fullPct;
+          const midEnd = full + pct(m.mid, m.tot || 1);
+          const fade = (m.tot ? m.full / m.tot : 0).toFixed(3);
+          const extra = m.tot ? (full + "% đủ trường") : (cls === "ema" ? "phủ EMA" : "không dump / EMA");
+          const hot = full >= 55 ? " hot" : "";
+          return "<button type=\"button\" class=\"" + cls + hot + "\" data-cc=\"" + esc(s.cc) + "\" aria-pressed=\"false\" style=\"--full:" + full + "%;--mid-end:" + midEnd + "%;--fade:" + fade + ";--hue:" + (cls === "ema" ? "#1e3a8a" : (cls === "m" ? "var(--warn)" : "var(--teal)")) + ";animation-delay:" + (i * 0.03) + "s\"><b>" + flagImg(s.cc) + " " + esc(s.name) + "</b><small>" + extra + "</small></button>";
         }).join("");
+        if (!cov.dataset.bound) {
+          cov.dataset.bound = "1";
+          cov.addEventListener("click", (ev) => {
+            const btn = ev.target.closest("button[data-cc]");
+            if (!btn) return;
+            const cc = btn.getAttribute("data-cc");
+            paintCountryDonut(healthCc === cc ? "" : cc);
+          });
+        }
+        paintCountryDonut(healthCc);
         const box = document.getElementById("hcomp");
-        box.innerHTML = "<div class=\"hcomp\">" + loaded.map((s) => {
-          const full = s.full || 0;
-          const lean = s.lean || 0;
-          const mid = Math.max((s.rows || 0) - full - lean, 0);
-          const tot = s.rows || 1;
-          return "<div class=\"row\"><span>" + esc(s.name) + "</span><div class=\"hbar\"><i class=\"full\" style=\"--w:" + pct(full, tot) + "%\"></i><i class=\"mid\" style=\"--w:" + pct(mid, tot) + "%\"></i><i class=\"lean\" style=\"--w:" + pct(lean, tot) + "%\"></i></div><b>" + pct(full, tot) + "%</b></div>";
-        }).join("") + "</div>";
+        if (box) box.innerHTML = "";
         const crawl = document.getElementById("hcrawl");
         if (crawl) {
           const miss = PACK.filter((p) => !have.has(p.cc));
@@ -657,11 +757,11 @@
             "<p class=\"hint\">AccessMedicina / Vidal (HAR sếp hay dùng): HTML monograph ATC (FT_*.html), không có JSON dump. Nội dung bản quyền McGraw Hill — không nhét vào ô tra SRA. Dùng để đọc ATC, không thay register nước.</p>" +
             "<table class=\"db\"><thead><tr><th>Nước</th><th>Việc</th><th></th></tr></thead><tbody>" +
             miss.map((p) => {
-              return "<tr><td>" + flagImg(p.cc) + " <strong>" + esc(p.name) + "</strong></td><td class=\"how\">" + p.how + "</td><td><a class=\"go\" href=\"" + esc(p.url) + "\" target=\"_blank\" rel=\"noopener\">Open</a></td></tr>";
+              return "<tr><td>" + flagImg(p.cc) + " <strong>" + esc(p.name) + "</strong></td><td class=\"how\">" + p.how + "</td><td><a class=\"go\" href=\"" + esc(p.url) + "\" target=\"_blank\" rel=\"noopener\">Mở</a></td></tr>";
             }).join("") + "</tbody></table>";
         }
         const hsum = document.getElementById("hsum");
-        if (hsum) hsum.textContent = "Data health · " + nat + "/36 national dumps";
+        if (hsum) hsum.textContent = "Sức khỏe dữ liệu · " + nat + "/36 dump quốc gia";
         const sec = document.getElementById("health");
         const ring = document.getElementById("hring");
         const circ = 2 * Math.PI * 50;
@@ -747,8 +847,8 @@
         if (!input) return;
         const cc = input.dataset.countryFilter;
         if (input.checked) selCountries.add(cc); else selCountries.delete(cc);
-        activeCountry = selCountries.size === 1 ? [...selCountries][0] : '';
-        focusCountry(input.checked ? cc : activeCountry || [...selCountries].at(-1) || '');
+        activeCountry = '';
+        focusCountry(input.checked ? cc : [...selCountries].at(-1) || '');
         document.getElementById('region-count').textContent = selCountries.size ? '(' + selCountries.size + ')' : '';
         paintCountries(); searchMed();
       });
@@ -809,6 +909,62 @@
         mgMinEl.value = ''; mgMaxEl.value = ''; document.getElementById('mg-exact').value = '';
         paintFormChips(); paintFlags(); paintSrc(); paintMg(); searchMed();
       });
+      function snapshotFilter() {
+        return {
+          v: 1,
+          q: mq.value || "",
+          countries: [...selCountries],
+          forms: [...selForms],
+          src: [...srcSel],
+          strengthMode: document.getElementById("strength-mode").value,
+          mgExact: document.getElementById("mg-exact").value || "",
+          mgMin: mgMinEl.value || "",
+          mgMax: mgMaxEl.value || "",
+          guide: root.dataset.guide || "orig"
+        };
+      }
+      function applyFilter(f) {
+        if (!f || typeof f !== "object") return;
+        mq.value = f.q || "";
+        selCountries.clear();
+        (f.countries || []).forEach((cc) => { if (SRA36.includes(cc)) selCountries.add(cc); });
+        selForms.clear();
+        (f.forms || []).forEach((k) => selForms.add(k));
+        srcSel.clear();
+        (f.src || []).forEach((k) => { if (k === "d" || k === "e") srcSel.add(k); });
+        const mode = f.strengthMode === "range" ? "range" : "exact";
+        document.getElementById("strength-mode").value = mode;
+        document.getElementById("strength-range").hidden = mode !== "range";
+        document.getElementById("mg-exact").hidden = mode === "range";
+        document.getElementById("mg-exact").value = f.mgExact || "";
+        mgMinEl.value = f.mgMin || "";
+        mgMaxEl.value = f.mgMax || "";
+        if (f.guide) setGuide(f.guide);
+        activeCountry = "";
+        focusCountry("");
+        paintFormChips(); paintFlags(); paintSrc(); paintMg();
+        searchMed();
+      }
+      document.getElementById("filter-save").addEventListener("click", () => {
+        const blob = new Blob([JSON.stringify(snapshotFilter())], { type: "application/json" });
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "sra-loc.json";
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+      document.getElementById("filter-load").addEventListener("click", () => document.getElementById("filter-file").click());
+      document.getElementById("filter-file").addEventListener("change", (ev) => {
+        const file = ev.target.files && ev.target.files[0];
+        ev.target.value = "";
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try { applyFilter(JSON.parse(String(reader.result || "{}"))); }
+          catch (e) { mhit.textContent = "Không đọc được file bộ lọc."; }
+        };
+        reader.readAsText(file);
+      });
       function copyFallback(text) {
         const input = document.createElement('textarea'); input.value = text;
         input.style.cssText = 'position:fixed;left:-9999px;top:0'; document.body.appendChild(input);
@@ -837,7 +993,7 @@
         pageSizeEl.addEventListener("change", () => {
           pageSize = Number(pageSizeEl.value || 50);
           try { localStorage.setItem("sra-page", String(pageSize)); } catch (e) {}
-          searchMed();
+          searchMed({ keepPeek: true });
         });
       }
       if (mgroups) {

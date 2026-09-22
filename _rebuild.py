@@ -235,6 +235,65 @@ prefix = prefix.replace(
     '<tr data-df="dump"><td>🇧🇬 Bulgaria</td><td><span class="tag-dump">Có file</span></td><td class="fmt">PDF</td><td>Có — Ctrl+F trên PDF</td>',
     '<tr data-df="dump"><td>🇧🇬 Bulgaria</td><td><span class="tag-dump">Có file</span></td><td class="fmt">Excel</td><td>Có — IAL Register + Centrally Authorised</td>',
 )
+prefix = prefix.replace('<a href="#health">Data</a>', '<a href="#health">Dữ liệu</a>')
+HEALTH_HTML = """    <details class="fold health" id="health">
+      <summary><span class="kicker">Kiểm tra dữ liệu</span> <span id="hsum">Sức khỏe dữ liệu</span></summary>
+      <div class="fold-body">
+        <p class="hint" id="hhero-cap" style="margin:0 0 8px"></p>
+        <div class="health-hero" id="hhero">
+          <div class="ring-box">
+            <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="track" cx="60" cy="60" r="50"></circle>
+              <circle class="fill" id="hring" cx="60" cy="60" r="50"></circle>
+            </svg>
+            <div class="ring-lab"><b id="hring-n">0</b><span>/36 dump gốc</span></div>
+          </div>
+          <div>
+            <div class="htrack" id="htrack"></div>
+            <div class="status-row" id="hst"></div>
+            <div class="health-kpis" id="hkpi"></div>
+          </div>
+        </div>
+        <p class="hint" id="hfunnel-cap"></p>
+        <div id="hfunnel"></div>
+        <div class="health-cov">
+          <div>
+            <p class="hint" id="hcov-cap">Ô càng xanh = dữ liệu càng đủ trường. Bấm một nước để xem biểu đồ tròn.</p>
+            <div class="cov" id="hcov"></div>
+          </div>
+          <aside class="health-pies" aria-label="Biểu đồ dữ liệu">
+            <div class="donut-card">
+              <p class="side-lab">Tổng nguồn</p>
+              <div class="donut-wrap">
+                <div class="donut" id="hdonut"></div>
+                <ul class="donut-leg" id="hleg"></ul>
+              </div>
+            </div>
+            <div class="donut-card" id="hcdonut-card">
+              <p class="side-lab" id="hcdonut-title">Từng nước</p>
+              <div class="donut-wrap">
+                <div class="donut idle country" id="hcdonut"></div>
+                <ul class="donut-leg" id="hcleg"></ul>
+              </div>
+              <p class="hint" id="hcdonut-hint">Bấm một ô nước bên trái để xem tỷ lệ đủ trường.</p>
+            </div>
+          </aside>
+        </div>
+        <div id="hcomp" hidden></div>
+        <div id="hcrawl"></div>
+      </div>
+    </details>
+"""
+prefix, nhealth = re.subn(
+    r'    <details class="fold health" id="health">.*?</details>\r?\n',
+    HEALTH_HTML,
+    prefix,
+    count=1,
+    flags=re.S,
+)
+if nhealth != 1:
+    raise SystemExit(f"health section replace failed ({nhealth})")
+
 
 prefix = prefix.replace(
     '<button type="button" data-guide="orig" class="on">Tiếng gốc</button>',

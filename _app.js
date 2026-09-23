@@ -946,12 +946,21 @@
         const status = document.getElementById('boot-status');
         if (status && message) status.textContent = message;
         const boot = document.getElementById('boot-screen');
-        if (!boot) return;
+        if (!boot || boot.classList.contains('is-done')) return;
         boot.setAttribute('aria-busy', 'false');
-        boot.classList.add('is-done');
-        const remove = () => boot.remove();
-        boot.addEventListener('transitionend', remove, { once: true });
-        setTimeout(remove, 800);
+        boot.style.pointerEvents = 'none';
+        // Heavy parse can skip the fade if we flip opacity in the same turn — paint once, then ease out.
+        void boot.offsetWidth;
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            boot.classList.add('is-done');
+            const remove = () => { if (boot.isConnected) boot.remove(); };
+            boot.addEventListener('transitionend', (ev) => {
+              if (ev.target === boot && ev.propertyName === 'opacity') remove();
+            });
+            setTimeout(remove, 900);
+          });
+        });
       }
       function loadMed() {
         try {

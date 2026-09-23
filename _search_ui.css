@@ -3,9 +3,11 @@
   display: flex; align-items: center; justify-content: center;
   background: linear-gradient(165deg, #f6f1e8 0%, #e4f0eb 42%, #f6f1e8 100%);
   color: var(--ink);
-  transition: opacity .4s ease, visibility .4s ease;
+  opacity: 1;
+  transition: opacity .7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity;
 }
-#boot-screen.is-done { opacity: 0; visibility: hidden; pointer-events: none; }
+#boot-screen.is-done { opacity: 0; pointer-events: none; }
 .boot-panel { text-align: center; padding: 28px 32px; max-width: min(92vw, 360px); }
 .boot-brand { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
 .boot-spinner {

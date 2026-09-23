@@ -44,7 +44,21 @@
     const target = /^\d+(?:[.,]\d+)?$/.test(norm(typed)) ? typed + ' mg' : typed;
     return strengthKey(raw) === strengthKey(target);
   }
-  const api = { norm, strengthKey, mergeRows, strengthMatches };
+  function escapeRe(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+  // Short tokens match at word starts so "an" does not hit inside "phan".
+  function queryMatches(haystack, bits) {
+    if (!bits.length) return true;
+    const hay = String(haystack || '');
+    const phrase = bits.join(' ');
+    if (hay.includes(phrase)) return true;
+    return bits.every(bit => {
+      if (bit.length >= 4) return hay.includes(bit);
+      return new RegExp('(?:^|\\s)' + escapeRe(bit)).test(hay);
+    });
+  }
+  const api = { norm, strengthKey, mergeRows, strengthMatches, queryMatches };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SraData = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

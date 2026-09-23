@@ -29,7 +29,8 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  await page.locator('#vn-only').uncheck();await done();assert.equal(await count(),before);
  await page.locator('#filter-file').setInputFiles(file);await done();assert.equal(await count(),after);
  await page.locator('#vn-only').uncheck();await done();
- await page.locator('#compare-toggle').check();await page.locator('#vn-compare').waitFor({state:'visible'});
+ await page.locator('#compare-toggle').click();await page.locator('#vn-compare').waitFor({state:'visible'});
+ assert.equal(await page.locator('#compare-toggle').getAttribute('aria-pressed'),'true');
  assert.ok(await page.locator('#compare-left .compare-row').count()>0);
  assert.ok(await page.locator('#compare-right .compare-row').count()>0);
  const leftTotal=parseInt((await page.locator('#compare-left-count').innerText()).replace(/[^0-9]/g,''));assert.equal(leftTotal,before);
@@ -49,7 +50,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
   assert.ok(await page.locator('#vn-compare').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'dialog overflow '+width);
   await page.screenshot({path:`qa-compare-${width}.png`});
  }
- await page.keyboard.press('Escape');await page.waitForFunction(()=>!document.getElementById('compare-toggle').checked);
+ await page.keyboard.press('Escape');await page.waitForFunction(()=>document.getElementById('compare-toggle').getAttribute('aria-pressed')!=='true');
  for(const width of [360,390,768,1440]) {
   await page.setViewportSize({width,height:950});await page.locator('#tra').scrollIntoViewIfNeeded();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'page overflow '+width);
@@ -60,7 +61,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  await page.locator('#country-all').click();await done();
  await page.locator('[data-remove-term]').click();await done();
  const all=await count();assert.ok(all>500000);
- const start=Date.now();await page.locator('#compare-toggle').check();
+ const start=Date.now();await page.locator('#compare-toggle').click();
  await page.locator('#compare-right .compare-row').first().waitFor();
  assert.equal(parseInt((await page.locator('#compare-left-count').innerText()).replace(/[^0-9]/g,'')),all);
  console.log('All-results comparison opened in',Date.now()-start,'ms');

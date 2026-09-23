@@ -501,7 +501,7 @@
         const inp = d.querySelector('.cg-q');
         const all = allRows.get(d) || store.get(d) || [];
         const bits = searchText((inp && inp.value) || '').split(/\s+/).filter(Boolean);
-        const list = bits.length ? all.filter((r) => bits.every((bit) => r._search.includes(bit))) : all;
+        const list = bits.length ? all.filter((r) => SraData.queryMatches(r._search, bits)) : all;
         store.set(d, list);
         shownN.set(d, 0);
         const tb = d.querySelector('tbody');
@@ -592,7 +592,7 @@
           for (const cc of eligibleCountries()) {
             const rows = countryData[cc] || [];
             let matches = needFilter
-              ? rows.filter((r) => (!queries.length || queries.some(bits => bits.every(bit => r._search.includes(bit)))) && passes(r, rowSrc(r)) && (!vnOnly.checked || vnIndex.matches(r[1]) || Object.values(r._inns || {}).some(inn => vnIndex.matches(inn))))
+              ? rows.filter((r) => (!queries.length || queries.some(bits => SraData.queryMatches(r._search, bits))) && passes(r, rowSrc(r)) && (!vnOnly.checked || vnIndex.matches(r[1]) || Object.values(r._inns || {}).some(inn => vnIndex.matches(inn))))
               : rows;
             if (vnOnly.checked && vnOptions.excludeDomestic) matches = matches.filter(r => {
               const state=vnDomestic(r);
@@ -986,8 +986,15 @@
 
       if (mgo) mgo.addEventListener("click", () => pickSuggest(mq.value));
       vnOnly.addEventListener('change', () => { configureVn(); searchMed({keepPeek: true}); });
-      document.getElementById('compare-toggle').addEventListener('change', ev => {
-        if(ev.target.checked) {if(!hasSearched) {ev.target.checked=false; mhit.textContent='Bấm Tìm thuốc trước khi so sánh.';return;} compare?.open();}
+      document.getElementById('compare-toggle').addEventListener('click', () => {
+        const btn = document.getElementById('compare-toggle');
+        if (btn.getAttribute('aria-pressed') === 'true') {
+          document.getElementById('vn-compare').close();
+          return;
+        }
+        if (!hasSearched) { mhit.textContent = 'Bấm Tìm thuốc trước khi so sánh.'; return; }
+        btn.setAttribute('aria-pressed', 'true');
+        compare?.open();
       });
       if (msrc) msrc.addEventListener("click", (ev) => {
         const b = ev.target.closest("button[data-src]");

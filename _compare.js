@@ -51,7 +51,7 @@ function SraCompare(options) {
   el('all').addEventListener('click',()=>{s.focus=null;relate();});
   el('close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{
-    clearTimeout(timer);document.getElementById('compare-toggle').checked=false;
+    clearTimeout(timer);document.getElementById('compare-toggle').setAttribute('aria-pressed','false');
     s={entries:[],left:[],right:[],hits:[],focus:null,lp:0,rp:0};
     el('left').replaceChildren();el('right').replaceChildren();
   });

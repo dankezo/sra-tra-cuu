@@ -4,9 +4,20 @@ function SraCompare(options) {
   const el=id=>document.getElementById('compare-'+id);
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const pageSize=40;
+  const loupe='<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
   let index=null, timer=0, s={entries:[],left:[],right:[],focus:null,lp:0,rp:0}, exporting=false;
   const assessment=r=>options.assessments().get(r.id);
   const reason=r=>options.reasons[assessment(r)?.reason] || 'chưa đủ dữ liệu';
+  function companyHtml(name, vn){
+    if(!name) return esc(vn ? 'Chưa có công ty đăng ký' : 'Chưa có công ty');
+    const link=options.companyLink(name);
+    const tip={official:'Website công ty',profile:'Giới thiệu công ty',search:'Google Search'}[link.kind] || 'Google Search';
+    return `<a class="compare-co" href="${esc(link.url)}" target="_blank" rel="noopener" title="${esc(tip)}">${esc(name)}</a>`;
+  }
+  function sourceBtn(url, product, agency){
+    if(!url) return '';
+    return `<a class="compare-source" href="${esc(url)}" data-copy-product="${esc(product || '')}" target="_blank" rel="noopener" title="Mở ${esc(agency || 'nguồn')}; sao chép tên thuốc">${loupe}<span class="visually-hidden">Mở nguồn và sao chép tên thuốc</span></a>`;
+  }
   function scoped(){return s.focus?[s.focus]:s.left;}
   function pager(side,n,p){
     const pages=Math.max(1,Math.ceil(n/pageSize));
@@ -17,8 +28,16 @@ function SraCompare(options) {
   function paintLeft(){
     el('left-count').textContent='· '+s.left.length.toLocaleString('vi-VN');
     el('left').innerHTML=s.left.slice(s.lp*pageSize,(s.lp+1)*pageSize).map((entry,j)=>{
-      const r=entry.row;
-      return `<button type="button" class="compare-row" data-compare-row="${s.lp*pageSize+j}" aria-pressed="${s.focus===entry}"><span class="compare-tag">${esc(countryName(entry.cc))}</span><strong>${esc(r[2] || 'Chưa có tên thuốc')}</strong><span>${esc(r[1] || 'Chưa có hoạt chất')}</span><small>${esc(r[4] || 'Chưa có hàm lượng')} · ${esc(r[3] || 'Chưa có dạng')}</small><small>${entry.cc==='VN'?'Công ty đăng ký: ':''}${esc(r[5] || 'Chưa có công ty')}</small></button>`;
+      const r=entry.row, vn=entry.cc==='VN', src=options.sourceOf(entry.cc, r);
+      return `<article class="compare-row" data-compare-row="${s.lp*pageSize+j}" aria-pressed="${s.focus===entry}" tabindex="0">`+
+        sourceBtn(src.url, r[2], src.agency)+
+        `<span class="compare-tag">${esc(countryName(entry.cc))}</span>`+
+        `<strong>${esc(r[2] || 'Chưa có tên thuốc')}</strong>`+
+        `<span><span class="compare-k">Hoạt chất</span> ${esc(r[1] || 'Chưa có hoạt chất')}</span>`+
+        `<small><span class="compare-k">Hàm lượng</span> ${esc(r[4] || 'Chưa có hàm lượng')} · <span class="compare-k">Dạng</span> ${esc(options.formLabel(r[3]))}</small>`+
+        `<small><span class="compare-k">${vn?'Công ty đăng ký':'Công ty'}</span> ${companyHtml(r[5], vn)}</small>`+
+        (vn ? `<small><span class="compare-k">SĐK</span> ${esc(r[8] || '—')} · <span class="compare-k">Hạn</span> ${esc(options.assessments().get(r[7])?.record?.expiry || options.assessments().get(r[7])?.expiry || 'chưa rõ')}</small>` : '')+
+      `</article>`;
     }).join('') || '<p class="compare-empty">Không có kết quả trong phạm vi này.</p>';
     pager('left',s.left.length,s.lp);
     el('context').textContent=s.focus ? 'Đối chiếu riêng: '+(s.focus.row[2] || s.focus.row[1]) : 'Đối chiếu toàn bộ '+s.left.length.toLocaleString('vi-VN')+' kết quả hiện tại';
@@ -26,12 +45,23 @@ function SraCompare(options) {
   }
   function paintRight(){
     const q=fold(el('right-query').value);
+    const davUrl='https://dichvucong.dav.gov.vn/congbothuoc/index';
     s.right=s.hits.filter(hit=>assessment(hit.record)?.reason==='eligible' && (!q || fold([hit.record.sdk,hit.record.product,hit.record.inn,hit.record.registrant,hit.record.strength].join(' ')).includes(q)));
     s.rp=Math.min(s.rp,Math.max(0,Math.ceil(s.right.length/pageSize)-1));
     el('right-count').textContent='· '+s.right.length.toLocaleString('vi-VN');
     el('right').innerHTML=s.right.slice(s.rp*pageSize,(s.rp+1)*pageSize).map(hit=>{
       const r=hit.record, a=assessment(r);
-      return `<article class="compare-row"><span class="compare-tag">${esc(hit.kind)} · ${esc(hit.matched.join(', '))}</span><strong>${esc(r.product || 'Chưa có tên thuốc')}</strong><span>${esc(r.inn)}</span><small>${esc(r.strength || 'Chưa có hàm lượng')} · ${esc(r.form || 'Chưa có dạng')}</small><small>Công ty đăng ký: ${esc(r.registrant || 'Chưa có dữ liệu')}</small><small>SĐK: ${esc(r.sdk)} · Hạn: ${esc(a?.expiry || r.expiry || 'Chưa rõ')}</small><span class="compare-verdict ok">${esc(reason(r))}</span><button type="button" class="quiet-button compare-copy" data-copy-sdk="${esc(r.sdk)}">Sao chép SĐK</button></article>`;
+      return `<article class="compare-row">`+
+        sourceBtn(davUrl, r.product, 'DAV')+
+        `<span class="compare-tag">${esc(hit.kind)} · ${esc(hit.matched.join(', '))}</span>`+
+        `<strong>${esc(r.product || 'Chưa có tên thuốc')}</strong>`+
+        `<span><span class="compare-k">Hoạt chất</span> ${esc(r.inn || 'Chưa có hoạt chất')}</span>`+
+        `<small><span class="compare-k">Hàm lượng</span> ${esc(r.strength || 'Chưa có hàm lượng')} · <span class="compare-k">Dạng</span> ${esc(options.formLabel(r.form))}</small>`+
+        `<small><span class="compare-k">Công ty đăng ký</span> ${companyHtml(r.registrant, true)}</small>`+
+        `<small><span class="compare-k">SĐK</span> ${esc(r.sdk || '—')} · <span class="compare-k">Hạn</span> ${esc(a?.expiry || r.expiry || 'Chưa rõ')}</small>`+
+        `<span class="compare-verdict ok">${esc(reason(r))}</span>`+
+        `<button type="button" class="quiet-button compare-copy" data-copy-sdk="${esc(r.sdk)}">Sao chép SĐK</button>`+
+      `</article>`;
     }).join('') || '<p class="compare-empty">Không có hồ sơ DAV đạt bộ lọc VN khớp thành phần trong phạm vi này. Thử đổi từ khóa hoặc chọn dòng khác bên trái.</p>';
     pager('right',s.right.length,s.rp);
   }
@@ -45,6 +75,9 @@ function SraCompare(options) {
     const q=fold(el('left-query').value);
     s.left=s.entries.filter(e=>!q || e.search.includes(q));s.lp=0;s.focus=null;relate();
   }
+  function focusRow(ix){
+    s.focus=s.left[Number(ix)];relate();
+  }
   el('left-query').addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(filterLeft,160);});
   el('right-query').addEventListener('input',()=>{s.rp=0;paintRight();});
   el('all').addEventListener('click',()=>{s.focus=null;relate();});
@@ -54,13 +87,22 @@ function SraCompare(options) {
     s={entries:[],left:[],right:[],hits:[],focus:null,lp:0,rp:0};
     el('left').replaceChildren();el('right').replaceChildren();
   });
-  dialog.addEventListener('click',async ev=>{
+  dialog.addEventListener('keydown',ev=>{
     const row=ev.target.closest('[data-compare-row]');
-    if(row){s.focus=s.left[Number(row.dataset.compareRow)];relate();return;}
+    if(row && (ev.key==='Enter' || ev.key===' ')){ev.preventDefault();focusRow(row.dataset.compareRow);}
+  });
+  dialog.addEventListener('click',async ev=>{
+    if(ev.target.closest('a, button, input, select, textarea, label')){
+      const copy=ev.target.closest('[data-copy-sdk]');
+      if(copy){try {await navigator.clipboard.writeText(copy.dataset.copySdk);el('status').textContent='Đã sao chép SĐK.';}catch(_){el('status').textContent='SĐK: '+copy.dataset.copySdk;}}
+      const src=ev.target.closest('a.compare-source');
+      if(src && src.dataset.copyProduct) el('status').textContent='Đã sao chép tên thuốc — dán vào ô tìm của nguồn.';
+      return;
+    }
+    const row=ev.target.closest('[data-compare-row]');
+    if(row){focusRow(row.dataset.compareRow);return;}
     const page=ev.target.closest('[data-compare-page]');
-    if(page){const [side,direction]=page.dataset.comparePage.split(':');if(side==='left'){s.lp+=Number(direction);paintLeft();el('left').scrollTop=0;}else{s.rp+=Number(direction);paintRight();el('right').scrollTop=0;}return;}
-    const copy=ev.target.closest('[data-copy-sdk]');
-    if(copy){try {await navigator.clipboard.writeText(copy.dataset.copySdk);el('status').textContent='Đã sao chép SĐK.';}catch(_){el('status').textContent='SĐK: '+copy.dataset.copySdk;}}
+    if(page){const [side,direction]=page.dataset.comparePage.split(':');if(side==='left'){s.lp+=Number(direction);paintLeft();el('left').scrollTop=0;}else{s.rp+=Number(direction);paintRight();el('right').scrollTop=0;}}
   });
   el('export').addEventListener('click',async()=>{
     if(exporting)return;

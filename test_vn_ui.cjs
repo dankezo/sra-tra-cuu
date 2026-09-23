@@ -6,6 +6,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  const page=await browser.newPage({viewport:{width:1440,height:950}}),errors=[];
  page.on('pageerror', e=>errors.push(e.message));
  await page.goto('file:///'+path.resolve('index.html').replaceAll('\\','/'));
+ assert.equal(await page.locator('#boot-screen').count(),1);
+ await page.locator('#mq').waitFor();
+ await page.waitForFunction(()=>!document.getElementById('boot-screen') || document.getElementById('boot-screen').classList.contains('is-done'));
  assert.equal(await page.locator('#compare-right-count').count(),1);
  const done=()=>page.waitForFunction(()=>/dòng|Không có kết quả/.test(document.querySelector('#tra-hit').textContent));
  const count=async()=>parseInt((await page.locator('#tra-hit').innerText()).replaceAll('.','')) || 0;
@@ -33,6 +36,9 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  assert.equal(await page.locator('#compare-toggle').getAttribute('aria-pressed'),'true');
  assert.ok(await page.locator('#compare-left .compare-row').count()>0);
  assert.ok(await page.locator('#compare-right .compare-row').count()>0);
+ assert.ok(await page.locator('#compare-left .compare-k').count()>0);
+ assert.ok(await page.locator('#compare-left .compare-source').count()>0);
+ assert.ok(await page.locator('#compare-left .compare-co').count()>0);
  assert.equal(await page.locator('#compare-eligible').count(),0);
  const leftTotal=parseInt((await page.locator('#compare-left-count').innerText()).replace(/[^0-9]/g,''));assert.equal(leftTotal,before);
  await page.locator('#compare-left .compare-row').first().click();assert.match(await page.locator('#compare-context').innerText(),/Đối chiếu riêng/);

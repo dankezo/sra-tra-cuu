@@ -213,6 +213,21 @@ if "/* sra-search-ui */" in prefix:
 else:
     prefix = prefix.replace("  </style>", CSS + "  </style>", 1)
 
+BOOT = """  <div id="boot-screen" role="status" aria-live="polite" aria-busy="true">
+    <div class="boot-panel">
+      <p class="boot-brand">Bảo An Pharma</p>
+      <div class="boot-spinner" aria-hidden="true"></div>
+      <p id="boot-status">Đang tải tra cứu thuốc…</p>
+      <p class="boot-note">Chỉ mục lớn — vui lòng chờ giây lát</p>
+    </div>
+  </div>
+"""
+if 'id="boot-screen"' not in prefix:
+    if "<body>\r\n" in prefix:
+        prefix = prefix.replace("<body>\r\n", "<body>\r\n" + BOOT, 1)
+    else:
+        prefix = prefix.replace("<body>\n", "<body>\n" + BOOT, 1)
+
 TRA = (root / "_search_ui.html").read_text(encoding="utf-8")
 
 prefix, ntra = re.subn(

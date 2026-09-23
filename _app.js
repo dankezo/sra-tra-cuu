@@ -942,6 +942,17 @@
           return { inn: it.inn, key: it.key, kind: it.kind, n: it.n, ccs: it.cc.size };
         }).sort((a, b) => b.n - a.n);
       }
+      function dismissBoot(message) {
+        const status = document.getElementById('boot-status');
+        if (status && message) status.textContent = message;
+        const boot = document.getElementById('boot-screen');
+        if (!boot) return;
+        boot.setAttribute('aria-busy', 'false');
+        boot.classList.add('is-done');
+        const remove = () => boot.remove();
+        boot.addEventListener('transitionend', remove, { once: true });
+        setTimeout(remove, 800);
+      }
       function loadMed() {
         try {
           const d = JSON.parse(document.getElementById("sra-med").textContent);
@@ -962,7 +973,19 @@
           compare=SraCompare({dialog:document.getElementById('vn-compare'),records:vnSnapshot?.records || [],
             assessments:()=>vnAssessments,reasons:vnReasons,countryName,fold:searchText,
             getResults:()=>[...mgroups.querySelectorAll('details.cg')].flatMap(d=>(store.get(d)||[]).map(r=>({cc:d.dataset.cc,row:r}))),
-            sourceUrl:cc=>srcOf(cc).url});
+            sourceUrl:cc=>srcOf(cc).url,
+            companyLink,
+            formLabel:raw=>{
+              const k=formKey(raw);
+              if(!k) return raw || 'Chưa có dạng';
+              return (FORM_LBL[k] && FORM_LBL[k].vi) || raw || 'Chưa có dạng';
+            },
+            sourceOf:(cc,r)=>{
+              const sources=r._sources || [rowSrc(r)];
+              const preferDump=sources.includes('d') || !sources.includes('e');
+              if(preferDump){const s=srcOf(cc);return {url:s.url,agency:s.agency};}
+              return {url:SRC.EMA.url,agency:'EMA'};
+            }});
           buildInns();
           buildCountryData();
           paintCountries();
@@ -974,11 +997,14 @@
           mmeta.textContent = MED.length.toLocaleString("vi-VN") + " dòng từ 36 nước SRA & Việt Nam · " + (d.u || "");
           paintHealth();
           hydrateFlags();
+          dismissBoot();
         } catch (e) {
           mmeta.textContent = "Không đọc được chỉ mục thuốc trên trang.";
+          dismissBoot('Không đọc được dữ liệu thuốc.');
         }
       }
-      loadMed();
+      // Let the boot screen paint before the heavy index parse.
+      setTimeout(loadMed, 0);
       setGuide(saved);
       guideBtns.forEach((b) => b.addEventListener("click", () => setGuide(b.dataset.guide)));
       window.addEventListener("beforeprint", () => paintUi(root.dataset.guide, true));

@@ -450,6 +450,37 @@
         }
       }
 
+      function termText(item) {
+        return typeof item === 'string' ? item : (item && item.term) || '';
+      }
+      function termKind(item) {
+        return typeof item === 'string' ? '' : (item && item.kind) || '';
+      }
+      function resolveTermKind(term, kind) {
+        if (kind) return kind;
+        const key = searchText(term);
+        const hits = INNS.filter((it) => it.key === key);
+        return hits.length === 1 ? hits[0].kind : '';
+      }
+      function rowMatchesTerm(r, term, kind) {
+        const key = searchText(term);
+        const bits = key.split(/\s+/).filter(Boolean);
+        if (!bits.length) return true;
+        const resolved = resolveTermKind(term, kind);
+        // Company suggestions must match the registrant/MAH field exactly (folded),
+        // otherwise shared tokens like "cong ty co phan duoc ... an" leak across firms.
+        if (resolved === 'Công ty') return SraData.companyExactMatch(r[5] || '', term);
+        if (resolved === 'Hoạt chất') {
+          const inns = [r[1], ...Object.values(r._inns || {})].map(searchText);
+          return inns.some((hay) => SraData.queryMatches(hay, bits));
+        }
+        if (resolved === 'Tên thuốc') return SraData.queryMatches(searchText(r[2] || ''), bits);
+        return SraData.queryMatches(r._search, bits);
+      }
+      function rowMatchesQueries(r) {
+        if (!searchTerms.length) return true;
+        return searchTerms.some((item) => rowMatchesTerm(r, termText(item), termKind(item)));
+      }
       function hideSuggest() {
         window.clearTimeout(sugTimer);
         if (!suggest) return;
@@ -462,14 +493,14 @@
         if (!items.length) { hideSuggest(); return; }
         suggest.hidden = false;
         suggest.innerHTML = items.map((it, i) => {
-          return "<button type=\"button\" class=\"" + (i === sugIx ? "on" : "") + "\"><span class=\"inn\">" + esc(it.inn) + "</span><span class=\"n\">" + esc(it.kind) + " · " + it.n + " dòng · " + it.ccs + "</span></button>";
+          return "<button type=\"button\" data-kind=\"" + esc(it.kind) + "\" class=\"" + (i === sugIx ? "on" : "") + "\"><span class=\"inn\">" + esc(it.inn) + "</span><span class=\"n\">" + esc(it.kind) + " · " + it.n + " dòng · " + it.ccs + "</span></button>";
         }).join("");
       }
       function matchInns(qstr) {
         const v = searchText(qstr);
         if (v.length < 2) return [];
         const priority = { 'Hoạt chất': 0, 'Tên thuốc': 1, 'Công ty': 2 };
-        const selectedTerms = new Set(searchTerms.map(searchText));
+        const selectedTerms = new Set(searchTerms.map((item) => searchText(termText(item))));
         return INNS.filter(it => it.key.includes(v) && !selectedTerms.has(searchText(it.inn)))
           .sort((a,b) => priority[a.kind] - priority[b.kind] || Number(b.key.startsWith(v)) - Number(a.key.startsWith(v)) || b.n - a.n)
           .slice(0, 12);
@@ -500,8 +531,8 @@
       function filterCard(d) {
         const inp = d.querySelector('.cg-q');
         const all = allRows.get(d) || store.get(d) || [];
-        const bits = searchText((inp && inp.value) || '').split(/\s+/).filter(Boolean);
-        const list = bits.length ? all.filter((r) => SraData.queryMatches(r._search, bits)) : all;
+        const q = (inp && inp.value) || '';
+        const list = searchText(q) ? all.filter((r) => rowMatchesTerm(r, q, '')) : all;
         store.set(d, list);
         shownN.set(d, 0);
         const tb = d.querySelector('tbody');
@@ -578,7 +609,7 @@
         hideSuggest();
         mnone.style.display = "none";
         mhit.textContent = "Đang lọc…";
-        const queries = searchTerms.map(term => searchText(term).split(/\s+/).filter(Boolean));
+        const queries = searchTerms.slice();
         const needFilter = queries.length > 0 || extraFiltersOn();
         const gen = (searchMed._gen = (searchMed._gen || 0) + 1);
         const run = () => {
@@ -592,7 +623,7 @@
           for (const cc of eligibleCountries()) {
             const rows = countryData[cc] || [];
             let matches = needFilter
-              ? rows.filter((r) => (!queries.length || queries.some(bits => SraData.queryMatches(r._search, bits))) && passes(r, rowSrc(r)) && (!vnOnly.checked || vnIndex.matches(r[1]) || Object.values(r._inns || {}).some(inn => vnIndex.matches(inn))))
+              ? rows.filter((r) => (!queries.length || rowMatchesQueries(r)) && passes(r, rowSrc(r)) && (!vnOnly.checked || vnIndex.matches(r[1]) || Object.values(r._inns || {}).some(inn => vnIndex.matches(inn))))
               : rows;
             if (vnOnly.checked && vnOptions.excludeDomestic) matches = matches.filter(r => {
               const state=vnDomestic(r);
@@ -655,12 +686,18 @@
         window.setTimeout(run, 0);
       }
       function paintSearchTerms() {
-        document.getElementById('search-terms').innerHTML = searchTerms.map((term, i) => `<span class="search-term"><span>${esc(term)}</span><button type="button" data-remove-term="${i}" aria-label="Xoá ${esc(term)}">×</button></span>`).join('');
+        document.getElementById('search-terms').innerHTML = searchTerms.map((item, i) => {
+          const term = termText(item);
+          return `<span class="search-term"><span>${esc(term)}</span><button type="button" data-remove-term="${i}" aria-label="Xoá ${esc(term)}">×</button></span>`;
+        }).join('');
         document.getElementById('search-terms').hidden = !searchTerms.length;
       }
-      function pickSuggest(term) {
+      function pickSuggest(term, kind) {
         term = String(term || '').trim();
-        if (term && !searchTerms.some(t => searchText(t) === searchText(term))) searchTerms.push(term);
+        kind = resolveTermKind(term, kind || '');
+        if (term && !searchTerms.some((t) => searchText(termText(t)) === searchText(term))) {
+          searchTerms.push(kind ? { term, kind } : term);
+        }
         mq.value = '';
         paintSearchTerms();
         hideSuggest();
@@ -978,6 +1015,13 @@
           for(const v of vnSnapshot?.records || []) {
             const row=['VN',v.inn,v.product,v.form,v.strength,v.registrant,'d',v.id,v.sdk];
             row._sources=['d'];row._inns={d:v.inn};MED.push(row);
+            const co = v.registrant || '';
+            if (co && !SITES[co]) {
+              const key = searchText(co);
+              if (key.includes('duoc my pham bao an') && !key.includes('quoc te')) {
+                SITES[co] = { url: 'https://baoanpharma.com', kind: 'official' };
+              }
+            }
           }
           compare=SraCompare({dialog:document.getElementById('vn-compare'),records:vnSnapshot?.records || [],
             assessments:()=>vnAssessments,reasons:vnReasons,countryName,fold:searchText,
@@ -1130,7 +1174,13 @@
         vnNote.hidden = !vnOnly.checked && !vnOnly.disabled;
         configureVn();
         mq.value = typeof f.q === 'string' ? f.q : '';
-        searchTerms = [...new Map((Array.isArray(f.terms) ? f.terms : [mq.value]).filter(t => typeof t === 'string' && t.trim()).map(t => [searchText(t), t.trim()])).values()];
+        searchTerms = [...new Map((Array.isArray(f.terms) ? f.terms : [mq.value]).map((t) => {
+          if (typeof t === 'string' && t.trim()) return [searchText(t), t.trim()];
+          if (t && typeof t === 'object' && typeof t.term === 'string' && t.term.trim()) {
+            return [searchText(t.term), { term: t.term.trim(), kind: t.kind || '' }];
+          }
+          return null;
+        }).filter(Boolean)).values()];
         if (!Array.isArray(f.terms)) mq.value = '';
         paintSearchTerms();
         selCountries.clear();
@@ -1266,7 +1316,7 @@
           else if (ev.key === "Enter") {
             if (sugIx >= 0 && items[sugIx]) {
               ev.preventDefault();
-              pickSuggest(items[sugIx].querySelector(".inn").textContent);
+              pickSuggest(items[sugIx].querySelector(".inn").textContent, items[sugIx].dataset.kind || '');
             } else { ev.preventDefault(); pickSuggest(mq.value); }
           }
         });
@@ -1276,7 +1326,7 @@
           const b = ev.target.closest("button");
           if (!b) return;
           ev.preventDefault();
-          pickSuggest(b.querySelector(".inn").textContent);
+          pickSuggest(b.querySelector(".inn").textContent, b.dataset.kind || '');
         });
       }
       document.addEventListener("click", (ev) => {

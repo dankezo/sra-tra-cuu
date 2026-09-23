@@ -58,7 +58,13 @@
       return new RegExp('(?:^|\\s)' + escapeRe(bit)).test(hay);
     });
   }
-  const api = { norm, strengthKey, mergeRows, strengthMatches, queryMatches };
+  const fold = value => norm(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd');
+  /** Exact folded company match — used when the selected term is a company suggestion. */
+  function companyExactMatch(company, term) {
+    const a = fold(company), b = fold(term);
+    return !!a && a === b;
+  }
+  const api = { norm, fold, strengthKey, mergeRows, strengthMatches, queryMatches, companyExactMatch };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SraData = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

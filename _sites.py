@@ -498,6 +498,9 @@ BRANDS = [
     ("medochemie", "https://www.medochemie.com"),
     ("wala heilmittel", "https://www.wala.ch"),
     ("aurovitas", "https://www.aurobindo.com"),
+    ("cong ty co phan duoc my pham bao an", "https://baoanpharma.com"),
+    ("duoc my pham bao an", "https://baoanpharma.com"),
+    ("bao an pharma", "https://baoanpharma.com"),
 ]
 
 

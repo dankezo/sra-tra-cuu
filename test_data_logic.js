@@ -30,4 +30,9 @@ assert.ok(!queryMatches(vipharco, baoAn.split(' ')), 'an must not match inside p
 assert.ok(!queryMatches(tenamyd, baoAn.split(' ')), 'company tokens must not leak across fields');
 assert.ok(queryMatches('atorvastatin calcium 20mg company', ['atorvastatin','calcium']), 'multi-field INN still matches');
 assert.ok(queryMatches('atorvastatin calcium', ['atorva']), 'longer partial INN still matches');
+const {companyExactMatch} = require('./_data_logic');
+assert.ok(companyExactMatch('Công ty cổ phần dược mỹ phẩm Bảo An', baoAn));
+assert.ok(companyExactMatch('CÔNG TY CỔ PHẦN DƯỢC MỸ PHẨM BẢO AN', 'Công ty cổ phần dược mỹ phẩm Bảo An'));
+assert.ok(!companyExactMatch('Công ty cổ phần Dược Mỹ phẩm Quốc tế Bảo An', baoAn), 'Quốc tế Bảo An is a different firm');
+assert.ok(!companyExactMatch('Công ty cổ phần dược phẩm Me Di Sun', baoAn), 'Me Di Sun must not match Bảo An');
 console.log('PASS: merge identity, completeness, variants, provenance, strength units, company query tokens');

@@ -16,7 +16,7 @@ Ngày 23/09/2026: 8.752 hồ sơ đạt điều kiện trước danh mục 93; l
 
 ## So sánh hai bên
 
-Mở từ thanh chọn/xuất kết quả. Bên trái là bản chụp toàn bộ kết quả đang hiển thị theo tìm kiếm, quốc gia và lọc trong thẻ từng nước, kể cả những dòng chưa mở trang. Bên phải là các hồ sơ DAV có thành phần khớp với phạm vi bên trái. Có thể chọn một dòng, quay lại tất cả, tìm nhanh từng bên, phân trang 40 dòng, chỉ giữ DAV đạt bộ lọc, sao chép SĐK và xuất Excel. Đóng bằng nút × hoặc Escape sẽ bỏ tick chế độ so sánh.
+Mở từ thanh chọn/xuất kết quả. Bên trái là bản chụp toàn bộ kết quả đang hiển thị theo tìm kiếm, quốc gia và lọc trong thẻ từng nước, kể cả những dòng chưa mở trang. Bên phải chỉ hiện hồ sơ DAV đạt bộ lọc VN có thành phần khớp với phạm vi bên trái. Có thể chọn một dòng, quay lại tất cả, tìm nhanh từng bên, phân trang 40 dòng, sao chép SĐK và xuất Excel. Đóng bằng nút × hoặc Escape sẽ tắt chế độ so sánh.
 
 So khớp bỏ dấu, không phân biệt hoa thường, tách thành phần phối hợp và hàm lượng có đơn vị. Một số biến thể được chuẩn hóa có kiểm soát: acetaminophen/paracetamol, aciclovir/acyclovir, chữ e cuối tên dài, hydrochloride/hydroclorid. Không dùng khoảng cách ký tự tùy ý. “Gần khớp cách viết” và “khớp thành phần” không phải xác nhận tương đương điều trị. Mỗi hồ sơ DAV xuất hiện tối đa một lần dù khớp nhiều kết quả; vẫn ghi các hoạt chất cùng khớp.
 

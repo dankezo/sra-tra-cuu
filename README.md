@@ -36,7 +36,7 @@ Việt Nam xuất hiện cùng các quốc gia khác trong tìm kiếm, danh sá
 
 Ô **🇻🇳 Hoạt chất ở VN** chỉ bật/tắt. Khi bật, tự giữ tân dược thương mại có hoạt chất, hạn rõ ràng và còn ít nhất 36 tháng; loại cờ thu hồi/hết hạn và ô khớp danh mục 93 theo đủ hoạt chất–hàm lượng–dạng. Theo dữ liệu ngày 23/09/2026, còn **7.785 hồ sơ đạt** làm tập đối chiếu. Bỏ tick phục hồi toàn bộ dữ liệu theo các bộ lọc tìm kiếm khác. Liên kết **Giải thích bộ lọc VN** chỉ mở thông tin, không có lựa chọn nhóm thầu hay mốc tháng.
 
-Bật **So sánh với VN** cạnh Xuất Excel để mở cửa sổ hai bên: kết quả tìm kiếm hiện tại và hồ sơ DAV có thành phần khớp/gần khớp cách viết. Có tìm nhanh, phân trang, chọn một dòng hoặc tất cả, chỉ xem DAV đạt điều kiện, sao chép SĐK. Nút xuất tạo `.xlsx` thật với hai worksheet **Kết quả chính** và **DAV đối chiếu**, gồm toàn bộ phạm vi đang đối chiếu, không chỉ trang đang hiện. Khi chọn riêng một dòng, sheet chính chứa dòng đó; khi đối chiếu tất cả, sheet chính chứa toàn bộ kết quả sau ô tìm nhanh bên trái. Sheet DAV tôn trọng ô tìm nhanh bên phải và lựa chọn DAV đạt điều kiện.
+Bật **So sánh với VN** cạnh Xuất Excel để mở cửa sổ hai bên: kết quả tìm kiếm hiện tại và hồ sơ DAV đạt bộ lọc VN có thành phần khớp/gần khớp cách viết. Có tìm nhanh, phân trang, chọn một dòng hoặc tất cả, sao chép SĐK. Nút xuất tạo `.xlsx` thật với hai worksheet **Kết quả chính** và **DAV đối chiếu**, gồm toàn bộ phạm vi đang đối chiếu, không chỉ trang đang hiện. Khi chọn riêng một dòng, sheet chính chứa dòng đó; khi đối chiếu tất cả, sheet chính chứa toàn bộ kết quả sau ô tìm nhanh bên trái. Sheet DAV tôn trọng ô tìm nhanh bên phải và chỉ gồm hồ sơ đạt bộ lọc VN.
 
 Xem [quy tắc và giới hạn](VN_FILTER.md). Đóng downloader DAV trước khi nhập lại; cập nhật dữ liệu và build:
 

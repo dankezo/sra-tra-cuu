@@ -962,7 +962,7 @@
           compare=SraCompare({dialog:document.getElementById('vn-compare'),records:vnSnapshot?.records || [],
             assessments:()=>vnAssessments,reasons:vnReasons,countryName,fold:searchText,
             getResults:()=>[...mgroups.querySelectorAll('details.cg')].flatMap(d=>(store.get(d)||[]).map(r=>({cc:d.dataset.cc,row:r}))),
-            vnEnabled:()=>vnOnly.checked,sourceUrl:cc=>srcOf(cc).url});
+            sourceUrl:cc=>srcOf(cc).url});
           buildInns();
           buildCountryData();
           paintCountries();

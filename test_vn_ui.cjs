@@ -33,13 +33,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  assert.equal(await page.locator('#compare-toggle').getAttribute('aria-pressed'),'true');
  assert.ok(await page.locator('#compare-left .compare-row').count()>0);
  assert.ok(await page.locator('#compare-right .compare-row').count()>0);
+ assert.equal(await page.locator('#compare-eligible').count(),0);
  const leftTotal=parseInt((await page.locator('#compare-left-count').innerText()).replace(/[^0-9]/g,''));assert.equal(leftTotal,before);
  await page.locator('#compare-left .compare-row').first().click();assert.match(await page.locator('#compare-context').innerText(),/Đối chiếu riêng/);
  await page.locator('#compare-all').click();assert.match(await page.locator('#compare-context').innerText(),/toàn bộ/);
  const totalDAV=parseInt((await page.locator('#compare-right-count').innerText()).replace(/[^0-9]/g,''));
- await page.locator('#compare-eligible').check();
- const eligibleDAV=parseInt((await page.locator('#compare-right-count').innerText()).replace(/[^0-9]/g,''));assert.ok(eligibleDAV>0 && eligibleDAV<totalDAV);
- await page.locator('#compare-eligible').uncheck();
+ assert.ok(totalDAV>0);
+ const verdicts=await page.locator('#compare-right .compare-verdict').allTextContents();
+ assert.ok(verdicts.every(t=>/đủ điều kiện/i.test(t)),JSON.stringify(verdicts.slice(0,5)));
  await page.locator('#compare-right-query').fill('nonexistent-zzzz');assert.equal(await page.locator('#compare-right .compare-row').count(),0);
  await page.locator('#compare-right-query').fill('');
  const downloadEvent=page.waitForEvent('download');await page.locator('#compare-export').click();const download=await downloadEvent;
@@ -67,6 +68,6 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  console.log('All-results comparison opened in',Date.now()-start,'ms');
  await page.locator('#compare-close').click();
  assert.deepEqual(errors,[]);
- console.log(JSON.stringify({before,after,leftTotal,totalDAV,eligibleDAV}));
+ console.log(JSON.stringify({before,after,leftTotal,totalDAV}));
  } finally {await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

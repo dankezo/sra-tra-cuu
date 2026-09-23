@@ -16,6 +16,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 
 from _sites import company_sites
+from _explicit_fields import explicit_form, explicit_strength
 
 ROOT = Path(__file__).resolve().parent
 RAW = ROOT / "data" / "raw"
@@ -77,11 +78,11 @@ def clean(s: str, n: int) -> str:
     return re.sub(r"\s+", " ", (s or "")).strip()[:n]
 
 
-def add_row(rows, country, inn, name, form, strength, company="", extra="", src=""):
+def add_row(rows, country, inn, name, form, strength, company="", extra="", src="", infer_strength=True):
     inn = clean(inn, 240)
     name = clean(name, 240)
     form = clean(form, 160)
-    strength = clean(strength, 80) or strength_from(name) or strength_from(inn)
+    strength = clean(strength, 80) or ((strength_from(name) or strength_from(inn)) if infer_strength else "")
     company = clean(company, 180)
     extra = clean(extra, 120)
     if not inn and not name:
@@ -838,11 +839,17 @@ def parse_ch_swiss(rows, path: Path):
         inn = hg("wirkstoff", "principe")
         company = hg("zulassungsinhaber", "inhaberin", "titulaire")
         extra = hg("zulassungs-\nnummer", "zulassungsnummer", "n° d'autorisation")
-        strength = strength_from(name) or strength_from(hg("zusammensetzung", "composition"))
+        strength = explicit_strength(name)
+        if not strength:
+            composition = hg("zusammensetzung", "composition")
+            # Only the first declared active ingredient, never an arbitrary excipient dose.
+            first_active = re.split(r"[,;\n]", inn)[0].strip()
+            if first_active and composition.lower().startswith(first_active.lower()):
+                strength = explicit_strength(re.split(r",\s+(?=[A-Za-z])|;|\n", composition)[0])
         if not name and not inn:
             continue
         accept_prod("CH")
-        add_row(rows, "CH", inn, name, "", strength, company, extra)
+        add_row(rows, "CH", inn, name, explicit_form(name, "CH"), strength, company, extra, infer_strength=False)
         n += 1
     log(f"parse CH swiss {n}")
 
@@ -1448,7 +1455,7 @@ def build_health(rows):
         "DE": RAW / "EMA" / "article57.xlsx",
         "DK": pick_file(RAW / "DK", "dkma.xlsx") or RAW / "EMA" / "article57.xlsx",
         "CY": pick_file(RAW / "CY", "cyprus.xlsx") or RAW / "EMA" / "article57.xlsx",
-        "GR": pick_file(RAW / "GR", "eof.xlsx", "eof_price.xlsx") or RAW / "GR" / "eof.xlsx",
+        "GR": pick_file(RAW / "GR" / "crawl", "EOF_Greek_Medicines_Full.xlsx") or pick_file(RAW / "GR", "eof.xlsx", "eof_price.xlsx") or RAW / "GR" / "eof.xlsx",
         "HU": pick_file(RAW / "HU", "tk_lista.csv", "ogyi.csv") or RAW / "HU" / "tk_lista.csv",
         "SE": pick_file(RAW / "SE", "lakemedel.xlsx", "produktdokument.xml") or RAW / "SE" / "produktdokument.xml",
         "LI": RAW / "EMA" / "article57.xlsx",

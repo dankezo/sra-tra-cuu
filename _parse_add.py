@@ -113,9 +113,7 @@ def stage_add_files() -> None:
         (("bo dao nha",), "PT", "infomed.xlsx"),
         (("hungary",), "HU", "tk_lista.csv"),
         (("tk_lista",), "HU", "tk_lista.csv"),
-        (("human_medicines_search",), "GR", "eof.xlsx"),
         (("hy lap (2)",), "GR", "eof_price.xlsx"),
-        (("hy lap",), "GR", "eof.xlsx"),
         (("ha lan",), "NL", "cbg.csv"),
         (("japan",), "JP", "pmda-approved.pdf"),
         (("lithuania",), "LT", "preparatas.csv"),
@@ -130,6 +128,7 @@ def stage_add_files() -> None:
     ]
     for needles, cc, dest_name in mapping:
         copy_if(find_add(*needles), P.RAW / cc / dest_name)
+    stage_gr_search()
     ema = find_add("ema.xlsx")
     if ema and fold_name(ema.name) == "ema.xlsx":
         copy_if(ema, P.RAW / "EMA" / "article57.xlsx")
@@ -750,16 +749,92 @@ def parse_article57_gaps(rows):
     P.log("parse A57 gaps " + ", ".join(f"{k}:{v}" for k, v in sorted(by.items())) + f" total={n}")
 
 
+def stage_gr_search():
+    files = find_add_all("human_medicines_search")
+    if not files:
+        return
+    # Dated exports supersede older snapshots even when the new file is smaller.
+    def export_date(path):
+        match = re.search(r"(\d{8}-\d{6})", path.name)
+        return match.group(1) if match else ""
+    src = max(files, key=lambda p: (export_date(p), p.stat().st_mtime))
+    dest = P.RAW / "GR" / "eof.xlsx"
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    if not dest.exists() or src.read_bytes() != dest.read_bytes():
+        shutil.copy2(src, dest)
+
+
+def parse_gr_crawl(rows, path: Path) -> int:
+    records = iter(P.xlsx_rows(path))
+    header = next(records, [])
+    seen = set()
+    n = 0
+    for vals in records:
+        code = re.sub(r"\.0$", "", col(header, vals, "eof_code", "code")).strip()
+        code = code.lstrip("0") if code != "0" else code
+        if not code or code in seen:
+            continue
+        seen.add(code)
+        status = fold_name(col(header, vals, "status"))
+        if status not in {"valid", "εγκεκριμενο", "approved"}:
+            P.reject("GR", "not_authorised")
+            continue
+        name = col(header, vals, "tradename_strength", "trade name", "name")
+        if not name:
+            continue
+        inn = col(header, vals, "active_substance", "active substance")
+        company = col(header, vals, "company_mah", "company")
+        P.accept_prod("GR")
+        P.add_row(
+            rows,
+            "GR",
+            inn,
+            name,
+            P.explicit_form(name, "GR"),
+            P.explicit_strength(name),
+            company,
+            code,
+            src="d",
+            infer_strength=False,
+        )
+        n += 1
+    P.log(f"parse GR crawl {n}")
+    return n
+
+
 def parse_gr(rows):
+    crawl = P.RAW / "GR" / "crawl" / "EOF_Greek_Medicines_Full.xlsx"
+    if crawl.exists() and crawl.stat().st_size > 200:
+        dest = P.RAW / "GR" / "eof.xlsx"
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if not dest.exists() or dest.read_bytes() != crawl.read_bytes():
+            shutil.copy2(crawl, dest)
+        parse_gr_crawl(rows, crawl)
+        return
+    stage_gr_search()
     p = P.pick_file(P.RAW / "GR", "eof.xlsx") or find_add("human_medicines_search")
     if not p:
         cands = [x for x in find_add_all("hy lap") if "(2)" not in fold_name(x.name)]
         p = max(cands, key=lambda x: x.stat().st_size) if cands else None
     if p:
         n = 0
-        for header, vals in xlsx_after_header(p, "name", "status"):
+        # Exports may repeat pages or cover only a subset. Merge by product code,
+        # with the newest snapshot overriding matching codes, including status.
+        paths = sorted(find_add_all("human_medicines_search"), key=lambda x: x.name)
+        if not paths:
+            paths = [p]
+        merged = {}
+        for source in paths:
+            records = iter(P.xlsx_rows(source))
+            header = next(records, [])
+            for vals in records:
+                code = col(header, vals, "code", "κωδικός")
+                code = re.sub(r"\.0$", "", code).lstrip("0")
+                if code:
+                    merged[code] = (header, vals)
+        for header, vals in merged.values():
             status = fold_name(col(header, vals, "m.a. status", "status", "κατάσταση"))
-            if status and "valid" not in status and "enisch" not in status:
+            if status not in {"valid", "εγκεκριμενο"}:
                 P.reject("GR", "not_authorised")
                 continue
             name = col(header, vals, "name / strength", "name", "ονομασία")
@@ -771,11 +846,12 @@ def parse_gr(rows):
                 "GR",
                 "",
                 name,
-                "",
-                P.strength_from(name),
+                P.explicit_form(name, "GR"),
+                P.explicit_strength(name),
                 "",
                 col(header, vals, "code", "κωδικός"),
                 src="d",
+                infer_strength=False,
             )
             n += 1
         P.log(f"parse GR {n}")
@@ -795,7 +871,7 @@ def parse_gr_price(rows):
         company = col(header, vals, "κάτοχος", "κατοχος", "kak")
         extra = col(header, vals, "κωδικός", "κωδικος", "barcode")
         P.accept_prod("GR")
-        P.add_row(rows, "GR", inn, name, "", P.strength_from(name), company, extra, src="d")
+        P.add_row(rows, "GR", inn, name, P.explicit_form(name, "GR"), P.explicit_strength(name), company, extra, src="d", infer_strength=False)
         n += 1
     P.log(f"parse GR price {n}")
 
@@ -880,7 +956,8 @@ def parse_cy(rows):
         company = col(header, vals, "marketing authorisation holder")
         extra = col(header, vals, "pricing code")
         P.accept_prod("CY")
-        P.add_row(rows, "CY", inn, name, "", P.strength_from(name), company, extra, src="d")
+        package = col(header, vals, "package")
+        P.add_row(rows, "CY", inn, name, P.explicit_form(name, "CY", package), P.explicit_strength(name), company, extra, src="d", infer_strength=False)
         n += 1
     P.log(f"parse CY {n}")
 

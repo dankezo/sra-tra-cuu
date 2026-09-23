@@ -209,7 +209,7 @@
         { cc:"GB", name:"Anh", tag:"dump", how:"NHS dm+d XML đã nạp (MHRA/EMA licensed AMPs).", url:"https://products.mhra.gov.uk/" },
         { cc:"JP", name:"Nhật", tag:"dump", how:"PMDA List of Approved Drugs PDF đã nạp.", url:"https://www.pmda.go.jp/PmdaSearch/iyakuSearch/" },
         { cc:"CY", name:"Síp", tag:"dump", how:"Pricelist Excel (INN + MAH) đã nạp.", url:"https://www.phs.moh.gov.cy/human-search/home.xhtml?lang=en" },
-        { cc:"GR", name:"Hy Lạp", tag:"dump", how:"EOF search + bảng giá Hy Lạp (2) đã nạp.", url:"https://eof.gr/en/anazitisi-proionton/" },
+        { cc:"GR", name:"Hy Lạp", tag:"dump", how:"EOF crawl danh mục đầy đủ (mã thuốc, INN, MAH) đã nạp.", url:"https://services.eof.gr/human-search/home.xhtml" },
         { cc:"MT", name:"Malta", tag:"dump", how:"Medicines Authority CSV đã nạp từ data/raw/add.", url:"https://www.medicinesauthority.gov.mt/advanced-search" },
         { cc:"SI", name:"Slovenia", tag:"dump", how:"JAZMP/CBZ CSV đã nạp từ data/raw/add.", url:"https://www.cbz.si/" },
         { cc:"LI", name:"Liechtenstein", tag:"skip", how:"Không CSDL riêng — Article 57 + Áo + Swissmedic + EMA.", url:"https://medikamente.basg.gv.at/de/" }

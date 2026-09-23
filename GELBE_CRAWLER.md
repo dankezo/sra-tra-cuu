@@ -30,3 +30,13 @@ Re-run phase 2 to retry partial/error rows. Phase 1 skips ATC groups marked comp
 - Endpoint: `https://www.gelbe-liste.de/profi-suche/results` (POST page 1, GET later pages).
 - Commercial MMI index, not BfArM official dump. Prefer EMA Article 57 for regulatory DE coverage unless Gelbe fields are required.
 - Be polite: default delay 0.35s; do not raise workers above 6–8.
+
+## Load into search
+
+```bash
+python _parse.py
+python _rebuild.py
+python _embed.py
+```
+
+`parse_de` in `_parse_add.py` prefers `data/raw/DE/crawl/GelbeListe_Medicines_ATC_Filtered.xlsx` and then skips Article 57 gap-fill for DE.

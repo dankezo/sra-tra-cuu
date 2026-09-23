@@ -1037,6 +1037,65 @@ def parse_hu(rows):
     P.log(f"parse HU {n}")
 
 
+def parse_de_gelbe(rows, path: Path) -> int:
+    """Load Gelbe Liste ATC-filtered crawl (preferred national DE source)."""
+    records = iter(P.xlsx_rows(path))
+    header = next(records, [])
+    seen = set()
+    n = 0
+    for vals in records:
+        pid = re.sub(r"\.0$", "", col(header, vals, "product_id", "id")).strip()
+        if pid and pid in seen:
+            continue
+        if pid:
+            seen.add(pid)
+        status = fold_name(col(header, vals, "detail_status", "status"))
+        if status == "error":
+            P.reject("DE", "detail_error")
+            continue
+        name = col(header, vals, "drug_name", "name", "product")
+        if not name:
+            P.reject("DE", "empty")
+            continue
+        inn = col(header, vals, "active_substance", "active substance")
+        if not inn:
+            P.reject("DE", "no_substance")
+            continue
+        company = col(header, vals, "company")
+        form = col(header, vals, "dosage_form", "pharmform") or P.explicit_form(name, "DE")
+        strength = col(header, vals, "strength") or P.explicit_strength(name)
+        # Prefer compact strength from trade name when composition mass is noisy (e.g. 100000.0 I.E.)
+        if strength and re.search(r"\d+\.0\b", strength) and P.explicit_strength(name):
+            strength = P.explicit_strength(name)
+        P.accept_prod("DE")
+        P.add_row(
+            rows,
+            "DE",
+            inn,
+            name,
+            form,
+            strength,
+            company,
+            pid,
+            src="d",
+            infer_strength=False,
+        )
+        n += 1
+    P.log(f"parse DE gelbe {n}")
+    return n
+
+
+def parse_de(rows):
+    crawl = P.RAW / "DE" / "crawl" / "GelbeListe_Medicines_ATC_Filtered.xlsx"
+    if crawl.exists() and crawl.stat().st_size > 200:
+        parse_de_gelbe(rows, crawl)
+        return
+    # Fallback: staged copy if present
+    p = P.pick_file(P.RAW / "DE", "gelbe.xlsx", "GelbeListe_Medicines_ATC_Filtered.xlsx")
+    if p:
+        parse_de_gelbe(rows, p)
+
+
 def parse_added(rows):
     stage_add_files()
     parse_union_register(rows)
@@ -1050,6 +1109,7 @@ def parse_added(rows):
     parse_gb(rows)
     parse_jp(rows)
     parse_gr(rows)
+    parse_de(rows)
     parse_se_lmf(rows)
     parse_hu(rows)
     parse_dk(rows)

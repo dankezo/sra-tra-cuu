@@ -203,7 +203,7 @@
         { cc:"CH", name:"Thụy Sĩ", tag:"dump", how:"Swissmedic Erweiterte Liste HAM Excel đã nạp.", url:"https://www.swissmedic.ch/swissmedic/en/home/services/ogd.html" },
         { cc:"NL", name:"Hà Lan", tag:"dump", how:"CBG-MEB CSV đã nạp từ data/raw/add.", url:"https://www.geneesmiddeleninformatiebank.nl/" },
         { cc:"HU", name:"Hungary", tag:"dump", how:"OGYÉI tk_lista CSV đã nạp.", url:"https://ogyei.gov.hu/gyogyszeradatbazis" },
-        { cc:"DE", name:"Đức", tag:"skip", how:"BfArM không dump công; đang dùng EMA Article 57 theo nước.", url:"https://portal.bfarm.de/amguifree/am/search.xhtml" },
+        { cc:"DE", name:"Đức", tag:"dump", how:"Gelbe Liste Profi-Suche crawl theo ATC L2 (~41k thuốc điều trị).", url:"https://www.gelbe-liste.de/profi-suche" },
         { cc:"DK", name:"Đan Mạch", tag:"dump", how:"DKMA Godkendte Lægemidler Excel đã nạp.", url:"https://www.produktresume.dk/AppBuilder/search" },
         { cc:"PT", name:"Bồ Đào Nha", tag:"dump", how:"INFARMED list đã nạp từ data/raw/add.", url:"https://extranet.infarmed.pt/INFOMED-fo/index.xhtml" },
         { cc:"SK", name:"Slovakia", tag:"dump", how:"SIDC JSON (lieky_ui42 + atc.php) đã nạp.", url:"https://www.sukl.sk/en/servis/search/searching-on-the-database-of-medicinal-products?page_id=410" },

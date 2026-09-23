@@ -1452,7 +1452,9 @@ def build_health(rows):
         "SK": pick_file(RAW / "SK", "lieky_all.json", "p00000.json", "lieky_00000.json") or RAW / "SK" / "lieky_all.json",
         "GB": next(iter((RAW / "add" / "Anh").rglob("f_amp2_*.xml")), RAW / "GB"),
         "JP": RAW / "JP" / "pmda-approved.pdf",
-        "DE": RAW / "EMA" / "article57.xlsx",
+        "DE": pick_file(RAW / "DE" / "crawl", "GelbeListe_Medicines_ATC_Filtered.xlsx")
+        or pick_file(RAW / "DE", "gelbe.xlsx")
+        or RAW / "EMA" / "article57.xlsx",
         "DK": pick_file(RAW / "DK", "dkma.xlsx") or RAW / "EMA" / "article57.xlsx",
         "CY": pick_file(RAW / "CY", "cyprus.xlsx") or RAW / "EMA" / "article57.xlsx",
         "GR": pick_file(RAW / "GR" / "crawl", "EOF_Greek_Medicines_Full.xlsx") or pick_file(RAW / "GR", "eof.xlsx", "eof_price.xlsx") or RAW / "GR" / "eof.xlsx",

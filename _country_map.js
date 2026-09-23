@@ -2,6 +2,7 @@
 function SraCountryMap(svg, world, options) {
   const centers = {AT:[14,47.6],BE:[4.7,50.6],BG:[25.5,42.7],HR:[16.4,45.1],CY:[33.3,35],CZ:[15.4,49.8],DK:[10,56],EE:[25.5,58.7],FI:[26,64],FR:[2.5,46.5],DE:[10.4,51.1],GR:[23,39],HU:[19.5,47.2],IE:[-8,53.3],IT:[12.5,42.5],LV:[24.6,57],LT:[24,55.3],LU:[6.13,49.61],MT:[14.38,35.94],NL:[5.4,52.2],PL:[19,52],PT:[-8,39.5],RO:[25,46],SK:[19.5,48.7],SI:[14.8,46.1],ES:[-3.7,40.2],SE:[16,63],US:[-100,39],GB:[-3,55],JP:[138,37],CH:[8.2,46.8],CA:[-105,57],AU:[134,-25],NO:[10,63],IS:[-19,65],LI:[9.55,47.16]};
   const tiny = ['MT','LI','LU'];
+  centers.VN = [106,16];
   const regionSelect = document.getElementById('map-region');
   let view = 'globe', rotation = [-12,-35,0], center = [12,51], scale = 440;
   let animation = 0, renderFrame = 0, drag = null, suppressClickUntil = 0;
@@ -75,7 +76,7 @@ function SraCountryMap(svg, world, options) {
   function focus(cc, immediate = false) {
     if (!centers[cc]) { render(); return; }
     const p = centers[cc];
-    regionSelect.value = ['CA','US'].includes(cc) ? 'america' : ['JP','AU'].includes(cc) ? 'asia' : 'europe';
+    regionSelect.value = ['CA','US'].includes(cc) ? 'america' : ['JP','AU','VN'].includes(cc) ? 'asia' : 'europe';
     move([-p[0],-p[1],0],p,['CA','US'].includes(cc) ? 145 : cc==='AU' ? 210 : cc==='JP' ? 480 : 670,immediate);
   }
   svg.addEventListener('pointerdown', ev => {

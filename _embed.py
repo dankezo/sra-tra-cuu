@@ -34,6 +34,22 @@ for r in rows:
         ir.append(i)
     packed.append(ir)
 
+vn = json.loads((root / "data/vn-ingredients.json").read_text(encoding="utf-8"))
+vn.pop('ingredients', None)
+vn_table, vn_index = [], {}
+vn_records = []
+for record in vn.pop('records'):
+    packed_record = []
+    for value in record:
+        if value not in vn_index:
+            vn_index[value] = len(vn_table)
+            vn_table.append(value)
+        packed_record.append(vn_index[value])
+    vn_records.append(packed_record)
+vn.update(table=vn_table, records=vn_records,
+          domestic=json.loads((root / 'data/vn-domestic-list.json').read_text(encoding='utf-8')),
+          evidence=json.loads((root / 'data/vn-evidence.json').read_text(encoding='utf-8')))
+
 blob = json.dumps(
     {
         "u": src.get("updated", ""),
@@ -42,6 +58,7 @@ blob = json.dumps(
         "r": packed,
         "h": src.get("h") or {},
         "c": company_sites({"company": r[5]} for r in rows),
+        "vn": vn,
     },
     ensure_ascii=False,
     separators=(",", ":"),

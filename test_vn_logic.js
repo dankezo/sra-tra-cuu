@@ -1,0 +1,11 @@
+const assert = require('node:assert/strict');
+const {create} = require('./_vn_logic');
+const index = create(['Paracetamol 500mg', 'Cefixim (dưới dạng Cefixim trihydrat) 200mg', 'Irbesartan 150mg; Hydroclorothiazid 12,5mg']);
+for (const text of ['PARACETAMOL', 'paracetamóle 5mg / abcxyg 6mg', 'Paracetamol + caffeine', 'Cefixime 100 mg', 'Irbesartan', 'Acetaminophen']) assert.ok(index.matches(text), text);
+for (const text of ['', 'abcxyg 6mg', 'Notparacetamol', 'paracetamolxyz', 'mg', 'trihydrat', 'Hydroxyzine']) assert.equal(index.matches(text), false, text);
+assert.equal(create(['Clonazepam']).matches('Lorazepam'), false);
+assert.equal(create(['Prednisone']).matches('Prednisolone'), false);
+assert.equal(create(['Vitamin B12']).matches('Vitamin B6'), false);
+assert.equal(create(['Vitamin B 12']).matches('Vitamin B 6'), false);
+assert.equal(create(['Paracetamol / caffeine']).matches('caffeine'), true);
+console.log('PASS: exact, accents, spelling variants, dosage, combinations, reverse components and negative matches');

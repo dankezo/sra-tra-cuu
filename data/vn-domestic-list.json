@@ -1,0 +1,659 @@
+{
+  "document": "03/2024/TT-BYT",
+  "checked": "2026-09-23",
+  "source": "https://vbpl.vn/boyte/Pages/vbpq-print.aspx?ItemID=166832",
+  "note": "Phụ lục 93 thuốc, nhóm 2. Không suy rộng sang nhóm 1 hoặc dạng bào chế đặc biệt. Dòng 75 giữ nguyên cách ghi Pcrindopril trong bản HTML nguồn; cần kiểm tra bản ký trước khi ánh xạ.",
+  "rows": [
+    {
+      "id": 1,
+      "inn": "Acyclovir",
+      "strength": "400mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 2,
+      "inn": "Acyclovir",
+      "strength": "800mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 3,
+      "inn": "Albendazole",
+      "strength": "400mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 4,
+      "inn": "Allopurinol",
+      "strength": "300mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 5,
+      "inn": "Amisulpride",
+      "strength": "100mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 6,
+      "inn": "Amisulpride",
+      "strength": "200mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 7,
+      "inn": "Atenolol",
+      "strength": "50mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 8,
+      "inn": "Atorvastatin",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 9,
+      "inn": "Atorvastatin",
+      "strength": "20mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 10,
+      "inn": "Bambuterol hydrochloride",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 11,
+      "inn": "Betahistine dihydrochloride",
+      "strength": "16mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 12,
+      "inn": "Bisoprolol fumarate",
+      "strength": "5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 13,
+      "inn": "Bisoprolol fumarate",
+      "strength": "2.5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 14,
+      "inn": "Bisoprolol fumarate",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 15,
+      "inn": "Carvedilol",
+      "strength": "12.5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 16,
+      "inn": "Cefazolin",
+      "strength": "1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 17,
+      "inn": "Cefepime",
+      "strength": "1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 18,
+      "inn": "Cefepime",
+      "strength": "2g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 19,
+      "inn": "Cefoperazone",
+      "strength": "1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 20,
+      "inn": "Cefoperazone",
+      "strength": "2g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 21,
+      "inn": "Cefoperazone; Sulbactam",
+      "strength": "500mg; 500mg",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 22,
+      "inn": "Cefoperazone; Sulbactam",
+      "strength": "1g; 500mg",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 23,
+      "inn": "Cefoperazone; Sulbactam",
+      "strength": "1g; 1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 24,
+      "inn": "Cefotaxime",
+      "strength": "1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 25,
+      "inn": "Cefotaxime",
+      "strength": "2g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 26,
+      "inn": "Cefotiam",
+      "strength": "1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 27,
+      "inn": "Ceftazidime",
+      "strength": "1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 28,
+      "inn": "Ceftazidime",
+      "strength": "2g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 29,
+      "inn": "Ceftazidime",
+      "strength": "500mg",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 30,
+      "inn": "Ceftizoxime",
+      "strength": "1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 31,
+      "inn": "Ceftriaxone",
+      "strength": "1g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 32,
+      "inn": "Cefuroxime",
+      "strength": "750mg",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 33,
+      "inn": "Cefuroxime",
+      "strength": "1.5g",
+      "form": "Thuốc tiêm",
+      "group": "2"
+    },
+    {
+      "id": 34,
+      "inn": "Cetirizin dihydrochloride",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 35,
+      "inn": "Ciprofloxacin",
+      "strength": "500mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 36,
+      "inn": "Clopidogrel",
+      "strength": "75mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 37,
+      "inn": "Colchicine",
+      "strength": "1mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 38,
+      "inn": "Diosmin; Hesperidin",
+      "strength": "450mg; 50mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 39,
+      "inn": "Domperidone",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 40,
+      "inn": "Eperisone hydrochloride",
+      "strength": "50mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 41,
+      "inn": "Esomeprazole",
+      "strength": "40mg",
+      "form": "Viên bao tan ở ruột",
+      "group": "2"
+    },
+    {
+      "id": 42,
+      "inn": "Esomeprazole",
+      "strength": "20mg",
+      "form": "Viên bao tan ở ruột",
+      "group": "2"
+    },
+    {
+      "id": 43,
+      "inn": "Etoricoxib",
+      "strength": "90mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 44,
+      "inn": "Etoricoxib",
+      "strength": "120mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 45,
+      "inn": "Ezetimibe",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 46,
+      "inn": "Fexofenadine hydrochloride",
+      "strength": "120mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 47,
+      "inn": "Fexofenadine hydrochloride",
+      "strength": "60mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 48,
+      "inn": "Fluconazole",
+      "strength": "150mg",
+      "form": "Viên nang",
+      "group": "2"
+    },
+    {
+      "id": 49,
+      "inn": "Gabapentin",
+      "strength": "300mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 50,
+      "inn": "Galantamine",
+      "strength": "4mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 51,
+      "inn": "Ibuprofen",
+      "strength": "400mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 52,
+      "inn": "Ibuprofen; Paracetamol",
+      "strength": "200mg; 325mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 53,
+      "inn": "Irbesartan",
+      "strength": "150mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 54,
+      "inn": "Irbesartan",
+      "strength": "300mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 55,
+      "inn": "Lamivudine",
+      "strength": "100mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 56,
+      "inn": "Lamotrigine",
+      "strength": "50mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 57,
+      "inn": "Lansoprazole",
+      "strength": "30mg",
+      "form": "Viên nang",
+      "group": "2"
+    },
+    {
+      "id": 58,
+      "inn": "Levetiracetam",
+      "strength": "500mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 59,
+      "inn": "Levocetirizine dihydrochloride",
+      "strength": "5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 60,
+      "inn": "Levofloxacin",
+      "strength": "500mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 61,
+      "inn": "Levofloxacin",
+      "strength": "250mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 62,
+      "inn": "Linezolid",
+      "strength": "600mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 63,
+      "inn": "Magnesi lactate dihydrate; Vitamin B6",
+      "strength": "470mg; 5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 64,
+      "inn": "Meloxicam",
+      "strength": "7.5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 65,
+      "inn": "Metformin hydrochloride",
+      "strength": "1000mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 66,
+      "inn": "Mirtazapin",
+      "strength": "30mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 67,
+      "inn": "Montelukast",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 68,
+      "inn": "Montelukast",
+      "strength": "5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 69,
+      "inn": "Nabumeton",
+      "strength": "500mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 70,
+      "inn": "Nebivolol",
+      "strength": "5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 71,
+      "inn": "Olanzapin",
+      "strength": "5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 72,
+      "inn": "Olanzapin",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 73,
+      "inn": "Paracetamol",
+      "strength": "500mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 74,
+      "inn": "Paracetamol; Tramadol hydrocloride",
+      "strength": "325mg; 37.5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 75,
+      "inn": "Pcrindopril tert-butylamine",
+      "strength": "4mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 76,
+      "inn": "Piracetam",
+      "strength": "800mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 77,
+      "inn": "Quetiapine",
+      "strength": "200mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 78,
+      "inn": "Quetiapine",
+      "strength": "100mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 79,
+      "inn": "Rabeprazole natri",
+      "strength": "20mg",
+      "form": "Viên bao tan ở ruột",
+      "group": "2"
+    },
+    {
+      "id": 80,
+      "inn": "Rivaroxaban",
+      "strength": "15mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 81,
+      "inn": "Rosuvastatin",
+      "strength": "10mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 82,
+      "inn": "Rosuvastatin",
+      "strength": "20mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 83,
+      "inn": "Rosuvastatin",
+      "strength": "5mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 84,
+      "inn": "Spiramycin",
+      "strength": "3000000 IU",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 85,
+      "inn": "Sulpiride",
+      "strength": "50mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 86,
+      "inn": "Telmisartan",
+      "strength": "80mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 87,
+      "inn": "Telmisartan",
+      "strength": "40mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 88,
+      "inn": "Tenofovir disoproxil fumarate",
+      "strength": "300mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 89,
+      "inn": "Trimetazidine hydrochloride",
+      "strength": "20mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 90,
+      "inn": "Trimetazidine hydrochloride",
+      "strength": "35mg",
+      "form": "Viên giải phóng có kiểm soát",
+      "group": "2"
+    },
+    {
+      "id": 91,
+      "inn": "Valsartan",
+      "strength": "80mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 92,
+      "inn": "Venlafaxin",
+      "strength": "75mg",
+      "form": "Viên",
+      "group": "2"
+    },
+    {
+      "id": 93,
+      "inn": "Vitamin B1; Vitamin B6; Vitamin B12",
+      "strength": "100mg; 200mg; 200mcg",
+      "form": "Viên",
+      "group": "2"
+    }
+  ]
+}

@@ -116,6 +116,8 @@
       const EN = { FR:"France", ES:"Spain", EMA:"EMA", CA:"Canada", US:"United States", IE:"Ireland", CZ:"Czechia", RO:"Romania", LV:"Latvia", LU:"Luxembourg", CH:"Switzerland", FI:"Finland", IS:"Iceland", IT:"Italy", AT:"Austria", BE:"Belgium", EE:"Estonia", LT:"Lithuania", PL:"Poland", BG:"Bulgaria", HR:"Croatia", CY:"Cyprus", DK:"Denmark", DE:"Germany", GR:"Greece", HU:"Hungary", MT:"Malta", NL:"Netherlands", PT:"Portugal", SK:"Slovakia", SI:"Slovenia", SE:"Sweden", GB:"United Kingdom", JP:"Japan", AU:"Australia", NO:"Norway", LI:"Liechtenstein" };
       const EEA = new Set(["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","IS","NO","LI"]);
       const SRA36 = ["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","US","GB","JP","CH","CA","AU","NO","IS","LI"];
+      const SEARCH_COUNTRIES = [...SRA36, 'VN'];
+      CC.VN = 'Việt Nam'; EN.VN = 'Vietnam';
       const SRC = {
         FR:{agency:"ANSM",url:"https://base-donnees-publique.medicaments.gouv.fr/"},
         ES:{agency:"AEMPS",url:"https://cima.aemps.es/"},
@@ -218,6 +220,32 @@
       let MED = [];
       let HEALTH = null;
       let SITES = {};
+      let vnIndex = SraVn.create([]);
+      const vnOnly = document.getElementById('vn-only');
+      const vnNote = document.getElementById('vn-note');
+      let vnData = null;
+      let vnSnapshot = null;
+      const vnOptions = SraVn.SIMPLE_POLICY;
+      let vnAssessments = new Map();
+      let compare = null;
+      const vnReasons = {eligible:'đủ điều kiện', revoked:'thu hồi/đã xóa', inactive:'không hoạt động', type:'ngoài loại SĐK mục tiêu', expired:'hết hạn theo dữ liệu, chưa có bằng chứng gia hạn', renewalReview:'có tiếp nhận gia hạn, cần xác minh hạn mới', unknownExpiry:'thiếu hạn/trạng thái', unknownTerm:'thiếu hoặc mâu thuẫn kỳ cấp', shortTerm:'kỳ cấp/gia hạn ≤ 3 năm', nearExpiry:'không đủ thời gian còn lại', missingInn:'thiếu hoạt chất'};
+      function configureVn() {
+        if (!vnSnapshot) return;
+        vnIndex = vnSnapshot.configure(vnOptions);
+        vnAssessments = new Map(vnIndex.audit.map(a=>[a.record.id,a]));
+        paintVn();
+      }
+      function paintVn(blocked=0, review=0) {
+        const available = !!vnSnapshot?.records.length;
+        vnOnly.disabled = !available;
+        vnNote.hidden = available && !vnOnly.checked;
+        document.getElementById('vn-help').hidden = !vnOnly.checked;
+        if (!available) {vnNote.textContent='Chưa có dữ liệu SĐK DAV để sàng lọc.'; return;}
+        const n = vnIndex.stats.eligible || 0;
+        vnNote.textContent = 'Khớp ít nhất một hoạt chất từ ' + n.toLocaleString('vi-VN') + ' hồ sơ đạt điều kiện · DAV ' + vnData.updated.slice(0,10).split('-').reverse().join('/') + ' · xét ngày ' + vnIndex.asOf +
+          ' · tự loại ô khớp danh mục 93 thuốc nội địa.';
+      }
+      function vnDomestic(r) {return vnIndex.domestic(r[1],r[4],r[3],vnOptions.group);}
       let INNS = [];
       let searchTerms = [];
       let dumpCc = new Set();
@@ -246,7 +274,7 @@
       const WORLD = JSON.parse(document.getElementById('sra-world').textContent);
       const countryMap = SraCountryMap(mapSvg, WORLD, {eligible:eligibleCountries, selected:()=>focusedCountry, label:countryName, onSelect:selectCountry});
       function eligibleCountries() {
-        return SRA36.filter(c => !selCountries.size || selCountries.has(c));
+        return SEARCH_COUNTRIES.filter(c => !selCountries.size || selCountries.has(c));
       }
       function selectCountry(cc) {
         if (cc && cc === activeCountry) cc = '';
@@ -306,9 +334,9 @@
         const ema = MED.filter(r => rowSrc(r) === 'e');
         const local = {};
         for (const r of MED) if (rowSrc(r) !== 'e') (local[r[0]] ||= []).push(r);
-        for (const cc of SRA36) {
-          countryData[cc] = SraData.mergeRows([...(local[cc] || []), ...(EEA.has(cc) ? ema : [])]);
-          for (const r of countryData[cc]) r._search = searchText(r.slice(1, 6).join(' '));
+        for (const cc of SEARCH_COUNTRIES) {
+          countryData[cc] = cc==='VN' ? (local.VN || []) : SraData.mergeRows([...(local[cc] || []), ...(EEA.has(cc) ? ema : [])]);
+          for (const r of countryData[cc]) r._search = searchText(r.slice(1, 6).join(' ') + ' ' + (r[8] || ''));
         }
       }
 
@@ -334,7 +362,7 @@
       function esc(s) {
         return String(s || "").replace(/[&<>"]/g, (ch) => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[ch]));
       }
-      function srcOf(cc) { return SRC[cc] || { agency: cc, url: "https://www.google.com/search?q=" + encodeURIComponent((EN[cc] || cc) + " official medicines register") }; }
+      function srcOf(cc) { return cc==='VN' ? {agency:'DAV',url:'https://dichvucong.dav.gov.vn/congbothuoc/index'} : SRC[cc] || { agency: cc, url: "https://www.google.com/search?q=" + encodeURIComponent((EN[cc] || cc) + " official medicines register") }; }
 
       function formKey(s) {
         const t = " " + String(s || "").toLowerCase() + " ";
@@ -389,7 +417,7 @@
       }
 
       function rowKey(cc, r) {
-        return cc + "\t" + (r[1] || "") + "\t" + (r[2] || "") + "\t" + (r[3] || "") + "\t" + (r[4] || "") + "\t" + (r[5] || "") + "\t" + (r[6] || "d");
+        return cc + "\t" + (r[1] || "") + "\t" + (r[2] || "") + "\t" + (r[3] || "") + "\t" + (r[4] || "") + "\t" + (r[5] || "") + "\t" + (r[6] || "d") + (cc==='VN' ? '\t'+r[7] : '');
       }
       function saveSel() {
         try { localStorage.setItem("sra-sel", JSON.stringify(selected)); } catch (e) {}
@@ -403,7 +431,7 @@
       }
       function paintFlags() {
         const query = searchText(document.getElementById('filter-country-query').value);
-        mflags.innerHTML = SRA36.slice().sort((a,b)=>countryName(a).localeCompare(countryName(b),'vi')).filter(c=>searchText(c+' '+CC[c]+' '+EN[c]).includes(query)).map(c => `<label><input type="checkbox" data-country-filter="${c}" ${selCountries.has(c) ? 'checked' : ''} />${flagImg(c)}${esc(countryName(c))}</label>`).join('') || '<p>Không tìm thấy quốc gia.</p>';
+        mflags.innerHTML = SEARCH_COUNTRIES.slice().sort((a,b)=>countryName(a).localeCompare(countryName(b),'vi')).filter(c=>searchText(c+' '+CC[c]+' '+EN[c]).includes(query)).map(c => `<label><input type="checkbox" data-country-filter="${c}" ${selCountries.has(c) ? 'checked' : ''} />${flagImg(c)}${esc(countryName(c))}</label>`).join('') || '<p>Không tìm thấy quốc gia.</p>';
         document.getElementById('region-count').textContent = selCountries.size ? '(' + selCountries.size + ')' : '';
       }
       function paintFormChips() {
@@ -449,7 +477,8 @@
       function rowHtml(r, idx, code, src) {
         const k = rowKey(code, r);
         const on = selected[k] ? " checked" : "";
-        return "<tr data-k=\"" + esc(k) + "\"><td class=\"ck\"><input type=\"checkbox\" data-k=\"" + esc(k) + "\"" + on + "></td><td class=\"num\">" + (idx + 1) + "</td><td class=\"inn\">" + esc(r[1]) + "</td><td class=\"nm\">" + esc(r[2]) + "</td><td class=\"fm\">" + esc(formText(r[3])) + "</td><td class=\"st\">" + esc(r[4] || "—") + "</td><td class=\"co\">" + coCell(r[5]) + "</td><td class=\"src\">" + (r._sources || [src]).map(k => srcChip(k, code, r[2])).join(" ") + "</td></tr>";
+        const vnBadge = vnOnly.checked && vnOptions.excludeDomestic && vnDomestic(r)==='review' ? '<span class="vn-review">Cần đối chiếu ô kỹ thuật VN</span>' : '';
+        return "<tr data-k=\"" + esc(k) + "\"><td class=\"ck\"><input type=\"checkbox\" data-k=\"" + esc(k) + "\"" + on + "></td><td class=\"num\">" + (idx + 1) + "</td><td class=\"inn\">" + esc(r[1]) + vnBadge + "</td><td class=\"nm\">" + esc(r[2]) + (code === "VN" ? "<small class=\"vn-review\">SĐK: " + esc(r[8]) + " · Hạn: " + esc(vnAssessments.get(r[7])?.record.expiry || "chưa rõ") + "</small>" : "") + "</td><td class=\"fm\">" + esc(formText(r[3])) + "</td><td class=\"st\">" + esc(r[4] || "—") + "</td><td class=\"co\">" + coCell(r[5]) + "</td><td class=\"src\">" + (r._sources || [src]).map(k => srcChip(k, code, r[2])).join(" ") + "</td></tr>";
       }
       function bindCardSearch(d) {
         const inp = d.querySelector('.cg-q');
@@ -511,6 +540,7 @@
         } else if (more) more.hidden = true;
       }
       function passes(r, src) {
+        if(vnOnly.checked && r[0]==='VN' && vnAssessments.get(r[7])?.reason!=='eligible')return false;
         const sources = r._sources || [src];
         if (srcSel.has("d") && srcSel.has("e")) {
           if (!(sources.includes("d") && sources.includes("e"))) return false;
@@ -531,6 +561,7 @@
       }
 
       function extraFiltersOn() {
+        if (vnOnly.checked) return true;
         if (srcSel.size || selForms.size || selCountries.size) return true;
         if (document.getElementById("strength-mode").value === "exact" && (document.getElementById("mg-exact").value || "").trim()) return true;
         return !!(mgMinEl.value || mgMaxEl.value);
@@ -557,11 +588,18 @@
           const order = [];
           countryCounts = {};
           let n = 0;
+          let vnBlocked = 0, vnReview = 0;
           for (const cc of eligibleCountries()) {
             const rows = countryData[cc] || [];
-            const matches = needFilter
-              ? rows.filter((r) => (!queries.length || queries.some(bits => bits.every(bit => r._search.includes(bit)))) && passes(r, rowSrc(r)))
+            let matches = needFilter
+              ? rows.filter((r) => (!queries.length || queries.some(bits => bits.every(bit => r._search.includes(bit)))) && passes(r, rowSrc(r)) && (!vnOnly.checked || vnIndex.matches(r[1]) || Object.values(r._inns || {}).some(inn => vnIndex.matches(inn))))
               : rows;
+            if (vnOnly.checked && vnOptions.excludeDomestic) matches = matches.filter(r => {
+              const state=vnDomestic(r);
+              if(state==='blocked') {if(!activeCountry || activeCountry===cc)vnBlocked++;return false;}
+              if(state==='review' && (!activeCountry || activeCountry===cc))vnReview++;
+              return true;
+            });
             countryCounts[cc] = matches.length;
             if ((!activeCountry || activeCountry === cc) && matches.length) {
               buckets[cc] = matches;
@@ -590,7 +628,7 @@
               (hasDump ? '<span class="src-label">Nguồn quốc gia</span>' : "") +
               (hasEma ? '<span class="src-label">EMA</span>' : "") +
               "<input class=\"cg-q\" type=\"search\" placeholder=\"Lọc…\" aria-label=\"Lọc thuốc " + esc(countryName(code)) + "\" autocomplete=\"off\" /></summary>" +
-              "<div class=\"cg-body\"><table class=\"med\"><colgroup><col class=\"ck\" /><col class=\"num\" /><col class=\"inn\" /><col class=\"nm\" /><col class=\"fm\" /><col class=\"st\" /><col class=\"co\" /><col class=\"src\" /></colgroup><thead><tr><th></th><th>#</th><th>Hoạt chất (INN)</th><th>Tên thuốc</th><th>Dạng</th><th>Hàm lượng</th><th>Công ty</th><th>Nguồn</th></tr></thead><tbody></tbody></table></div>";
+              "<div class=\"cg-body\"><table class=\"med\"><colgroup><col class=\"ck\" /><col class=\"num\" /><col class=\"inn\" /><col class=\"nm\" /><col class=\"fm\" /><col class=\"st\" /><col class=\"co\" /><col class=\"src\" /></colgroup><thead><tr><th></th><th>#</th><th>Hoạt chất (INN)</th><th>Tên thuốc</th><th>Dạng</th><th>Hàm lượng</th><th>" + (code === "VN" ? "Công ty đăng ký" : "Công ty") + "</th><th>Nguồn</th></tr></thead><tbody></tbody></table></div>";
             store.set(d, list);
             allRows.set(d, list);
             shownN.set(d, 0);
@@ -610,6 +648,7 @@
             }
           });
           mnone.style.display = n ? "none" : "block";
+          if(vnOnly.checked)paintVn(vnBlocked, vnReview);
           mhit.textContent = n ? (n.toLocaleString("vi-VN") + " dòng · " + order.length + " nước") : "Không có kết quả.";
           syncTraHeights();
         };
@@ -636,7 +675,7 @@
       });
       function remember(code, r, on, persist = true) {
         const k = rowKey(code, r);
-        if (on) selected[k] = [code, r[1], r[2], r[3], r[4], r[5], (r._sources || [r[6] || "d"]).join("+")];
+        if (on) selected[k] = [code, r[1], r[2], r[3], r[4], r[5], (r._sources || [r[6] || "d"]).join("+"),r[7] || '',r[8] || ''];
         else delete selected[k];
         if (persist) saveSel();
       }
@@ -912,6 +951,18 @@
           });
           HEALTH = d.h || null;
           SITES = d.c || {};
+          vnData = d.vn;
+          vnSnapshot = d.vn?.records ? SraVn.snapshot(d.vn) : null;
+          configureVn(); paintVn();
+          vnReasons.domestic='ô khớp danh mục 93 nội địa';
+          for(const v of vnSnapshot?.records || []) {
+            const row=['VN',v.inn,v.product,v.form,v.strength,v.registrant,'d',v.id,v.sdk];
+            row._sources=['d'];row._inns={d:v.inn};MED.push(row);
+          }
+          compare=SraCompare({dialog:document.getElementById('vn-compare'),records:vnSnapshot?.records || [],
+            assessments:()=>vnAssessments,reasons:vnReasons,countryName,fold:searchText,
+            getResults:()=>[...mgroups.querySelectorAll('details.cg')].flatMap(d=>(store.get(d)||[]).map(r=>({cc:d.dataset.cc,row:r}))),
+            vnEnabled:()=>vnOnly.checked,sourceUrl:cc=>srcOf(cc).url});
           buildInns();
           buildCountryData();
           paintCountries();
@@ -920,7 +971,7 @@
           paintFormChips();
           paintMg();
           saveSel();
-          mmeta.textContent = (d.n || MED.length).toLocaleString("vi-VN") + " dòng từ các nguồn đã nạp · " + (d.u || "");
+          mmeta.textContent = MED.length.toLocaleString("vi-VN") + " dòng từ 36 nước SRA & Việt Nam · " + (d.u || "");
           paintHealth();
           hydrateFlags();
         } catch (e) {
@@ -934,6 +985,10 @@
       window.addEventListener("afterprint", () => paintUi(root.dataset.guide, false));
 
       if (mgo) mgo.addEventListener("click", () => pickSuggest(mq.value));
+      vnOnly.addEventListener('change', () => { configureVn(); searchMed({keepPeek: true}); });
+      document.getElementById('compare-toggle').addEventListener('change', ev => {
+        if(ev.target.checked) {if(!hasSearched) {ev.target.checked=false; mhit.textContent='Bấm Tìm thuốc trước khi so sánh.';return;} compare?.open();}
+      });
       if (msrc) msrc.addEventListener("click", (ev) => {
         const b = ev.target.closest("button[data-src]");
         if (!b) return;
@@ -1004,6 +1059,8 @@
         });
       }
       document.getElementById('filter-reset').addEventListener('click', () => {
+        vnOnly.checked = false;
+        configureVn();
         selForms.clear(); selCountries.clear(); activeCountry = ''; focusCountry(''); srcSel.clear();
         document.getElementById('filter-country-query').value = '';
         mgMinEl.value = ''; mgMaxEl.value = ''; document.getElementById('mg-exact').value = '';
@@ -1012,6 +1069,7 @@
       function snapshotFilter() {
         return {
           v: 2,
+          vnOnly: vnOnly.checked,
           terms: [...searchTerms],
           q: mq.value || "",
           countries: [...selCountries],
@@ -1026,12 +1084,15 @@
       }
       function applyFilter(f) {
         if (!f || typeof f !== "object") return;
+        vnOnly.checked = f.vnOnly === true && !vnOnly.disabled;
+        vnNote.hidden = !vnOnly.checked && !vnOnly.disabled;
+        configureVn();
         mq.value = typeof f.q === 'string' ? f.q : '';
         searchTerms = [...new Map((Array.isArray(f.terms) ? f.terms : [mq.value]).filter(t => typeof t === 'string' && t.trim()).map(t => [searchText(t), t.trim()])).values()];
         if (!Array.isArray(f.terms)) mq.value = '';
         paintSearchTerms();
         selCountries.clear();
-        (f.countries || []).forEach((cc) => { if (SRA36.includes(cc)) selCountries.add(cc); });
+        (f.countries || []).forEach((cc) => { if (SEARCH_COUNTRIES.includes(cc)) selCountries.add(cc); });
         selForms.clear();
         (f.forms || []).forEach((k) => selForms.add(k));
         srcSel.clear();

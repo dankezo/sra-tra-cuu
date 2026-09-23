@@ -1,5 +1,5 @@
     <section id="tra">
-      <div class="tra-head"><div><p class="kicker">Tra cứu thuốc · 36 quốc gia SRA</p><h2>Tìm thuốc & công ty</h2></div></div>
+      <div class="tra-head"><div><p class="kicker">Tra cứu thuốc · 36 quốc gia SRA & Việt Nam</p><h2>Tìm thuốc & công ty</h2></div></div>
       <p class="search-intro">Tìm trong dữ liệu đã nạp. Chọn một nước để xem thuốc từ nguồn quốc gia và EMA.</p>
       <div class="search-filters no-print">
         <div class="search-bar"><div class="qwrap">
@@ -23,6 +23,18 @@
           <details class="filter-dropdown"><summary>Dạng bào chế <span id="form-count"></span></summary><div class="filter-menu"><div id="mforms" class="check-grid"></div></div></details>
           <details class="filter-dropdown"><summary>Quốc gia <span id="region-count"></span></summary><div class="filter-menu"><input id="filter-country-query" type="search" aria-label="Tìm trong bộ lọc quốc gia" placeholder="Tìm quốc gia…" /><button type="button" class="quiet-button" id="filter-countries-clear">Bỏ lọc quốc gia</button><div id="mflags" class="check-grid"></div></div></details>
           <details class="filter-dropdown"><summary>Nguồn dữ liệu</summary><div class="filter-menu"><div id="msrc" class="src-mini"></div></div></details>
+          <label class="vn-filter" title="Giữ kết quả có ít nhất một hoạt chất khớp danh mục DAV"><input id="vn-only" type="checkbox" aria-describedby="vn-note" disabled /><svg width="20" height="14" viewBox="0 0 30 20" aria-hidden="true"><path fill="#da251d" d="M0 0h30v20H0z"/><path fill="#ff0" d="m15 3 1.57 4.84h5.09l-4.12 2.99 1.57 4.84L15 12.68l-4.11 2.99 1.57-4.84-4.12-2.99h5.09z"/></svg><span>Hoạt chất ở VN</span></label>
+        </div>
+        <div class="vn-info">
+        <p id="vn-note" class="vn-note" role="status" hidden></p>
+        <details id="vn-help" class="vn-help" hidden>
+          <summary>Giải thích bộ lọc VN</summary>
+          <div class="vn-help-body">
+          <p>Giữ tân dược thương mại có hoạt chất và ngày hết hạn rõ ràng, còn ít nhất 36 tháng. Tự loại hồ sơ thu hồi/hết hạn và ô khớp danh mục 93 thuốc nội địa theo hoạt chất, hàm lượng, dạng bào chế. Đây là tiêu chí sàng lọc cố định; không cần chọn nhóm thầu.</p>
+          <p>Thuốc phối hợp chỉ cần có một hoạt chất khớp DAV. “Gần khớp” chỉ gồm một số biến thể cách viết; không xác nhận tương đương điều trị. Hồ sơ thiếu hạn hoặc chỉ có tiếp nhận gia hạn không được tự suy ra hạn mới. Dữ liệu DAV là bản đã tải, chưa đồng bộ riêng toàn bộ quyết định mới.</p>
+          <a href="https://vbpl.vn/boyte/Pages/vbpq-print.aspx?ItemID=166832" target="_blank" rel="noopener">Danh mục 93 và ngoại lệ</a>
+          </div>
+        </details>
         </div>
         <div class="filter-footer"><div class="lang-mini" role="group" aria-label="Ngôn ngữ dạng bào chế"><button type="button" data-guide="orig" class="on">Gốc</button><button type="button" data-guide="en">EN</button><button type="button" data-guide="vi">VI</button></div><div class="filter-file"><button id="filter-save" class="quiet-button" type="button">Lưu bộ lọc</button><button id="filter-load" class="quiet-button" type="button">Mở bộ lọc</button><input id="filter-file" type="file" accept="application/json,.json" hidden /></div><button id="filter-reset" class="quiet-button" type="button">Xóa bộ lọc</button></div>
       </div>
@@ -42,6 +54,7 @@
               <span id="sel-n">0 đã chọn</span>
               <button type="button" id="sel-export">Xuất Excel</button>
               <button type="button" id="sel-clear">Bỏ chọn</button>
+              <label><input type="checkbox" id="compare-toggle" /> So sánh với VN</label>
               <label>Hiện
                 <select id="page-size">
                   <option value="25">25</option>
@@ -60,4 +73,13 @@
         </div>
       </div>
       <div id="source-toast" role="status" hidden></div>
+      <dialog id="vn-compare" aria-labelledby="compare-title">
+        <header class="compare-head"><div><h3 id="compare-title">So sánh hoạt chất với Việt Nam</h3><p id="compare-context"></p></div><button type="button" id="compare-close" aria-label="Đóng so sánh">×</button></header>
+        <div class="compare-actions"><button type="button" id="compare-all">Đối chiếu tất cả</button><label><input type="checkbox" id="compare-eligible" /> Chỉ DAV đạt bộ lọc VN</label><button type="button" id="compare-export">Xuất Excel · 2 sheet</button><span id="compare-status" role="status"></span></div>
+        <p class="compare-hint">Bấm một dòng bên trái để đối chiếu riêng. Excel xuất toàn bộ phạm vi đang so sánh, không chỉ trang đang xem. Khớp hoạt chất không đồng nghĩa tương đương điều trị.</p>
+        <div class="compare-panes">
+          <section><h4>Kết quả hiện tại <span id="compare-left-count"></span></h4><input id="compare-left-query" type="search" aria-label="Lọc kết quả trong so sánh" placeholder="Lọc tên thuốc, hoạt chất, công ty…" /><div id="compare-left" class="compare-list"></div><nav><button type="button" data-compare-page="left:-1">←</button><span id="compare-left-page"></span><button type="button" data-compare-page="left:1">→</button></nav></section>
+          <section><h4>Hồ sơ DAV tương ứng <span id="compare-right-count"></span></h4><input id="compare-right-query" type="search" aria-label="Lọc hồ sơ DAV trong so sánh" placeholder="Lọc SĐK, thuốc, công ty đăng ký…" /><div id="compare-right" class="compare-list"></div><nav><button type="button" data-compare-page="right:-1">←</button><span id="compare-right-page"></span><button type="button" data-compare-page="right:1">→</button></nav></section>
+        </div>
+      </dialog>
     </section>

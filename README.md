@@ -30,6 +30,29 @@ Each EEA country receives the entire loaded EMA set plus its national dump. `_da
 
 ## Local rebuild (maintainers)
 
+### Việt Nam và so sánh DAV
+
+Việt Nam xuất hiện cùng các quốc gia khác trong tìm kiếm, danh sách và bản đồ; Việt Nam không được tính vào 36 nước SRA. Nạp 54.752 hồ sơ DAV từ `D:\BaoAnSearcher\test zone\data\thuoc.sqlite3`, bản tải 21/09/2026. Cột công ty của VN luôn lấy **tên công ty đăng ký**, không thay bằng công ty sản xuất. Mỗi SĐK là một dòng riêng, kèm SĐK và ngày hết hạn.
+
+Ô **🇻🇳 Hoạt chất ở VN** chỉ bật/tắt. Khi bật, tự giữ tân dược thương mại có hoạt chất, hạn rõ ràng và còn ít nhất 36 tháng; loại cờ thu hồi/hết hạn và ô khớp danh mục 93 theo đủ hoạt chất–hàm lượng–dạng. Theo dữ liệu ngày 23/09/2026, còn **7.785 hồ sơ đạt** làm tập đối chiếu. Bỏ tick phục hồi toàn bộ dữ liệu theo các bộ lọc tìm kiếm khác. Liên kết **Giải thích bộ lọc VN** chỉ mở thông tin, không có lựa chọn nhóm thầu hay mốc tháng.
+
+Bật **So sánh với VN** cạnh Xuất Excel để mở cửa sổ hai bên: kết quả tìm kiếm hiện tại và hồ sơ DAV có thành phần khớp/gần khớp cách viết. Có tìm nhanh, phân trang, chọn một dòng hoặc tất cả, chỉ xem DAV đạt điều kiện, sao chép SĐK. Nút xuất tạo `.xlsx` thật với hai worksheet **Kết quả chính** và **DAV đối chiếu**, gồm toàn bộ phạm vi đang đối chiếu, không chỉ trang đang hiện. Khi chọn riêng một dòng, sheet chính chứa dòng đó; khi đối chiếu tất cả, sheet chính chứa toàn bộ kết quả sau ô tìm nhanh bên trái. Sheet DAV tôn trọng ô tìm nhanh bên phải và lựa chọn DAV đạt điều kiện.
+
+Xem [quy tắc và giới hạn](VN_FILTER.md). Đóng downloader DAV trước khi nhập lại; cập nhật dữ liệu và build:
+
+```text
+python _import_vn.py "D:\BaoAnSearcher\test zone\data\thuoc.sqlite3"
+python _rebuild.py
+python _embed.py
+node test_vn_logic.js
+node test_vn_policy.js
+node test_compare_logic.js
+python -m unittest test_import_vn
+node test_vn_ui.cjs
+```
+
+Kiểm tra trình duyệt dùng `SRA_PLAYWRIGHT_PATH` và `SRA_BROWSER_CHANNEL=chrome` nếu cần. JSZip được nhúng để xuất Excel offline (MIT, `vendor/JSZIP-LICENSE`). Toàn bộ dữ liệu DAV nằm trong HTML, không cần truy cập ổ D của máy nguồn.
+
 ```text
 python _parse.py      # data/raw/{CC}/ → data/search.json
 python _rebuild.py    # prefix HTML + _app.js
@@ -46,7 +69,7 @@ Raw dumps stay in `data/raw/` and are not published (some files are hundreds of 
 
 Source URLs were checked against the [EMA national register directory](https://www.ema.europa.eu/en/medicines/national-registers-authorised-medicines), [AIFA](https://www.aifa.gov.it/en/trova-farmaco), [FimeaWeb](https://fimea.fi/en/databases_and_registers/fimeaweb) and register pages on 2026-09-22. Some sources block automated verification; external availability and English support vary.
 
-The standalone HTML embeds D3 7.9.0 (ISC, `vendor/D3-LICENSE`) and [Natural Earth 1:110m country boundaries](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson) (public domain). Small countries have supplemental selectable points. This generalized map is navigation only; the list always includes all 36 countries.
+The standalone HTML embeds D3 7.9.0 (ISC, `vendor/D3-LICENSE`) and [Natural Earth 1:110m country boundaries](https://github.com/nvkelso/natural-earth-vector/blob/master/geojson/ne_110m_admin_0_countries.geojson) (public domain). Small countries have supplemental selectable points. This generalized map is navigation only; the search list includes 36 SRA countries plus Vietnam.
 
 ## Company link verification
 

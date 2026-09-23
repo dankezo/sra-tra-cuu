@@ -9,3 +9,5 @@ Thumbs.db
 *.log
 _inspect.txt
 qa-*.png
+qa-*.xlsx
+qa-compare-counts.json

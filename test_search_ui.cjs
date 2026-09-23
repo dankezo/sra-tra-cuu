@@ -2,7 +2,7 @@ const {chromium}=require(process.env.SRA_PLAYWRIGHT_PATH || 'playwright');
 const assert=require('node:assert/strict');
 const path=require('node:path');
 (async()=>{
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({headless:true, ...(process.env.SRA_BROWSER_CHANNEL ? {channel:process.env.SRA_BROWSER_CHANNEL} : {})});
  const page=await browser.newPage({viewport:{width:1440,height:1000}});
  const errors=[]; page.on('pageerror', e=>errors.push(e.message));
  await page.goto('file:///'+path.resolve('index.html').replaceAll('\\','/'));

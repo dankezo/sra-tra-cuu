@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """Rebuild index.html from current prefix + _app.js. Idempotent. Then run _embed.py."""
 import re
+import time
 from pathlib import Path
 
 root = Path(__file__).resolve().parent
@@ -215,8 +216,9 @@ else:
 TRA = (root / "_search_ui.html").read_text(encoding="utf-8")
 
 prefix, ntra = re.subn(
-    r"    <section id=\"tra\">.*?</section>\r?\n",
-    TRA,
+    # The search UI contains nested sections (comparison panes); stop at its sibling.
+    r'    <section id="tra">.*?(?=    <details class="fold health" id="health">)',
+    TRA + '\n',
     prefix,
     count=1,
     flags=re.S,
@@ -326,11 +328,26 @@ out = (
     + '  <script type="application/json" id="sra-world">' + (root / "vendor/world.geojson").read_text(encoding="utf-8").replace("<", "\\u003c") + "</script>\n"
     + "<script>/*\n" + (root / "vendor/D3-LICENSE").read_text(encoding="utf-8") + "\n*/\n" + (root / "vendor/d3.min.js").read_text(encoding="utf-8") + "</script>\n"
     + "  <script>\n"
+    + '/*\n' + (root / 'vendor/JSZIP-LICENSE').read_text(encoding='utf-8').replace('*/', '* /') + '\n'
+    + (root / 'vendor/PAKO-LICENSE').read_text(encoding='utf-8').replace('*/', '* /') + '\n*/\n'
+    + (root / "vendor/jszip.min.js").read_text(encoding="utf-8") + "\n"
+    + (root / "_excel_export.js").read_text(encoding="utf-8") + "\n"
     + (root / "_data_logic.js").read_text(encoding="utf-8") + "\n"
+    + (root / "_vn_logic.js").read_text(encoding="utf-8") + "\n"
+    + (root / "_compare.js").read_text(encoding="utf-8") + "\n"
     + (root / "_country_map.js").read_text(encoding="utf-8") + "\n"
     + js
     + "  </script>\n"
     + "</body>\n</html>\n"
 )
-html_path.write_text(out, encoding="utf-8")
+tmp = html_path.with_name('_index.rebuild.html')
+tmp.write_text(out, encoding="utf-8")
+for attempt in range(6):
+    try:
+        tmp.replace(html_path)
+        break
+    except PermissionError:
+        if attempt == 5:
+            raise
+        time.sleep(0.5)
 print("rebuilt", round(html_path.stat().st_size / 1e6, 3), "mb")

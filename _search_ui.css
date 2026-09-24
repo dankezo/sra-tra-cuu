@@ -253,9 +253,7 @@ details.cg > summary::after { margin-left: 4px; flex: 0 0 auto; }
   .tra-main { height: auto !important; overflow: visible; }
   .strength-filter { min-width: 100%; }
   .search-filters { padding: 12px; }
-  .country-panel header { padding: 12px; }
-  #country-map { max-height: 260px; }
-  #country-list { max-height: 220px; }
+  .country-panel { display: none !important; }
   #mgo { padding: 9px 16px; }
   #tra .filter-row > details { min-width: 120px; }
   #tra .filter-row > details { position: static; }

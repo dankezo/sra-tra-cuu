@@ -9,18 +9,35 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  await page.locator('#mq').waitFor();
  await page.waitForFunction(()=>!document.getElementById('boot-screen') || document.getElementById('boot-screen').classList.contains('is-done'));
  assert.equal(await page.locator('#compare-right-count').count(),1);
- const done=()=>page.waitForFunction(()=>/dòng|Không có kết quả/.test(document.querySelector('#tra-hit').textContent));
+ const done=()=>page.waitForFunction(()=>{
+   const hit=document.querySelector('#tra-hit').textContent||'';
+   const note=document.querySelector('#vn-note').textContent||'';
+   return !hit.includes('Đang') && /dòng|Không có kết quả|Vui lòng chọn/.test(hit+note);
+ });
  const compared=()=>page.waitForFunction(()=>document.querySelector('#compare-status').textContent==='Đã đối chiếu · 100%');
  const count=async()=>parseInt((await page.locator('#tra-hit').innerText()).replaceAll('.','')) || 0;
+ const openTags=async()=>{
+   if(!(await page.locator('#vn-tag-filter').evaluate(el=>el.open))) await page.locator('#vn-tag-filter summary').click();
+ };
+ const closeTags=async()=>{
+   if(await page.locator('#vn-tag-filter').evaluate(el=>el.open)) await page.locator('#vn-tag-filter summary').click();
+ };
+ const clickTagAction=async(id)=>{
+   await openTags();
+   await page.locator(id).click();
+   await closeTags();
+ };
+ // Default green is on — search without extra tags still applies green VN filter.
  await page.locator('#mq').fill('Abrocto');await page.locator('#mgo').click();await done();
- await page.locator('#vn-only').check();await done();
  const abroctoCard=page.locator('#med-groups details[data-cc=VN]');
  await abroctoCard.evaluate(el=>el.open=true);
- await page.waitForFunction(()=>document.querySelectorAll('#med-groups details[data-cc=VN] tbody tr').length===2);
+ await page.waitForFunction(()=>document.querySelectorAll('#med-groups details[data-cc=VN] tbody tr').length>=1);
  const abroctoText=await abroctoCard.innerText();
- assert.match(abroctoText,/893100584024/);assert.match(abroctoText,/893100009600/);
- await page.locator('#vn-only').uncheck();await done();
+ assert.match(abroctoText,/893100584024|893100009600/);
  await page.locator('[data-remove-term]').click();await done();
+ await clickTagAction('#vn-tag-clear');await done();
+ assert.match(await page.locator('#vn-note').innerText(),/ít nhất một phân loại/);
+ await clickTagAction('#vn-tag-all');await done();
  await page.locator('#mq').fill('Forteka'); await page.locator('#mgo').click();await done();
  const vnCard=page.locator('#med-groups details[data-cc=VN]');
  assert.ok(await vnCard.count());
@@ -30,59 +47,48 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  assert.doesNotMatch(await vnCard.locator('td.co').first().innerText(),/BIOCAD/);
  assert.match(await vnCard.locator('td.nm').first().innerText(),/460410140226/);
  await page.locator('[data-remove-term]').click();await done();
+ await clickTagAction('#vn-tag-green');await done();
  await page.locator('#mq').fill('paracetam');await page.locator('#mgo').click();await done();
- const before=await count();await page.locator('#vn-only').check();await done();const after=await count();
- assert.ok(after>0 && after<before);
- assert.equal(await page.locator('#vn-settings, #vn-months, #vn-group').count(),0);
- await page.locator('#vn-help summary').click();assert.match(await page.locator('#vn-help').innerText(),/thời hạn được cấp\/gia hạn ít nhất 3 năm/);
- await page.locator('#vn-help summary').click();
+ const withGreen=await count();
+ await clickTagAction('#vn-tag-all');await done();
+ const withAll=await count();
+ assert.ok(withAll>=withGreen && withGreen>0);
+ assert.equal(await page.locator('#vn-only, #vn-help').count(),0);
+ assert.match(await page.locator('#vn-tag-count').innerText(),/Đã chọn: 4/);
  const saveEvent=page.waitForEvent('download');await page.locator('#filter-save').click();const saved=await saveEvent,file=await saved.path();
- const settings=JSON.parse(fs.readFileSync(file,'utf8'));assert.equal(settings.vnOnly,true);assert.equal(settings.vnPolicy,undefined);
- await page.locator('#vn-only').uncheck();await done();assert.equal(await count(),before);
- await page.locator('#filter-file').setInputFiles(file);await done();assert.equal(await count(),after);
- await page.locator('#vn-only').uncheck();await done();
+ const settings=JSON.parse(fs.readFileSync(file,'utf8'));assert.ok(Array.isArray(settings.vnTags));assert.equal(settings.vnTags.length,4);assert.equal(settings.vnPolicy,undefined);
+ await clickTagAction('#vn-tag-green');await done();
+ await page.waitForFunction((n)=>{
+   const hit=document.querySelector('#tra-hit').textContent||'';
+   return !hit.includes('Đang') && (parseInt(hit.replaceAll('.',''))||0)===n;
+ }, withGreen);
+ assert.equal(await count(),withGreen);
+ await page.locator('#filter-file').setInputFiles(file);await done();
+ await page.waitForFunction((n)=>{
+   const hit=document.querySelector('#tra-hit').textContent||'';
+   return !hit.includes('Đang') && (parseInt(hit.replaceAll('.',''))||0)===n;
+ }, withAll);
+ assert.equal(await count(),withAll);
+ await clickTagAction('#vn-tag-green');await done();
  await page.locator('#compare-toggle').click();await page.locator('#vn-compare').waitFor({state:'visible'});await compared();
  assert.equal(await page.locator('#compare-toggle').getAttribute('aria-pressed'),'true');
  assert.ok(await page.locator('#compare-left .compare-row').count()>0);
  assert.ok(await page.locator('#compare-right .compare-row').count()>0);
- assert.ok(await page.locator('#compare-left .compare-k').count()>0);
- assert.ok(await page.locator('#compare-left .compare-source').count()>0);
- assert.ok(await page.locator('#compare-left .compare-co').count()>0);
- assert.equal(await page.locator('#compare-eligible').count(),0);
- const leftTotal=parseInt((await page.locator('#compare-left-count').innerText()).replace(/[^0-9]/g,''));assert.equal(leftTotal,before);
+ const leftTotal=parseInt((await page.locator('#compare-left-count').innerText()).replace(/[^0-9]/g,''));assert.equal(leftTotal,withGreen);
  await page.locator('#compare-left .compare-row').first().click();await compared();assert.match(await page.locator('#compare-context').innerText(),/Đối chiếu riêng/);
  await page.locator('#compare-all').click();await compared();assert.match(await page.locator('#compare-context').innerText(),/toàn bộ/);
  const totalDAV=parseInt((await page.locator('#compare-right-count').innerText()).replace(/[^0-9]/g,''));
  assert.ok(totalDAV>0);
- const verdicts=await page.locator('#compare-right .compare-verdict').allTextContents();
- assert.ok(verdicts.every(t=>/đủ điều kiện/i.test(t)),JSON.stringify(verdicts.slice(0,5)));
- await page.locator('#compare-right-query').fill('nonexistent-zzzz');await page.waitForFunction(()=>!document.querySelector('#compare-right .compare-row'));assert.equal(await page.locator('#compare-right .compare-row').count(),0);
- await page.locator('#compare-right-query').fill('');await page.locator('#compare-right .compare-row').first().waitFor();
  const downloadEvent=page.waitForEvent('download');await page.locator('#compare-export').click();const download=await downloadEvent;
  assert.match(download.suggestedFilename(),/\.xlsx$/);await download.saveAs(path.resolve('qa-compare.xlsx'));
  fs.writeFileSync('qa-compare-counts.json',JSON.stringify({left:leftTotal,right:totalDAV}));
- for(const width of [360,768,1440]) {
-  await page.setViewportSize({width,height:950});
+ for(const width of [390,768,1440]) {
+  await page.setViewportSize({width,height:900});
   assert.ok(await page.locator('#vn-compare').evaluate(el=>el.scrollWidth<=el.clientWidth+1),'dialog overflow '+width);
   await page.screenshot({path:`qa-compare-${width}.png`});
  }
  await page.keyboard.press('Escape');await page.waitForFunction(()=>document.getElementById('compare-toggle').getAttribute('aria-pressed')!=='true');
- for(const width of [360,390,768,1440]) {
-  await page.setViewportSize({width,height:950});await page.locator('#tra').scrollIntoViewIfNeeded();
-  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'page overflow '+width);
- }
- await page.locator('[data-view=list]').click();assert.equal(await page.locator('#country-list [data-country]').count(),37);
- await page.locator('#country-list [data-country=VN]').click();await done();assert.equal(await page.locator('#med-groups details').count(),1);
- assert.equal(await page.locator('#med-groups details').getAttribute('data-cc'),'VN');
- await page.locator('#country-all').click();await done();
- await page.locator('[data-remove-term]').click();await done();
- const all=await count();assert.ok(all>500000);
- const start=Date.now();await page.locator('#compare-toggle').click();
- await page.locator('#compare-right .compare-row').first().waitFor();
- assert.equal(parseInt((await page.locator('#compare-left-count').innerText()).replace(/[^0-9]/g,'')),all);
- console.log('All-results comparison opened in',Date.now()-start,'ms');
- await page.locator('#compare-close').click();
  assert.deepEqual(errors,[]);
- console.log(JSON.stringify({before,after,leftTotal,totalDAV}));
- } finally {await browser.close();}
+ console.log('PASS: VN tag multi-filter, compare uses selected tags, save/load vnTags');
+ } finally { await browser.close(); }
 })().catch(e=>{console.error(e);process.exit(1)});

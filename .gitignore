@@ -11,3 +11,5 @@ _inspect.txt
 qa-*.png
 qa-*.xlsx
 qa-compare-counts.json
+node_modules/
+_patch_vn_tags.py

@@ -31,7 +31,9 @@ function SraCompare(options) {
     const current=options.assessments();if(assessed===current)return true;
     const next=new Map(), good=[];
     if(!await chunks(records,r=>{
-      if(current.get(r.id)?.reason!=='eligible')return;
+      const a=current.get(r.id);
+      const tags=new Set(options.selectedTags ? options.selectedTags() : []);
+      if(!tags.size || !a || !tags.has(a.tagId))return;
       good.push(r);
       for(const k of keys(r.inn)){
         if(!next.has(k))next.set(k,{sdk:new Set(),form:new Set(),strength:new Set(),missingForm:false,missingStrength:false});
@@ -106,7 +108,7 @@ function SraCompare(options) {
         `<small><span class="compare-k">Hàm lượng</span> ${esc(r.strength || 'Chưa có hàm lượng')} · <span class="compare-k">Dạng</span> ${esc(options.formLabel(r.form))}</small>`+
         `<small><span class="compare-k">Công ty đăng ký</span> ${companyHtml(r.registrant, true)}</small>`+
         `<small><span class="compare-k">SĐK</span> ${esc(r.sdk || '—')} · <span class="compare-k">Hạn</span> ${esc(a?.expiry || r.expiry || 'Chưa rõ')}</small>`+
-        `<span class="compare-verdict ok">${esc(reason(r))}</span>`+
+        `<span class="compare-verdict ok">${esc(reason(r))}${a?.tagId ? ' · ' + esc((options.tagLabel && options.tagLabel(a.tagId)) || a.tagId) : ''}</span>`+
         `<button type="button" class="quiet-button compare-copy" data-copy-sdk="${esc(r.sdk)}">Sao chép SĐK</button>`+
       `</article>`;
     }).join('') || '<p class="compare-empty">Không có hồ sơ DAV đạt bộ lọc VN khớp thành phần trong phạm vi này. Thử đổi từ khóa hoặc chọn dòng khác bên trái.</p>';

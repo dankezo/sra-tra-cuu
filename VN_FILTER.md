@@ -4,9 +4,11 @@
 
 54.752 hồ sơ DAV từ database BaoAnSearcher, hoàn tất tải 21/09/2026, xuất hiện trong nhóm Việt Nam. Cột công ty dùng `congTyDangKy.tenCongTyDangKy`; nếu trống thì để thiếu, không thay bằng nhà sản xuất. Không gộp các SĐK khác nhau chỉ vì trùng thuốc. Dòng kết quả VN có SĐK và hạn nguồn; Việt Nam được thêm vào bản đồ/danh sách tìm kiếm, không được gắn nhãn nước SRA.
 
-## Một ô bật/tắt
+## Lọc theo trạng thái (4 tag)
 
-Quy tắc cố định `SraVn.SIMPLE_POLICY`: tân dược thương mại, có hoạt chất, có ngày hết hạn hợp lệ và còn hiệu lực, có **thời hạn được cấp/gia hạn ít nhất 3 năm lịch** tính từ ngày cấp/gia hạn đến ngày hết hạn. Kỳ cấp đúng 3 năm được giữ; không yêu cầu thời gian còn lại phải đủ 3 năm. SĐK thu hồi, bị xóa, không hoạt động, hết hạn hoặc không rõ hạn bị loại. Hồ sơ chỉ có tiếp nhận gia hạn không được tự cộng thêm 5 năm. Ngày gia hạn mới và quyết định bổ sung có nguồn được xử lý trước khi xét hạn.
+Dropdown **Lọc theo trạng thái** thay checkbox cũ. Mặc định chỉ **TAG_XANH_LA** (Sẵn sàng dự thầu): tân dược thương mại, có hoạt chất, hạn hợp lệ còn hiệu lực, kỳ cấp/gia hạn **> 3 năm lịch**, còn hạn **> 18 tháng**, không khớp Danh mục 93. Kỳ cấp đúng ≤ 3 năm hoặc còn hạn ≤ 18 tháng → **TAG_VANG_XAC_MINH**. Khớp DM93 → **TAG_CAM_CMO**. Hết hạn / thu hồi / thiếu dữ liệu → **TAG_XAM_LICH_SU**.
+
+Quy tắc ngày/mã vẫn theo `SraVn.SIMPLE_POLICY` (months:18, excludeShort). Hồ sơ chỉ có tiếp nhận gia hạn không được tự cộng thêm 5 năm. Ngày gia hạn mới và quyết định bổ sung có nguồn được xử lý trước khi xét hạn.
 
 Giữ tiền tố `VD-`, `VN-`, `VN2-`, `VN3-`, `GC-`; mã 12 số nhóm thứ tư là 1 cũng được giữ. Mã nhóm 6/7 cần SĐK cũ xác nhận tiền tố mục tiêu. Không dùng kiểm tra `V*` vì sẽ loại nhầm VD/VN. [Cấu trúc mã mới](https://dav.gov.vn/images/upload_file/2025/325phu-luc-vsigned_1747811661.pdf).
 
@@ -16,7 +18,7 @@ Số hồ sơ đạt được tính lại theo ngày dùng công cụ và thời
 
 ## So sánh hai bên
 
-Mở từ thanh chọn/xuất kết quả. Bên trái là bản chụp toàn bộ kết quả đang hiển thị theo tìm kiếm, quốc gia và lọc trong thẻ từng nước, kể cả những dòng chưa mở trang. Bên phải chỉ hiện hồ sơ DAV đạt bộ lọc VN có thành phần khớp với phạm vi bên trái. Có thể chọn một dòng, quay lại tất cả, tìm nhanh từng bên, phân trang 40 dòng, sao chép SĐK và xuất Excel. Đóng bằng nút × hoặc Escape sẽ tắt chế độ so sánh.
+Mở từ thanh chọn/xuất kết quả. Bên trái là bản chụp toàn bộ kết quả đang hiển thị theo tìm kiếm, quốc gia và lọc trong thẻ từng nước, kể cả những dòng chưa mở trang. Bên phải chỉ hiện hồ sơ DAV có `tagId` nằm trong các tag đang chọn ở dropdown ngoài, và thành phần khớp với phạm vi bên trái. Có thể chọn một dòng, quay lại tất cả, tìm nhanh từng bên, phân trang 40 dòng, sao chép SĐK và xuất Excel. Đóng bằng nút × hoặc Escape sẽ tắt chế độ so sánh.
 
 So khớp bỏ dấu, không phân biệt hoa thường, tách thành phần phối hợp và hàm lượng có đơn vị. Một số biến thể được chuẩn hóa có kiểm soát: acetaminophen/paracetamol, aciclovir/acyclovir, chữ e cuối tên dài, hydrochloride/hydroclorid. Không dùng khoảng cách ký tự tùy ý. “Gần khớp cách viết” và “khớp thành phần” không phải xác nhận tương đương điều trị. Mỗi hồ sơ DAV xuất hiện tối đa một lần dù khớp nhiều kết quả; vẫn ghi các hoạt chất cùng khớp.
 
@@ -36,7 +38,7 @@ Mặc định 50 dòng/lượt, chọn được 25/50/100/200. Lựa chọn cũ 
 
 `_import_vn.py` đọc database nguồn ở chế độ chỉ đọc, dừng nếu còn WAL chưa checkpoint; giữ tên thuốc và công ty đăng ký. `_embed.py` nhúng bảng dữ liệu vào HTML nên trang chạy offline. `data/vn-evidence.json` hỗ trợ quyết định bổ sung đã xác minh theo SĐK, loại quyết định, ngày và URL chính thức; hiện chưa có mục bổ sung. Chưa đồng bộ riêng đầy đủ quyết định gia hạn/thu hồi ngoài DAV; không coi thiếu hạn là bằng chứng giấy phép đã vô hiệu.
 
-Kiểm tra: `test_compare_logic.js` kiểm tra ngưỡng cố định, danh mục, công ty đăng ký, so khớp và loại trùng; `test_vn_policy.js` kiểm tra thuật toán ngày/mã/ngoại lệ; `test_vn_ui.cjs` kiểm tra giao diện, 37 quốc gia, so sánh, lưu/mở lọc, xuất workbook và màn hình nhỏ. Cấu hình cũ `vnPolicy` trong file lọc được bỏ qua; chỉ trạng thái `vnOnly` được phục hồi.
+Kiểm tra: `test_compare_logic.js` kiểm tra ngưỡng cố định, danh mục, công ty đăng ký, so khớp, tagId và loại trùng; `test_vn_policy.js` kiểm tra thuật toán ngày/mã/ngoại lệ; `test_vn_ui.cjs` kiểm tra dropdown tag, so sánh theo tag đã chọn, lưu/mở `vnTags`, xuất workbook và màn hình nhỏ. Cấu hình cũ `vnOnly` trong file lọc được map sang xanh (true) hoặc không chọn (false); ưu tiên `vnTags` nếu có.
 
 `test_compare_filters.cjs` kiểm tra số lượng, giá trị thiếu, phối hợp cùng hoạt chất, lọc hai chiều, dropdown và Excel. `test_large_search.cjs` đo trên dữ liệu đầy đủ, giới hạn DOM, phân trang và đóng tác vụ đang nạp.
 

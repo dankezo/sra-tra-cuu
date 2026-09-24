@@ -13,10 +13,13 @@ const {chromium}=require(process.env.SRA_PLAYWRIGHT_PATH||'playwright'),assert=r
  const pill=await page.locator('.boot-spinner').evaluate(e=>{const s=getComputedStyle(e);return {animation:s.animationName,w:parseFloat(s.width),h:parseFloat(s.height),background:s.backgroundImage};});
  assert.equal(pill.animation,'boot-spin');assert.ok(pill.w>pill.h*2);assert.match(pill.background,/linear-gradient/);
  assert.equal(await page.locator('#boot-progress').count(),1);await page.screenshot({path:'qa-boot-pill.png'});
- const ready=()=>page.waitForFunction(()=>!document.querySelector('.search-filters').inert&&!document.getElementById('vn-only').disabled);
+ const ready=()=>page.waitForFunction(()=>!document.querySelector('.search-filters').inert&&!document.querySelector('#vn-tag-filter [data-vn-tag]')?.disabled);
  await ready();
  const progress=await page.evaluate(()=>bootValues);assert.equal(progress.at(-1),100);assert.ok(progress.length>10);assert.ok(progress.every((n,i)=>!i||n>=progress[i-1]));
  assert.equal(await page.locator('#page-size').inputValue(),'50');assert.equal(await page.evaluate(()=>localStorage.getItem('sra-page')),'50');
+ await page.locator('#vn-tag-filter summary').click();
+ await page.locator('#vn-tag-all').click();
+ await page.locator('#vn-tag-filter summary').click();
  await page.locator('#mgo').click();await page.waitForFunction(()=>!document.querySelector('#compare-toggle').disabled);
  const card=page.locator('#med-groups details[data-cc=VN]');await card.locator('summary').click();
  await page.waitForFunction(()=>document.querySelectorAll('#med-groups details[data-cc=VN] tbody tr').length===50&&!document.querySelector('#med-groups details[data-cc=VN]').hasAttribute('aria-busy'));

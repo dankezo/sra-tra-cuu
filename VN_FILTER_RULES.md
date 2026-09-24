@@ -1,6 +1,8 @@
-# Rule filter “Hoạt chất ở VN” — dùng lại cho tool khác
+# Rule filter trạng thái SĐK VN (4 tag) — dùng lại cho tool khác
 
-Mục đích: từ kết quả thuốc đang tra, giữ các thuốc có ít nhất một thành phần xuất hiện trong tập SĐK DAV đạt tiêu chí sàng lọc kinh doanh. Không chỉ kiểm tra tên hoạt chất có tồn tại trong DAV; phải kiểm tra chất lượng hồ sơ đối chiếu trước.
+Mục đích: từ kết quả thuốc đang tra, giữ các thuốc có ít nhất một thành phần xuất hiện trong tập SĐK DAV thuộc các **tag đang chọn** (mặc định xanh = sẵn sàng dự thầu). Không chỉ kiểm tra tên hoạt chất có tồn tại trong DAV; phải kiểm tra chất lượng hồ sơ đối chiếu trước.
+
+Tập xanh (`TAG_XANH_LA`) tương đương bộ lọc “đạt điều kiện” cũ. Các tag khác: vàng (hạn ngắn / kỳ ≤ 3 năm / đang gia hạn), cam (khớp DM93), xám (hết hạn / thu hồi / lịch sử).
 
 ## 1. Dựng tập hồ sơ DAV đạt điều kiện
 
@@ -13,9 +15,9 @@ Ngày xét là ngày hiện tại tại máy chạy công cụ. Mỗi SĐK đư�
 | Thiếu ngày hết hạn hợp lệ hoặc trạng thái hạn không rõ | Loại khỏi tập đạt | Không suy đoán hiệu lực khi thiếu dữ liệu |
 | Hết hạn trước ngày xét, hoặc có cờ hết hạn chưa được quyết định gia hạn hợp lệ thay thế | Loại | Chỉ dùng hồ sơ còn hiệu lực theo dữ liệu |
 | Thiếu ngày bắt đầu kỳ cấp/gia hạn hợp lệ; ngày bắt đầu ở tương lai hoặc sau ngày hết hạn | Loại | Không đủ căn cứ tính thời hạn được cấp |
-| Thời hạn được cấp/gia hạn dưới 3 năm lịch | Loại; đúng 3 năm được giữ | Ngưỡng sàng lọc kỳ cấp theo lựa chọn của người dùng |
-| Thiếu hoạt chất có thể chuẩn hóa | Loại | Không thể dùng để so khớp |
-| Khớp chắc chắn một ô trong danh mục 93 nội địa | Loại | Loại các ô kỹ thuật thuộc phạm vi kinh doanh cần tránh |
+| Thời hạn được cấp/gia hạn ≤ 3 năm lịch | Gán vàng (`TAG_VANG_XAC_MINH`) | Kỳ ngắn / ADR / lâm sàng |
+| Còn hạn ≤ 18 tháng (kỳ > 3 năm) | Gán vàng | Cần xác minh / hạn ngắn |
+| Khớp chắc chắn một ô trong danh mục 93 nội địa | Gán cam (`TAG_CAM_CMO`) | Cơ hội CMO; cấm nhập khẩu dự thầu |
 
 **Ngày bắt đầu:** ưu tiên ngày gia hạn hợp lệ; nếu không có, lấy ngày cấp hợp lệ. Điều kiện thời gian là:
 

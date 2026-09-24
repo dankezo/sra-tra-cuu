@@ -2,13 +2,16 @@ const {chromium}=require(process.env.SRA_PLAYWRIGHT_PATH || 'playwright'),path=r
 (async()=>{const browser=await chromium.launch({channel:'chrome',headless:true});try{
  const page=await browser.newPage({viewport:{width:1440,height:950}});page.on('pageerror',e=>console.log('ERROR',e.message));
  const start=Date.now();await page.goto('file:///'+path.resolve('index.html').replaceAll('\\','/'));
- await page.waitForFunction(()=>!document.querySelector('.search-filters').inert && !document.querySelector('#vn-only').disabled);
+ await page.waitForFunction(()=>!document.querySelector('.search-filters').inert && !document.querySelector('#vn-tag-filter [data-vn-tag]')?.disabled);
  console.log('loadMs',Date.now()-start);
  await page.evaluate(()=>{window.beats=0;window.gaps=[];let last=performance.now();window.pulse=setInterval(()=>{const now=performance.now();gaps.push(now-last);last=now;beats++;},25);});
- const done=()=>page.waitForFunction(()=>!document.querySelector('#compare-toggle').disabled && /dòng/.test(document.querySelector('#tra-hit').textContent));
+ const done=()=>page.waitForFunction(()=>!document.querySelector('#compare-toggle').disabled && /dòng|Vui lòng chọn/.test(document.querySelector('#tra-hit').textContent));
+ const openTags=async()=>{ if(!(await page.locator('#vn-tag-filter').evaluate(el=>el.open))) await page.locator('#vn-tag-filter summary').click(); };
+ const closeTags=async()=>{ if(await page.locator('#vn-tag-filter').evaluate(el=>el.open)) await page.locator('#vn-tag-filter summary').click(); };
+ const tagAct=async(sel)=>{ await openTags(); await page.locator(sel).click(); await closeTags(); };
  let t=Date.now();await page.locator('#mq').fill('paracetam');await page.locator('#mgo').click();await done();console.log('searchMs',Date.now()-t,await page.locator('#tra-hit').innerText());
- t=Date.now();await page.locator('#vn-only').check();await done();console.log('vnMs',Date.now()-t);
- await page.locator('#vn-only').uncheck();await done();await page.locator('[data-remove-term]').click();await done();console.log('all',await page.locator('#tra-hit').innerText());
+ t=Date.now();await tagAct('#vn-tag-all');await done();console.log('vnMs',Date.now()-t);
+ await tagAct('#vn-tag-green');await done();await page.locator('[data-remove-term]').click();await done();console.log('all',await page.locator('#tra-hit').innerText());
  t=Date.now();await page.locator('#compare-toggle').click();await page.waitForFunction(()=>document.querySelector('#compare-status').textContent==='Đã đối chiếu · 100%');console.log('compareMs',Date.now()-t);
  console.log('counts',await page.locator('#compare-left-count').innerText(),await page.locator('#compare-right-count').innerText());
  await page.locator('[data-compare-page="left:1"]').click();assert.match(await page.locator('#compare-left-page').innerText(),/^2 \/ /);
@@ -25,7 +28,8 @@ const {chromium}=require(process.env.SRA_PLAYWRIGHT_PATH || 'playwright'),path=r
  await page.locator('[data-view=list]').click();await page.locator('#country-list [data-country=VN]').click();await done();
  await page.waitForFunction(()=>document.querySelectorAll('#med-groups details[data-cc=VN] tbody tr').length===200);
  assert.equal(await page.locator('#med-groups details[data-cc=VN] tbody tr').count(),200);
- await page.evaluate(()=>{const x=document.getElementById('vn-only');x.checked=true;x.dispatchEvent(new Event('change'));x.checked=false;x.dispatchEvent(new Event('change'));});await done();
- assert.match(await page.locator('#tra-hit').innerText(),/54\.752/);
+ await tagAct('#vn-tag-all');await done();
+ await tagAct('#vn-tag-green');await done();
+ assert.match(await page.locator('#tra-hit').innerText(),/dòng/);
  console.log('PASS large dataset, reverse match, paged DOM, cancellable open and rapid filter replacement');
  }finally{await browser.close();}})().catch(e=>{console.error(e);process.exit(1)});

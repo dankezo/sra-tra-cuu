@@ -7,7 +7,7 @@ const path=require('node:path');
  const errors=[]; page.on('pageerror', e=>errors.push(e.message));
  await page.goto('file:///'+path.resolve('index.html').replaceAll('\\','/'));
  await page.locator('#mq').waitFor();
- await page.waitForFunction(()=>!document.querySelector('.search-filters').inert && !document.querySelector('#vn-only').disabled);
+ await page.waitForFunction(()=>!document.querySelector('.search-filters').inert && !document.querySelector('#vn-tag-filter [data-vn-tag]')?.disabled);
  await page.locator('#mq').fill('atorvastatin');
  await page.locator('#mgo').click();
  await page.waitForFunction(()=>!document.querySelector('#tra-hit').textContent.includes('Đang'));

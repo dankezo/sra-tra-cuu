@@ -30,7 +30,55 @@
     }};
   }
   const DEFAULTS = {months:24, excludeShort:true, chemicalOnly:true, excludeDomestic:true, group:'2'};
-  const SIMPLE_POLICY = Object.freeze({months:0, excludeShort:true, chemicalOnly:true, excludeDomestic:true, excludeDomesticRecords:true, group:'2'});
+  // Tag filter policy: green needs >18 months remaining and grant cycle >3 years.
+  const SIMPLE_POLICY = Object.freeze({months:18, excludeShort:true, chemicalOnly:true, excludeDomestic:true, excludeDomesticRecords:true, group:'2'});
+  const DEFAULT_TAG_CONFIGS = Object.freeze([
+    {
+      id: 'TAG_XANH_LA',
+      colorHex: '#22c55e',
+      bgClass: 'tag-green',
+      label: 'Sẵn sàng dự thầu',
+      shortTitle: 'Đủ điều kiện thầu thương mại (TT 40/2025)',
+      description: 'SĐK còn hạn > 18 tháng, chu kỳ cấp trên 3 năm (thường 5 năm), pháp lý sạch, không dính Danh mục 93 cấm nhập khẩu.',
+      defaultChecked: true,
+    },
+    {
+      id: 'TAG_VANG_XAC_MINH',
+      colorHex: '#eab308',
+      bgClass: 'tag-amber',
+      label: 'Cần xác minh / Hạn ngắn',
+      shortTitle: 'Rủi ro kỹ thuật / Đang nộp gia hạn',
+      description: 'SĐK hạn còn lại ≤ 18 tháng, hoặc cấp kỳ hạn ≤ 3 năm, hoặc đã nộp giấy tiếp nhận gia hạn. Dùng để dóng dữ liệu ngoại, cân nhắc khi chào thầu.',
+      defaultChecked: false,
+    },
+    {
+      id: 'TAG_CAM_CMO',
+      colorHex: '#f97316',
+      bgClass: 'tag-orange',
+      label: 'Bẫy Danh mục 93 (CMO)',
+      shortTitle: 'Khớp Danh mục 93 nội địa (TT 03/2024)',
+      description: 'Trùng hoạt chất + hàm lượng + dạng bào chế với danh mục 93. Cấm hàng nhập khẩu chào thầu; cơ hội đặt gia công (CMO) trong nước.',
+      defaultChecked: false,
+    },
+    {
+      id: 'TAG_XAM_LICH_SU',
+      colorHex: '#64748b',
+      bgClass: 'tag-slate',
+      label: 'Lịch sử / Đã hết hạn',
+      shortTitle: 'SĐK đã hết hiệu lực / Thu hồi',
+      description: 'SĐK đã dừng lưu hành, thu hồi, thiếu hạn hoặc ngoài loại mục tiêu. Giữ để tra cứu tiền lệ cấp phép khi dóng quốc tế.',
+      defaultChecked: false,
+    },
+  ]);
+  function tagFromReason(reason) {
+    if (reason === 'domestic') return 'TAG_CAM_CMO';
+    if (reason === 'eligible') return 'TAG_XANH_LA';
+    if (reason === 'renewalReview' || reason === 'shortTerm' || reason === 'nearExpiry') return 'TAG_VANG_XAC_MINH';
+    return 'TAG_XAM_LICH_SU';
+  }
+  function defaultSelectedTags(configs = DEFAULT_TAG_CONFIGS) {
+    return configs.filter((t) => t.defaultChecked).map((t) => t.id);
+  }
   function dateValue(value) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return '';
     const d = new Date(value + 'T00:00:00Z');
@@ -74,7 +122,7 @@
     if ((flags & 2) && !fixedExtension) return {reason:'expired', expiry, source};
     if (!expiry || ((flags & 32) && !fixedExtension)) return {reason:'unknownExpiry', expiry, source};
     if (!start || start > expiry || start > asOf) return {reason:'unknownTerm', expiry, source};
-    if (o.excludeShort && expiry < addMonths(start,36)) return {reason:'shortTerm', expiry, source};
+    if (o.excludeShort && expiry <= addMonths(start,36)) return {reason:'shortTerm', expiry, source};
     if (expiry < addMonths(asOf, Number(o.months))) return {reason:'nearExpiry', expiry, source};
     if (!components(record.inn).length) return {reason:'missingInn', expiry, source};
     return {reason:'eligible', expiry, source};
@@ -138,12 +186,35 @@
     const records=(data.records || []).map(row=>Object.fromEntries(data.columns.map((name,i)=>[name,data.table ? data.table[row[i]] : row[i]])));
     const domestic=domesticMatcher(data.domestic?.rows || []);
     return {records, configure(options={}, asOf=today()) {
-      const stats={}, eligible=[], audit=[];
-      for(const r of records) {const a=assess(r,options,asOf,data.evidence?.items || []);
-        if(a.reason==='eligible' && options.excludeDomesticRecords && domestic(r.inn,r.strength,r.form,'2')==='blocked')a.reason='domestic';
-        stats[a.reason]=(stats[a.reason]||0)+1;
-        audit.push({record:r,...a});if(a.reason==='eligible')eligible.push(r.inn);}
-      return {...create(eligible), stats, audit, domestic, asOf};
+      const o={...SIMPLE_POLICY, ...options};
+      const stats={}, tagStats={}, eligible=[], audit=[];
+      for(const r of records) {
+        const a=assess(r,o,asOf,data.evidence?.items || []);
+        const dom=domestic(r.inn,r.strength,r.form,o.group || '2');
+        // DM93 technical-cell match wins the CMO tag even when the registration is otherwise usable.
+        const reason=dom==='blocked' ? 'domestic' : a.reason;
+        const tagId=tagFromReason(reason);
+        stats[reason]=(stats[reason]||0)+1;
+        tagStats[tagId]=(tagStats[tagId]||0)+1;
+        const entry={record:r,...a, reason, tagId, domestic:dom};
+        audit.push(entry);
+        if(tagId==='TAG_XANH_LA')eligible.push(r.inn);
+      }
+      const byTag=new Map();
+      for(const entry of audit){
+        if(!byTag.has(entry.tagId))byTag.set(entry.tagId,[]);
+        byTag.get(entry.tagId).push(entry);
+      }
+      function indexFor(selectedTags){
+        const tags=new Set(selectedTags || []);
+        const inns=audit.filter(e=>tags.has(e.tagId)).map(e=>e.record.inn);
+        return create(inns);
+      }
+      function recordsFor(selectedTags){
+        const tags=new Set(selectedTags || []);
+        return audit.filter(e=>tags.has(e.tagId)).map(e=>e.record);
+      }
+      return {...create(eligible), stats, tagStats, audit, domestic, asOf, indexFor, recordsFor, byTag};
     }};
   }
   function relatedIndex(records) {
@@ -161,7 +232,7 @@
       return [...hits.values()].map(hit=>({...hit,kind:hit.exact?'Khớp thành phần':'Gần khớp cách viết'}));
     }};
   }
-  const api = {components, key, create, DEFAULTS, SIMPLE_POLICY, relatedIndex, chemicalSdk, assess, addMonths, dateValue, amounts, formType, domesticMatcher, snapshot};
+  const api = {components, key, create, DEFAULTS, SIMPLE_POLICY, DEFAULT_TAG_CONFIGS, tagFromReason, defaultSelectedTags, relatedIndex, chemicalSdk, assess, addMonths, dateValue, amounts, formType, domesticMatcher, snapshot};
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.SraVn = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this);

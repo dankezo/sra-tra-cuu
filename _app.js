@@ -221,33 +221,99 @@
       let HEALTH = null;
       let SITES = {};
       let vnIndex = SraVn.create([]);
-      const vnOnly = document.getElementById('vn-only');
       const vnNote = document.getElementById('vn-note');
       let vnData = null;
       let vnSnapshot = null;
       const vnOptions = SraVn.SIMPLE_POLICY;
+      const TAG_LABEL_KEY = 'sra-vn-tag-labels';
+      let tagConfigs = SraVn.DEFAULT_TAG_CONFIGS.map((t) => ({ ...t }));
+      try {
+        const savedLabels = JSON.parse(localStorage.getItem(TAG_LABEL_KEY) || '{}');
+        tagConfigs.forEach((t) => { if (savedLabels[t.id]) t.label = String(savedLabels[t.id]); });
+      } catch (e) {}
+      let selectedTags = new Set(SraVn.defaultSelectedTags(tagConfigs));
       let vnAssessments = new Map();
       let compare = null;
-      const vnReasons = {eligible:'đủ điều kiện', revoked:'thu hồi/đã xóa', inactive:'không hoạt động', type:'ngoài loại SĐK mục tiêu', expired:'hết hạn theo dữ liệu, chưa có bằng chứng gia hạn', renewalReview:'có tiếp nhận gia hạn, cần xác minh hạn mới', unknownExpiry:'thiếu hạn/trạng thái', unknownTerm:'thiếu hoặc mâu thuẫn kỳ cấp', shortTerm:'kỳ cấp/gia hạn < 3 năm', nearExpiry:'không đủ thời gian còn lại', missingInn:'thiếu hoạt chất'};
-      function configureVn() {
+      const vnReasons = {eligible:'đủ điều kiện', revoked:'thu hồi/đã xóa', inactive:'không hoạt động', type:'ngoài loại SĐK mục tiêu', expired:'hết hạn theo dữ liệu, chưa có bằng chứng gia hạn', renewalReview:'có tiếp nhận gia hạn, cần xác minh hạn mới', unknownExpiry:'thiếu hạn/trạng thái', unknownTerm:'thiếu hoặc mâu thuẫn kỳ cấp', shortTerm:'kỳ cấp/gia hạn ≤ 3 năm', nearExpiry:'không đủ thời gian còn lại', missingInn:'thiếu hoạt chất', domestic:'khớp Danh mục 93 nội địa'};
+      function vnTagsConfigured() { return !!(vnSnapshot && vnSnapshot.records && vnSnapshot.records.length); }
+      function vnFilterActive() { return selectedTags.size > 0; }
+      function saveTagLabels() {
+        const out = {};
+        tagConfigs.forEach((t) => { out[t.id] = t.label; });
+        try { localStorage.setItem(TAG_LABEL_KEY, JSON.stringify(out)); } catch (e) {}
+      }
+      function configureVn(force) {
         if (!vnSnapshot) return;
         const now=new Date(), today=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-        if(vnIndex?.asOf===today){paintVn();return;}
+        if(!force && vnIndex?.asOf===today && vnIndex.indexFor){ rebuildVnMatch(); paintVn(); paintTagFilter(); return; }
         vnIndex = vnSnapshot.configure(vnOptions);
         vnAssessments = new Map(vnIndex.audit.map(a=>[a.record.id,a]));
+        rebuildVnMatch();
         paintVn();
+        paintTagFilter();
+      }
+      function rebuildVnMatch() {
+        if (!vnIndex?.indexFor) { vnIndex = Object.assign(SraVn.create([]), {tagStats:{}, indexFor:()=>SraVn.create([]), recordsFor:()=>[], domestic:()=>'unlisted'}); return; }
+        const matcher = vnIndex.indexFor([...selectedTags]);
+        vnIndex.matches = matcher.matches.bind(matcher);
+        vnIndex.size = matcher.size;
+      }
+      function tagMeta(id) { return tagConfigs.find((t) => t.id === id); }
+      function paintTagFilter() {
+        const list = document.getElementById('vn-tag-list');
+        const countEl = document.getElementById('vn-tag-count');
+        const dots = document.getElementById('vn-tag-dots');
+        const filterRoot = document.getElementById('vn-tag-filter');
+        if (!list) return;
+        const available = !!vnSnapshot?.records.length;
+        if (filterRoot) filterRoot.querySelectorAll('input,button').forEach((el) => { el.disabled = !available; });
+        list.innerHTML = tagConfigs.map((t) => {
+          const n = vnIndex?.tagStats?.[t.id] || 0;
+          const on = selectedTags.has(t.id);
+          return `<label class="tag-row" data-tag="${esc(t.id)}">`+
+            `<input type="checkbox" data-vn-tag="${esc(t.id)}" ${on ? 'checked' : ''} ${available ? '' : 'disabled'} />`+
+            `<span class="tag-dot" style="background:${esc(t.colorHex)}"></span>`+
+            `<span class="tag-label-wrap"><button type="button" class="tag-label" data-rename-tag="${esc(t.id)}" title="Đổi tên nhãn (lưu máy này)">${esc(t.label)}</button>`+
+            `<small style="color:var(--muted)">${n.toLocaleString('vi-VN')} hồ sơ</small></span>`+
+            `<button type="button" class="tag-info" aria-label="Giải thích ${esc(t.label)}">?</button>`+
+            `<span class="tag-tip" role="tooltip"><strong>${esc(t.shortTitle)}</strong><span>${esc(t.description)}</span></span>`+
+          `</label>`;
+        }).join('');
+        countEl.textContent = selectedTags.size ? `Đã chọn: ${selectedTags.size}` : 'Chưa chọn';
+        dots.innerHTML = tagConfigs.filter((t) => selectedTags.has(t.id)).map((t) => `<i style="background:${esc(t.colorHex)}"></i>`).join('');
       }
       function paintVn(blocked=0, review=0) {
         const available = !!vnSnapshot?.records.length;
-        vnOnly.disabled = !available;
-        vnNote.hidden = available && !vnOnly.checked;
-        document.getElementById('vn-help').hidden = !vnOnly.checked;
-        if (!available) {vnNote.textContent='Chưa có dữ liệu SĐK DAV để sàng lọc.'; return;}
-        const n = vnIndex.stats.eligible || 0;
-        vnNote.textContent = 'Khớp ít nhất một hoạt chất từ ' + n.toLocaleString('vi-VN') + ' hồ sơ đạt điều kiện · DAV ' + vnData.updated.slice(0,10).split('-').reverse().join('/') + ' · xét ngày ' + vnIndex.asOf +
-          ' · tự loại ô khớp danh mục 93 thuốc nội địa.';
+        if (!available) {vnNote.textContent='Chưa có dữ liệu SĐK DAV để sàng lọc.'; vnNote.classList.add('warn'); return;}
+        if (!selectedTags.size) {
+          vnNote.textContent = 'Vui lòng chọn ít nhất một phân loại tag để hiển thị kết quả.';
+          vnNote.classList.add('warn');
+          return;
+        }
+        vnNote.classList.remove('warn');
+        const parts = tagConfigs.filter((t) => selectedTags.has(t.id)).map((t) => {
+          const n = vnIndex?.tagStats?.[t.id] || 0;
+          return `${t.label} ${n.toLocaleString('vi-VN')}`;
+        });
+        vnNote.textContent = 'Lọc SĐK VN: ' + parts.join(' · ') + ' · DAV ' + vnData.updated.slice(0,10).split('-').reverse().join('/') + ' · xét ngày ' + (vnIndex.asOf || '') +
+          (blocked || review ? ` · loại ${blocked.toLocaleString('vi-VN')} khớp DM93` + (review ? `, giữ ${review.toLocaleString('vi-VN')} cần đối chiếu` : '') : '');
       }
-      function vnDomestic(r) {return vnIndex.domestic(r[1],r[4],r[3],vnOptions.group);}
+      function vnDomestic(r) {return vnIndex.domestic ? vnIndex.domestic(r[1],r[4],r[3],vnOptions.group) : 'unlisted';}
+      function vnRowTag(r) {
+        if (r[0] !== 'VN') return '';
+        return vnAssessments.get(r[7])?.tagId || '';
+      }
+      function vnRowAllowed(r) {
+        if (!vnTagsConfigured()) return true;
+        if (!selectedTags.size) return false;
+        if (r[0] === 'VN') return selectedTags.has(vnRowTag(r));
+        return vnIndex.matches(r[1]) || Object.values(r._inns || {}).some((inn) => vnIndex.matches(inn));
+      }
+      function vnBadgeHtml(tagId) {
+        const t = tagMeta(tagId);
+        if (!t) return '';
+        return `<span class="vn-badge" style="color:${esc(t.colorHex)};border-color:${esc(t.colorHex)}55;background:${esc(t.colorHex)}14"><i style="background:${esc(t.colorHex)}"></i>${esc(t.label)}</span>`;
+      }
       let INNS = [];
       let searchTerms = [];
       let dumpCc = new Set();
@@ -515,7 +581,7 @@
       function rowHtml(r, idx, code, src) {
         const k = rowKey(code, r);
         const on = selected[k] ? " checked" : "";
-        const vnBadge = vnOnly.checked && vnOptions.excludeDomestic && vnDomestic(r)==='review' ? '<span class="vn-review">Cần đối chiếu ô kỹ thuật VN</span>' : '';
+        const tagId = vnRowTag(r); const vnBadge = (vnFilterActive() && tagId ? vnBadgeHtml(tagId) : '') + (vnFilterActive() && selectedTags.has('TAG_XANH_LA') && vnDomestic(r)==='review' ? '<span class="vn-review">Cần đối chiếu ô kỹ thuật VN</span>' : '');
         return "<tr data-k=\"" + esc(k) + "\"><td class=\"ck\"><input type=\"checkbox\" data-k=\"" + esc(k) + "\"" + on + "></td><td class=\"num\">" + (idx + 1) + "</td><td class=\"inn\">" + esc(r[1]) + vnBadge + "</td><td class=\"nm\">" + esc(r[2]) + (code === "VN" ? "<small class=\"vn-review\">SĐK: " + esc(r[8]) + " · Hạn: " + esc(vnAssessments.get(r[7])?.record.expiry || "chưa rõ") + "</small>" : "") + "</td><td class=\"fm\">" + esc(formText(r[3])) + "</td><td class=\"st\">" + esc(r[4] || "—") + "</td><td class=\"co\">" + coCell(r[5]) + "</td><td class=\"src\">" + (r._sources || [src]).map(k => srcChip(k, code, r[2])).join(" ") + "</td></tr>";
       }
       function bindCardSearch(d) {
@@ -598,7 +664,7 @@
         }
       }
       function passes(r, src) {
-        if(vnOnly.checked && r[0]==='VN' && vnAssessments.get(r[7])?.reason!=='eligible')return false;
+        if(vnFilterActive() && r[0]==='VN' && !selectedTags.has(vnRowTag(r)))return false;
         const sources = r._sources || [src];
         if (srcSel.has("d") && srcSel.has("e")) {
           if (!(sources.includes("d") && sources.includes("e"))) return false;
@@ -619,7 +685,7 @@
       }
 
       function extraFiltersOn() {
-        if (vnOnly.checked) return true;
+        if (vnTagsConfigured()) return true;
         if (srcSel.size || selForms.size || selCountries.size) return true;
         if (document.getElementById("strength-mode").value === "exact" && (document.getElementById("mg-exact").value || "").trim()) return true;
         return !!(mgMinEl.value || mgMaxEl.value);
@@ -653,8 +719,8 @@
           for (const cc of countries) {
             const rows = countryData[cc] || [], matches=[];
             for(const r of rows){
-              let keep=!needFilter || ((!queries.length || rowMatchesQueries(r)) && passes(r,rowSrc(r)) && (!vnOnly.checked || vnIndex.matches(r[1]) || Object.values(r._inns||{}).some(inn=>vnIndex.matches(inn))));
-              if(keep && vnOnly.checked && vnOptions.excludeDomestic){
+              let keep=!needFilter || ((!queries.length || rowMatchesQueries(r)) && passes(r,rowSrc(r)) && vnRowAllowed(r));
+              if(keep && vnFilterActive() && selectedTags.has('TAG_XANH_LA') && r[0]!=='VN'){
                 const state=vnDomestic(r);
                 if(state==='blocked'){if(!activeCountry||activeCountry===cc)vnBlocked++;keep=false;}
                 if(state==='review' && (!activeCountry||activeCountry===cc))vnReview++;
@@ -716,8 +782,10 @@
             }
           });
           mnone.style.display = n ? "none" : "block";
-          if(vnOnly.checked)paintVn(vnBlocked, vnReview);
-          mhit.textContent = n ? (n.toLocaleString("vi-VN") + " dòng · " + order.length + " nước") : "Không có kết quả.";
+          if(vnTagsConfigured())paintVn(vnBlocked, vnReview);
+          mhit.textContent = (!selectedTags.size && vnTagsConfigured())
+            ? 'Vui lòng chọn ít nhất một phân loại tag để hiển thị kết quả.'
+            : (n ? (n.toLocaleString("vi-VN") + " dòng · " + order.length + " nước") : "Không có kết quả.");
           document.getElementById("compare-toggle").disabled=false;
           syncTraHeights();
         };
@@ -1075,7 +1143,7 @@
             }
           }
           compare=SraCompare({dialog:document.getElementById('vn-compare'),records:vnSnapshot?.records || [],
-            assessments:()=>vnAssessments,reasons:vnReasons,countryName,fold:searchText,
+            assessments:()=>vnAssessments,selectedTags:()=>[...selectedTags],tagLabel:(id)=>tagMeta(id)?.label || id,reasons:vnReasons,countryName,fold:searchText,
             getResults:()=>[...mgroups.querySelectorAll('details.cg')].flatMap(d=>(store.get(d)||[]).map(r=>({cc:d.dataset.cc,row:r}))),
             sourceUrl:cc=>srcOf(cc).url,
             companyLink,
@@ -1117,7 +1185,49 @@
       window.addEventListener("afterprint", () => paintUi(root.dataset.guide, false));
 
       if (mgo) mgo.addEventListener("click", () => pickSuggest(mq.value));
-      vnOnly.addEventListener('change', () => { configureVn(); searchMed({keepPeek: true}); });
+      document.getElementById('vn-tag-list').addEventListener('change', (ev) => {
+        const input = ev.target.closest('[data-vn-tag]');
+        if (!input) return;
+        if (input.checked) selectedTags.add(input.dataset.vnTag); else selectedTags.delete(input.dataset.vnTag);
+        rebuildVnMatch(); paintTagFilter(); paintVn(); searchMed({keepPeek: true});
+        if (document.getElementById('vn-compare').open) compare?.open();
+      });
+      document.getElementById('vn-tag-list').addEventListener('click', (ev) => {
+        const rename = ev.target.closest('[data-rename-tag]');
+        if (!rename) return;
+        ev.preventDefault();
+        const id = rename.dataset.renameTag;
+        const cfg = tagMeta(id);
+        if (!cfg) return;
+        const input = document.createElement('input');
+        input.className = 'tag-label-edit';
+        input.value = cfg.label;
+        rename.replaceWith(input);
+        input.focus(); input.select();
+        const commit = () => {
+          const next = input.value.trim() || cfg.label;
+          cfg.label = next;
+          saveTagLabels();
+          paintTagFilter(); paintVn();
+        };
+        input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') paintTagFilter(); });
+        input.addEventListener('blur', commit);
+      });
+      document.getElementById('vn-tag-green').addEventListener('click', () => {
+        selectedTags = new Set(['TAG_XANH_LA']);
+        rebuildVnMatch(); paintTagFilter(); paintVn(); searchMed({keepPeek: true});
+        if (document.getElementById('vn-compare').open) compare?.open();
+      });
+      document.getElementById('vn-tag-all').addEventListener('click', () => {
+        selectedTags = new Set(tagConfigs.map((t) => t.id));
+        rebuildVnMatch(); paintTagFilter(); paintVn(); searchMed({keepPeek: true});
+        if (document.getElementById('vn-compare').open) compare?.open();
+      });
+      document.getElementById('vn-tag-clear').addEventListener('click', () => {
+        selectedTags = new Set();
+        rebuildVnMatch(); paintTagFilter(); paintVn(); searchMed({keepPeek: true});
+        if (document.getElementById('vn-compare').open) compare?.open();
+      });
       document.getElementById('compare-toggle').addEventListener('click', () => {
         const btn = document.getElementById('compare-toggle');
         if (btn.getAttribute('aria-pressed') === 'true') {
@@ -1198,8 +1308,8 @@
         });
       }
       document.getElementById('filter-reset').addEventListener('click', () => {
-        vnOnly.checked = false;
-        configureVn();
+        selectedTags = new Set(SraVn.defaultSelectedTags(tagConfigs));
+        rebuildVnMatch(); paintTagFilter(); configureVn(true);
         selForms.clear(); selCountries.clear(); activeCountry = ''; focusCountry(''); srcSel.clear();
         document.getElementById('filter-country-query').value = '';
         mgMinEl.value = ''; mgMaxEl.value = ''; document.getElementById('mg-exact').value = '';
@@ -1208,7 +1318,7 @@
       function snapshotFilter() {
         return {
           v: 2,
-          vnOnly: vnOnly.checked,
+          vnTags: [...selectedTags],
           terms: [...searchTerms],
           q: mq.value || "",
           countries: [...selCountries],
@@ -1223,9 +1333,15 @@
       }
       function applyFilter(f) {
         if (!f || typeof f !== "object") return;
-        vnOnly.checked = f.vnOnly === true && !vnOnly.disabled;
-        vnNote.hidden = !vnOnly.checked && !vnOnly.disabled;
-        configureVn();
+        if (Array.isArray(f.vnTags)) {
+          selectedTags = new Set(f.vnTags.filter((id) => tagConfigs.some((t) => t.id === id)));
+        } else if (f.vnOnly === true) {
+          selectedTags = new Set(['TAG_XANH_LA']);
+        } else if (f.vnOnly === false) {
+          selectedTags = new Set();
+        }
+        rebuildVnMatch(); paintTagFilter();
+        configureVn(true);
         mq.value = typeof f.q === 'string' ? f.q : '';
         searchTerms = [...new Map((Array.isArray(f.terms) ? f.terms : [mq.value]).map((t) => {
           if (typeof t === 'string' && t.trim()) return [searchText(t), t.trim()];

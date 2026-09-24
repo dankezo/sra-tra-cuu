@@ -20,9 +20,18 @@ const fs=require('fs'),assert=require('node:assert/strict');
  const done=()=>page.waitForFunction(()=>document.getElementById('compare-status').textContent==='Đã đối chiếu · 100%');
  const right=()=>page.locator('#compare-right .compare-row').count();
  assert.equal(await right(),6);
- await page.locator('#compare-sdk-max').fill('2');await page.locator('#compare-sdk-on').check();assert.equal(await right(),3); // Beta and Gamma, global component counts
+ for(const [type,values] of [['sdk',['1','2','3','4','5','other']],['form',['1','2','3','4','5','6','7','other']],['strength',['1','3','4','5','other']]]){
+  assert.deepEqual(await page.locator('#compare-'+type+'-choice option').evaluateAll(opts=>opts.map(o=>o.value)),values);
+  assert.equal(await page.locator('#compare-'+type+'-max').isVisible(),false);
+ }
+ await page.locator('label[for=compare-sdk-on]').click();assert.equal(await page.locator('#compare-sdk-on').isChecked(),true);
+ await page.locator('label[for=compare-sdk-on]').click();assert.equal(await page.locator('#compare-sdk-on').isChecked(),false);
+ await page.locator('#compare-form-choice').selectOption('other');assert.equal(await page.locator('#compare-form-max').isVisible(),true);
+ await page.locator('#compare-form-max').fill('2');await page.locator('#compare-form-choice').selectOption('1');assert.equal(await page.locator('#compare-form-max').isVisible(),false);
+
+ await page.locator('#compare-sdk-choice').selectOption('2');await page.locator('#compare-sdk-on').check();assert.equal(await right(),3); // Beta and Gamma, global component counts
  await page.locator('#compare-form-on').check();assert.equal(await right(),2); // missing form does not qualify
- await page.locator('#compare-strength-max').fill('2');await page.locator('#compare-strength-on').check();assert.equal(await right(),2);
+ await page.locator('#compare-strength-choice').selectOption('other');await page.locator('#compare-strength-max').fill('2');await page.locator('#compare-strength-on').check();assert.equal(await right(),2);
  await page.locator('#compare-right .compare-row').filter({hasText:'Drug 3'}).click();await done();
  assert.equal(await page.locator('#compare-left .compare-row').count(),2);
  assert.match(await page.locator('#compare-left').innerText(),/Left B/);assert.match(await page.locator('#compare-left').innerText(),/Left AB/);
@@ -34,10 +43,10 @@ const fs=require('fs'),assert=require('node:assert/strict');
  await page.locator('#compare-right-strength').selectOption('40mg');assert.equal(await right(),1);
  await page.locator('#compare-export').click();await page.waitForFunction(()=>!!window.exported);
  assert.deepEqual(await page.evaluate(()=>exported.map(s=>s.rows.length)),[4,1]);
- await page.locator('#compare-sdk-max').fill('0');assert.equal(await right(),0);
+ await page.locator('#compare-sdk-choice').selectOption('other');await page.locator('#compare-sdk-max').fill('0');assert.equal(await right(),0);
  await page.locator('#compare-sdk-on').uncheck();await page.locator('#compare-form-on').uncheck();await page.locator('#compare-strength-on').uncheck();
  await page.locator('#compare-right-strength').selectOption('');assert.equal(await right(),6);
  for(const width of [360,768,1440]){await page.setViewportSize({width,height:950});assert.ok(await page.locator('#vn-compare').evaluate(e=>e.scrollWidth<=e.clientWidth+1));}
- assert.deepEqual(errors,[]);console.log('PASS: global distinct SDK/form/strength counts, missing values, same-component rules, bidirectional matching, dropdowns, Excel scope and responsive layout');
+ assert.deepEqual(errors,[]);console.log('PASS: preset/custom controls, clickable labels, global distinct SDK/form/strength counts, missing values, same-component rules, bidirectional matching, dropdowns, Excel scope and responsive layout');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

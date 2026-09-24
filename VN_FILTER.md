@@ -39,3 +39,5 @@ Mặc định 50 dòng/lượt, chọn được 25/50/100/200. Lựa chọn cũ 
 Kiểm tra: `test_compare_logic.js` kiểm tra ngưỡng cố định, danh mục, công ty đăng ký, so khớp và loại trùng; `test_vn_policy.js` kiểm tra thuật toán ngày/mã/ngoại lệ; `test_vn_ui.cjs` kiểm tra giao diện, 37 quốc gia, so sánh, lưu/mở lọc, xuất workbook và màn hình nhỏ. Cấu hình cũ `vnPolicy` trong file lọc được bỏ qua; chỉ trạng thái `vnOnly` được phục hồi.
 
 `test_compare_filters.cjs` kiểm tra số lượng, giá trị thiếu, phối hợp cùng hoạt chất, lọc hai chiều, dropdown và Excel. `test_large_search.cjs` đo trên dữ liệu đầy đủ, giới hạn DOM, phân trang và đóng tác vụ đang nạp.
+
+Các bộ lọc số lượng trong bảng so sánh gom checkbox, tên và mức chọn vào cùng ô; có viền hover/focus và nền khi bật. SĐK tối đa: 1/2/3/4/5/Khác; số dạng: 1–7/Khác; mức hàm lượng: 1/3/4/5/Khác. Chỉ chọn Khác mới hiện ô nhập số nguyên dương. Đổi mức không tự bật checkbox. Cách đếm và điều kiện so sánh giữ nguyên.

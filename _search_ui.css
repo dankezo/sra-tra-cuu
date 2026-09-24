@@ -436,3 +436,12 @@ details.cg > summary::after { margin-left: 4px; flex: 0 0 auto; }
 .compare-facets select { width:50%; min-width:0; padding:6px; border:1px solid var(--line); border-radius:6px; }
 .compare-row[data-compare-dav] { cursor:pointer; }
 #compare-status { color:var(--teal); }
+
+.compare-rule { display:flex; align-items:center; gap:6px; padding:6px 8px; border:1px solid var(--line); border-radius:9px; background:#fff; transition:border-color .15s,background .15s; }
+.compare-actions .compare-rule label { gap:5px; margin:0; cursor:pointer; white-space:nowrap; }
+.compare-rule input[type=checkbox] { margin:0; flex:0 0 auto; accent-color:var(--teal); }
+.compare-rule:hover, .compare-rule:focus-within { border-color:var(--teal); background:#f1f8f5; }
+.compare-rule:has(input[type=checkbox]:checked) { border-color:var(--teal); background:#e7f3ed; }
+.compare-rule select { min-width:58px; padding:4px 5px; border:1px solid var(--line); border-radius:5px; font:inherit; background:#fff; }
+.compare-actions .compare-rule input[type=number] { width:62px; min-width:0; box-sizing:border-box; font:inherit; }
+.compare-rule input[hidden] { display:none; }

@@ -42,7 +42,7 @@ function SraCompare(options) {
     },gen,'Đang thống kê DAV…'))return false;
     stats=next;eligible=good;assessed=current;return true;
   }
-  function limits(){return ['sdk','form','strength'].map(type=>({type,on:el(type+'-on').checked,value:Number(el(type+'-max').value)}));}
+  function limits(){return ['sdk','form','strength'].map(type=>({type,on:el(type+'-on').checked,value:Number(el(type+'-choice').value==='other'?el(type+'-max').value:el(type+'-choice').value)}));}
   function allowed(k, rules){const x=stats.get(k);return !!x && rules.every(r=>!r.on || (Number.isInteger(r.value)&&r.value>0 && (r.type==='sdk'?x.sdk.size<=r.value:!x[r.type==='form'?'missingForm':'missingStrength'] && x[r.type].size===r.value)));}
   function facets(side, forms, strengths){
     for(const [type,values,label] of [['form',forms,'Mọi dạng bào chế'],['strength',strengths,'Mọi hàm lượng']]){
@@ -144,7 +144,13 @@ function SraCompare(options) {
   el('left-query').addEventListener('input',()=>{clearTimeout(leftTimer);el('export').disabled=true;leftTimer=setTimeout(filterLeft,160);});
   el('right-query').addEventListener('input',()=>{clearTimeout(rightTimer);rightTimer=setTimeout(()=>{s.rp=0;paintRight();},160);});
   for(const side of ['left','right'])for(const field of ['form','strength'])el(side+'-'+field).addEventListener('change',()=>{if(side==='left')filterLeft();else{s.rp=0;paintRight();}});
-  for(const type of ['sdk','form','strength'])for(const suffix of ['on','max'])el(type+'-'+suffix).addEventListener('input',()=>{s.rp=0;paintRight();});
+  for(const type of ['sdk','form','strength']){
+    el(type+'-choice').addEventListener('change',()=>{
+      const custom=el(type+'-choice').value==='other';el(type+'-max').hidden=!custom;
+      if(custom)el(type+'-max').focus();s.rp=0;paintRight();
+    });
+    for(const suffix of ['on','max'])el(type+'-'+suffix).addEventListener('input',()=>{s.rp=0;paintRight();});
+  }
   el('all').addEventListener('click',()=>{s.focus=null;s.reverse=null;refresh();});
   el('close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import re
+import time
 from _sites import company_sites
 from pathlib import Path
 
@@ -75,5 +76,12 @@ if not pat.search(html):
 html = pat.sub(lambda m: m.group(1) + blob + m.group(3), html, count=1)
 tmp = html_path.with_name("_index.embed.html")
 tmp.write_text(html, encoding="utf-8")
-tmp.replace(html_path)
+for attempt in range(6):
+    try:
+        tmp.replace(html_path)
+        break
+    except PermissionError:
+        if attempt == 5:
+            raise
+        time.sleep(0.5)
 print("rows", len(packed), "html_mb", round(html_path.stat().st_size / 1e6, 2), "table", len(table))

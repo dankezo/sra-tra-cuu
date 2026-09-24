@@ -22,8 +22,20 @@ So khớp bỏ dấu, không phân biệt hoa thường, tách thành phần ph�
 
 Xuất `.xlsx` thực, không đổi đuôi HTML: hai sheet `Kết quả chính` và `DAV đối chiếu`. Xuất toàn bộ phạm vi đối chiếu sau tìm nhanh/lọc, không chỉ 40 dòng trên màn hình. Chọn một dòng trái thì xuất dòng đó và các dòng DAV tương ứng; chọn tất cả thì xuất toàn bộ tập trái. SĐK là chuỗi giữ nguyên số, dữ liệu không trở thành công thức Excel. Cả hai sheet có tiêu đề, bộ lọc và cố định hàng đầu.
 
+Bấm thẻ DAV bên phải lọc tập trái theo ít nhất một thành phần tương ứng; tập ứng viên DAV vẫn giữ để có thể chọn thẻ khác. Nút Đối chiếu tất cả bỏ lựa chọn thẻ ở cả hai bên. Mỗi bên có dropdown dạng bào chế và hàm lượng riêng. Excel tuân theo các bộ lọc và lựa chọn đang hiển thị.
+
+Các ô bật/tắt cạnh Xuất Excel áp dụng cho DAV: số SĐK không quá x; số dạng đúng x; số hàm lượng đúng x. Thống kê theo từng khóa hoạt chất chuẩn hóa trên toàn bộ DAV đạt điều kiện, không đếm lại sau khi tìm nhanh/chọn thẻ. Đếm SĐK riêng biệt; dạng chuẩn hóa dấu/chữ hoa/khoảng trắng, hàm lượng dùng `strengthKey` (mg/g/mcg cho đơn chất). Không suy đoán tương đương dạng khác tên. Nếu thiếu dạng/hàm lượng thì không đạt điều kiện số lượng tương ứng. Tất cả điều kiện đã bật phải cùng đạt trên ít nhất một hoạt chất đang khớp.
+
+## Hiệu năng
+
+Kết quả vẫn nằm trong HTML chạy offline. Tra loại từ khóa/gợi ý được cache theo từ khóa, không quét toàn bộ gợi ý trên mỗi dòng thuốc. Lọc chính, lọc trong thẻ và so sánh chia đợt, nhường luồng giao diện và hiển thị tiến độ; yêu cầu mới hủy kết quả cũ. Cache khóa thành phần, thông tin mỗi dòng và thống kê DAV giữa các lần mở. Nạp dữ liệu/lập chỉ mục chia giai đoạn có tiến độ; đọc JSON và một số bước gộp/sắp xếp vẫn đồng bộ.
+
+Lựa chọn cũ “hết” chuyển thành 200 dòng/lượt, có nút Hiện thêm; không ảnh hưởng số đếm/chọn hết/xuất toàn bộ. So sánh dựng tối đa 40 thẻ mỗi bên. Đây là giảm tải trên trình duyệt, chưa thêm máy chủ cơ sở dữ liệu.
+
 ## Cập nhật và giới hạn
 
 `_import_vn.py` đọc database nguồn ở chế độ chỉ đọc, dừng nếu còn WAL chưa checkpoint; giữ tên thuốc và công ty đăng ký. `_embed.py` nhúng bảng dữ liệu vào HTML nên trang chạy offline. `data/vn-evidence.json` hỗ trợ quyết định bổ sung đã xác minh theo SĐK, loại quyết định, ngày và URL chính thức; hiện chưa có mục bổ sung. Chưa đồng bộ riêng đầy đủ quyết định gia hạn/thu hồi ngoài DAV; không coi thiếu hạn là bằng chứng giấy phép đã vô hiệu.
 
 Kiểm tra: `test_compare_logic.js` kiểm tra ngưỡng cố định, danh mục, công ty đăng ký, so khớp và loại trùng; `test_vn_policy.js` kiểm tra thuật toán ngày/mã/ngoại lệ; `test_vn_ui.cjs` kiểm tra giao diện, 37 quốc gia, so sánh, lưu/mở lọc, xuất workbook và màn hình nhỏ. Cấu hình cũ `vnPolicy` trong file lọc được bỏ qua; chỉ trạng thái `vnOnly` được phục hồi.
+
+`test_compare_filters.cjs` kiểm tra số lượng, giá trị thiếu, phối hợp cùng hoạt chất, lọc hai chiều, dropdown và Excel. `test_large_search.cjs` đo trên dữ liệu đầy đủ, giới hạn DOM, phân trang và đóng tác vụ đang nạp.

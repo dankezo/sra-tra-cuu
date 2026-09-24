@@ -10,6 +10,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  await page.waitForFunction(()=>!document.getElementById('boot-screen') || document.getElementById('boot-screen').classList.contains('is-done'));
  assert.equal(await page.locator('#compare-right-count').count(),1);
  const done=()=>page.waitForFunction(()=>/dòng|Không có kết quả/.test(document.querySelector('#tra-hit').textContent));
+ const compared=()=>page.waitForFunction(()=>document.querySelector('#compare-status').textContent==='Đã đối chiếu · 100%');
  const count=async()=>parseInt((await page.locator('#tra-hit').innerText()).replaceAll('.','')) || 0;
  await page.locator('#mq').fill('Abrocto');await page.locator('#mgo').click();await done();
  await page.locator('#vn-only').check();await done();
@@ -40,7 +41,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  await page.locator('#vn-only').uncheck();await done();assert.equal(await count(),before);
  await page.locator('#filter-file').setInputFiles(file);await done();assert.equal(await count(),after);
  await page.locator('#vn-only').uncheck();await done();
- await page.locator('#compare-toggle').click();await page.locator('#vn-compare').waitFor({state:'visible'});
+ await page.locator('#compare-toggle').click();await page.locator('#vn-compare').waitFor({state:'visible'});await compared();
  assert.equal(await page.locator('#compare-toggle').getAttribute('aria-pressed'),'true');
  assert.ok(await page.locator('#compare-left .compare-row').count()>0);
  assert.ok(await page.locator('#compare-right .compare-row').count()>0);
@@ -49,14 +50,14 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('n
  assert.ok(await page.locator('#compare-left .compare-co').count()>0);
  assert.equal(await page.locator('#compare-eligible').count(),0);
  const leftTotal=parseInt((await page.locator('#compare-left-count').innerText()).replace(/[^0-9]/g,''));assert.equal(leftTotal,before);
- await page.locator('#compare-left .compare-row').first().click();assert.match(await page.locator('#compare-context').innerText(),/Đối chiếu riêng/);
- await page.locator('#compare-all').click();assert.match(await page.locator('#compare-context').innerText(),/toàn bộ/);
+ await page.locator('#compare-left .compare-row').first().click();await compared();assert.match(await page.locator('#compare-context').innerText(),/Đối chiếu riêng/);
+ await page.locator('#compare-all').click();await compared();assert.match(await page.locator('#compare-context').innerText(),/toàn bộ/);
  const totalDAV=parseInt((await page.locator('#compare-right-count').innerText()).replace(/[^0-9]/g,''));
  assert.ok(totalDAV>0);
  const verdicts=await page.locator('#compare-right .compare-verdict').allTextContents();
  assert.ok(verdicts.every(t=>/đủ điều kiện/i.test(t)),JSON.stringify(verdicts.slice(0,5)));
- await page.locator('#compare-right-query').fill('nonexistent-zzzz');assert.equal(await page.locator('#compare-right .compare-row').count(),0);
- await page.locator('#compare-right-query').fill('');
+ await page.locator('#compare-right-query').fill('nonexistent-zzzz');await page.waitForFunction(()=>!document.querySelector('#compare-right .compare-row'));assert.equal(await page.locator('#compare-right .compare-row').count(),0);
+ await page.locator('#compare-right-query').fill('');await page.locator('#compare-right .compare-row').first().waitFor();
  const downloadEvent=page.waitForEvent('download');await page.locator('#compare-export').click();const download=await downloadEvent;
  assert.match(download.suggestedFilename(),/\.xlsx$/);await download.saveAs(path.resolve('qa-compare.xlsx'));
  fs.writeFileSync('qa-compare-counts.json',JSON.stringify({left:leftTotal,right:totalDAV}));

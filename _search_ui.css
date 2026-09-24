@@ -421,3 +421,9 @@ details.cg > summary::after { margin-left: 4px; flex: 0 0 auto; }
 .health-pies .donut { animation:none !important; transform:none !important; }
 #hcov button { animation:none !important; }
 @media(max-width:420px) { #hcov { grid-template-columns:repeat(2,minmax(0,1fr)); } }
+
+.compare-actions input[type=number] { width:52px; padding:4px; border:1px solid var(--line); border-radius:5px; }
+.compare-facets { display:flex; gap:6px; margin-bottom:8px; }
+.compare-facets select { width:50%; min-width:0; padding:6px; border:1px solid var(--line); border-radius:6px; }
+.compare-row[data-compare-dav] { cursor:pointer; }
+#compare-status { color:var(--teal); }

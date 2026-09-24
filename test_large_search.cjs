@@ -25,7 +25,8 @@ const {chromium}=require(process.env.SRA_PLAYWRIGHT_PATH || 'playwright'),path=r
  await page.locator('#compare-close').click();
  await page.locator('#compare-toggle').click();await page.locator('#compare-close').click();await page.waitForTimeout(100);assert.equal(await page.locator('#vn-compare').evaluate(e=>e.open),false);
  await page.locator('#page-size').selectOption('200');await done();
- await page.locator('[data-view=list]').click();await page.locator('#country-list [data-country=VN]').click();await done();
+ await page.locator('#filter-drawer').evaluate(el=>{el.open=true;});
+ await page.locator('#mflags').locator('input[data-country-filter=VN]').check();await done();
  await page.waitForFunction(()=>document.querySelectorAll('#med-groups details[data-cc=VN] tbody tr').length===200);
  assert.equal(await page.locator('#med-groups details[data-cc=VN] tbody tr').count(),200);
  await tagAct('#vn-tag-all');await done();

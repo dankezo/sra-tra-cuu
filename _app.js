@@ -228,7 +228,7 @@
       const vnOptions = SraVn.SIMPLE_POLICY;
       let vnAssessments = new Map();
       let compare = null;
-      const vnReasons = {eligible:'đủ điều kiện', revoked:'thu hồi/đã xóa', inactive:'không hoạt động', type:'ngoài loại SĐK mục tiêu', expired:'hết hạn theo dữ liệu, chưa có bằng chứng gia hạn', renewalReview:'có tiếp nhận gia hạn, cần xác minh hạn mới', unknownExpiry:'thiếu hạn/trạng thái', unknownTerm:'thiếu hoặc mâu thuẫn kỳ cấp', shortTerm:'kỳ cấp/gia hạn ≤ 3 năm', nearExpiry:'không đủ thời gian còn lại', missingInn:'thiếu hoạt chất'};
+      const vnReasons = {eligible:'đủ điều kiện', revoked:'thu hồi/đã xóa', inactive:'không hoạt động', type:'ngoài loại SĐK mục tiêu', expired:'hết hạn theo dữ liệu, chưa có bằng chứng gia hạn', renewalReview:'có tiếp nhận gia hạn, cần xác minh hạn mới', unknownExpiry:'thiếu hạn/trạng thái', unknownTerm:'thiếu hoặc mâu thuẫn kỳ cấp', shortTerm:'kỳ cấp/gia hạn < 3 năm', nearExpiry:'không đủ thời gian còn lại', missingInn:'thiếu hoạt chất'};
       function configureVn() {
         if (!vnSnapshot) return;
         vnIndex = vnSnapshot.configure(vnOptions);

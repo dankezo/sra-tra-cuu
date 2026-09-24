@@ -30,7 +30,7 @@
     }};
   }
   const DEFAULTS = {months:24, excludeShort:true, chemicalOnly:true, excludeDomestic:true, group:'2'};
-  const SIMPLE_POLICY = Object.freeze({months:36, excludeShort:false, chemicalOnly:true, excludeDomestic:true, excludeDomesticRecords:true, group:'2'});
+  const SIMPLE_POLICY = Object.freeze({months:0, excludeShort:true, chemicalOnly:true, excludeDomestic:true, excludeDomesticRecords:true, group:'2'});
   function dateValue(value) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return '';
     const d = new Date(value + 'T00:00:00Z');
@@ -74,7 +74,7 @@
     if ((flags & 2) && !fixedExtension) return {reason:'expired', expiry, source};
     if (!expiry || ((flags & 32) && !fixedExtension)) return {reason:'unknownExpiry', expiry, source};
     if (!start || start > expiry || start > asOf) return {reason:'unknownTerm', expiry, source};
-    if (o.excludeShort && expiry <= addMonths(start,36)) return {reason:'shortTerm', expiry, source};
+    if (o.excludeShort && expiry < addMonths(start,36)) return {reason:'shortTerm', expiry, source};
     if (expiry < addMonths(asOf, Number(o.months))) return {reason:'nearExpiry', expiry, source};
     if (!components(record.inn).length) return {reason:'missingInn', expiry, source};
     return {reason:'eligible', expiry, source};

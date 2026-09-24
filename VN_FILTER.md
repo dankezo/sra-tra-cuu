@@ -6,13 +6,13 @@
 
 ## Một ô bật/tắt
 
-Quy tắc cố định `SraVn.SIMPLE_POLICY`: tân dược thương mại, có hoạt chất, có ngày hết hạn hợp lệ và còn **ít nhất 36 tháng lịch** tính tại ngày dùng công cụ. “Dưới 3 năm” được hiểu là thời gian còn lại, không phải tùy chọn kỳ cấp 3 năm. SĐK thu hồi, bị xóa, không hoạt động, hết hạn hoặc không rõ hạn bị loại. Hồ sơ chỉ có tiếp nhận gia hạn không được tự cộng thêm 5 năm. Ngày gia hạn mới và quyết định bổ sung có nguồn được xử lý trước khi xét hạn.
+Quy tắc cố định `SraVn.SIMPLE_POLICY`: tân dược thương mại, có hoạt chất, có ngày hết hạn hợp lệ và còn hiệu lực, có **thời hạn được cấp/gia hạn ít nhất 3 năm lịch** tính từ ngày cấp/gia hạn đến ngày hết hạn. Kỳ cấp đúng 3 năm được giữ; không yêu cầu thời gian còn lại phải đủ 3 năm. SĐK thu hồi, bị xóa, không hoạt động, hết hạn hoặc không rõ hạn bị loại. Hồ sơ chỉ có tiếp nhận gia hạn không được tự cộng thêm 5 năm. Ngày gia hạn mới và quyết định bổ sung có nguồn được xử lý trước khi xét hạn.
 
 Giữ tiền tố `VD-`, `VN-`, `VN2-`, `VN3-`, `GC-`; mã 12 số nhóm thứ tư là 1 cũng được giữ. Mã nhóm 6/7 cần SĐK cũ xác nhận tiền tố mục tiêu. Không dùng kiểm tra `V*` vì sẽ loại nhầm VD/VN. [Cấu trúc mã mới](https://dav.gov.vn/images/upload_file/2025/325phu-luc-vsigned_1747811661.pdf).
 
 Tự loại ô khớp [danh mục 93 thuốc, TT03/2024](https://vbpl.vn/boyte/Pages/vbpq-print.aspx?ItemID=166832) theo toàn bộ hoạt chất, đúng hàm lượng từng thành phần và dạng bào chế. Áp dụng như tiêu chí kinh doanh cố định, không còn lựa chọn nhóm dự thầu. Không suy rộng rằng mọi thuốc nhập khẩu cùng hoạt chất bị cấm: danh mục gốc thuộc nhóm 2, có ngoại lệ dạng đặc biệt. Dạng chưa rõ, tên muối chưa quy đổi được về base, hoặc biến thể ngôn ngữ chưa hỗ trợ được giữ để đối chiếu thêm; không gán khớp chắc chắn. Dòng 75 giữ cách ghi `Pcrindopril` của bản HTML nguồn, chưa tự sửa khi chưa đối chiếu bản ký.
 
-Ngày 23/09/2026: 8.752 hồ sơ đạt điều kiện trước danh mục 93; loại thêm 967 ô khớp, còn 7.785 hồ sơ làm chỉ mục. Đây là số hồ sơ, không phải số đối thủ. Kết quả nước ngoài chỉ cần có ít nhất một thành phần khớp một hồ sơ VN đạt. Kết quả VN khi bật ô phải tự đạt các điều kiện theo chính SĐK đó, không được vượt qua nhờ một SĐK khác cùng hoạt chất.
+Số hồ sơ đạt được tính lại theo ngày dùng công cụ và thời hạn được cấp/gia hạn; loại thêm các ô khớp danh mục 93 trước khi tạo chỉ mục. Đây là số hồ sơ, không phải số đối thủ. Kết quả nước ngoài chỉ cần có ít nhất một thành phần khớp một hồ sơ VN đạt. Kết quả VN khi bật ô phải tự đạt các điều kiện theo chính SĐK đó, không được vượt qua nhờ một SĐK khác cùng hoạt chất.
 
 ## So sánh hai bên
 

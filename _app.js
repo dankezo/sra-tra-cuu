@@ -257,10 +257,11 @@
       const selForms = new Set();
       let sugIx = -1;
       let sugTimer = 0;
+      const safePageSize=value=>[25,50,100,200].includes(Number(value))?Number(value):50;
       let pageSize = 50;
       let selected = {};
       try { selected = JSON.parse(localStorage.getItem("sra-sel") || "{}") || {}; } catch (e) { selected = {}; }
-      try { pageSize = Number(localStorage.getItem("sra-page") || 50); } catch (e) {}
+      try { pageSize = safePageSize(localStorage.getItem("sra-page")); localStorage.setItem("sra-page",String(pageSize)); } catch (e) {}
       const store = new WeakMap();
       const shownN = new WeakMap();
       const allRows = new WeakMap();
@@ -535,6 +536,7 @@
         });
       }
       async function filterCard(d) {
+        d._renderGen=(d._renderGen||0)+1;d._rendering=0;d.removeAttribute("aria-busy");
         const inp = d.querySelector('.cg-q');
         const all = allRows.get(d) || store.get(d) || [];
         const q = (inp && inp.value) || '';
@@ -563,27 +565,37 @@
           fillRows(d, d.dataset.cc);
         }
       }
-      function fillRows(d, code) {
-        const list = store.get(d) || [];
-        const tb = d.querySelector("tbody");
-        const start = shownN.get(d) || 0;
-        const cap = Math.min(list.length, start + (pageSize > 0 ? pageSize : 200));
-        let html = "";
-        for (let i = start; i < cap; i++) html += rowHtml(list[i], i, code, rowSrc(list[i]));
-        tb.insertAdjacentHTML("beforeend", html);
-        shownN.set(d, cap);
-        let more = d.querySelector(".more");
-        if (cap < list.length) {
-          if (!more) {
-            more = document.createElement("button");
-            more.type = "button";
-            more.className = "more";
-            more.addEventListener("click", () => fillRows(d, code));
-            d.querySelector(".cg-body").appendChild(more);
+      async function fillRows(d, code) {
+        if(d._rendering)return;
+        const gen=(d._renderGen=(d._renderGen||0)+1);
+        d._rendering=gen;d.setAttribute('aria-busy','true');
+        const list=store.get(d)||[], tb=d.querySelector('tbody'), start=shownN.get(d)||0;
+        const cap=Math.min(list.length,start+safePageSize(pageSize));
+        const loading=document.createElement('p');loading.className='cg-loading';loading.setAttribute('role','status');
+        loading.textContent='Đang hiển thị kết quả… 0%';d.querySelector('.cg-body').prepend(loading);
+        let more=d.querySelector('.more');if(more)more.disabled=true;
+        const current=()=>d.isConnected && d._renderGen===gen && store.get(d)===list;
+        try {
+          // Paint feedback before building rows, including when reopening a large country card.
+          await new Promise(resolve=>requestAnimationFrame(()=>setTimeout(resolve,0)));
+          if(!current())return;
+          let html='',lastYield=performance.now();
+          for(let i=start;i<cap;i++){
+            html+=rowHtml(list[i],i,code,rowSrc(list[i]));
+            if((i-start+1)%10===0 && performance.now()-lastYield>8){
+              loading.textContent='Đang hiển thị kết quả… '+Math.floor((i-start+1)/Math.max(1,cap-start)*100)+'%';
+              await new Promise(resolve=>setTimeout(resolve,0));if(!current())return;lastYield=performance.now();
+            }
           }
-          more.textContent = "Hiện thêm (" + (list.length - cap).toLocaleString("vi-VN") + " còn lại)";
-          more.hidden = false;
-        } else if (more) more.hidden = true;
+          tb.insertAdjacentHTML('beforeend',html);shownN.set(d,cap);
+          if(cap<list.length){
+            if(!more){more=document.createElement('button');more.type='button';more.className='more';more.addEventListener('click',()=>fillRows(d,code));d.querySelector('.cg-body').appendChild(more);}
+            more.textContent='Hiện thêm '+Math.min(safePageSize(pageSize),list.length-cap)+' ('+(list.length-cap).toLocaleString('vi-VN')+' còn lại)';more.hidden=false;
+          }else if(more)more.hidden=true;
+        } finally {
+          loading.remove();
+          if(d._renderGen===gen){d._rendering=0;d.removeAttribute('aria-busy');if(more)more.disabled=false;}
+        }
       }
       function passes(r, src) {
         if(vnOnly.checked && r[0]==='VN' && vnAssessments.get(r[7])?.reason!=='eligible')return false;
@@ -1028,7 +1040,9 @@
       }
       async function loadProgress(percent,label){
         const message=label+'… '+percent+'%';mmeta.textContent=message;
-        const status=document.getElementById('boot-status');if(status)status.textContent=message;
+        const status=document.getElementById('boot-status');if(status)status.textContent=label+'…';
+        const progress=document.getElementById('boot-progress');if(progress)progress.value=percent;
+        const percentEl=document.getElementById('boot-percent');if(percentEl)percentEl.textContent=percent+'%';
         await new Promise(resolve=>setTimeout(resolve,0));
       }
       async function loadMed() {
@@ -1084,6 +1098,7 @@
           paintFormChips();
           paintMg();
           saveSel();
+          await loadProgress(100,'Sẵn sàng');
           mmeta.textContent = MED.length.toLocaleString("vi-VN") + " dòng từ 36 nước SRA & Việt Nam · " + (d.u || "");
           paintHealth();
           hydrateFlags();
@@ -1286,7 +1301,8 @@
       if (pageSizeEl) {
         pageSizeEl.value = String(pageSize);
         pageSizeEl.addEventListener("change", () => {
-          pageSize = Number(pageSizeEl.value || 50);
+          pageSize = safePageSize(pageSizeEl.value);
+          pageSizeEl.value=String(pageSize);
           try { localStorage.setItem("sra-page", String(pageSize)); } catch (e) {}
           searchMed({ keepPeek: true });
         });

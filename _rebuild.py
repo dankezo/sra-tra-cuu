@@ -218,11 +218,15 @@ BOOT = """  <div id="boot-screen" role="status" aria-live="polite" aria-busy="tr
       <p class="boot-brand">Bảo An Pharma</p>
       <div class="boot-spinner" aria-hidden="true"></div>
       <p id="boot-status">Đang tải tra cứu thuốc…</p>
+      <progress id="boot-progress" max="100" value="0" aria-label="Tiến độ chuẩn bị dữ liệu"></progress>
+      <strong id="boot-percent">0%</strong>
       <p class="boot-note">Chỉ mục lớn — vui lòng chờ giây lát</p>
     </div>
   </div>
 """
-if 'id="boot-screen"' not in prefix:
+if 'id="boot-screen"' in prefix:
+    prefix = re.sub(r'  <div id="boot-screen"[^>]*>.*?(?=  <div class="wrap">)', lambda _: BOOT, prefix, count=1, flags=re.S)
+else:
     if "<body>\r\n" in prefix:
         prefix = prefix.replace("<body>\r\n", "<body>\r\n" + BOOT, 1)
     else:

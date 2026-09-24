@@ -11,10 +11,19 @@
 .boot-panel { text-align: center; padding: 28px 32px; max-width: min(92vw, 360px); }
 .boot-brand { margin: 0; font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--teal); }
 .boot-spinner {
-  width: 34px; height: 34px; margin: 18px auto 14px;
-  border: 3px solid #d3e6e1; border-top-color: var(--teal); border-radius: 50%;
-  animation: boot-spin .75s linear infinite;
+  position:relative; width:58px; height:24px; margin:28px auto;
+  border:2px solid var(--teal); border-radius:20px;
+  background:linear-gradient(90deg,var(--teal) 0 50%,#fff 50% 100%);
+  box-shadow:0 4px 10px #126f6720;
+  animation:boot-spin 1.3s linear infinite;
 }
+.boot-spinner::after { content:""; position:absolute; inset:3px 7px auto; height:4px; border-radius:5px; background:#ffffff70; }
+#boot-progress { display:block; width:100%; height:8px; margin:16px 0 6px; border:0; border-radius:8px; overflow:hidden; accent-color:var(--teal); }
+#boot-progress::-webkit-progress-bar { background:#d3e6e1; }
+#boot-progress::-webkit-progress-value { background:var(--teal); }
+#boot-percent { display:block; font-size:24px; font-weight:750; color:var(--teal); font-variant-numeric:tabular-nums; }
+.cg-loading { margin:8px 12px; color:var(--teal); font-size:13px; }
+@media(prefers-reduced-motion:reduce) { .boot-spinner { animation:none; transform:rotate(-30deg); } }
 #boot-status { margin: 0; font-size: 15px; font-weight: 650; line-height: 1.4; }
 .boot-note { margin: 8px 0 0; font-size: 12px; color: var(--muted); }
 @keyframes boot-spin { to { transform: rotate(360deg); } }

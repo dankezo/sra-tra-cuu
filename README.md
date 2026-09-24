@@ -79,4 +79,6 @@ To refresh: run `python audit_company_links.py`, optionally `node _browser_audit
 
 Bảng so sánh có bộ lọc DAV theo số SĐK tối đa, số dạng và số hàm lượng; mỗi bên có dropdown dạng/hàm lượng. Bấm thẻ DAV lọc ngược tập bên trái theo hoạt chất. Số lượng tính từ toàn bộ DAV đạt điều kiện để không thay đổi theo phạm vi tìm nhanh. Xem `VN_FILTER.md` để biết cách đếm.
 
-Tìm kiếm lưu kết quả phân loại từ khóa, chia đợt xử lý với tiến độ và bỏ tác vụ cũ khi đổi lọc. So sánh cache thành phần/thống kê, chỉ dựng 40 thẻ mỗi bên. Chế độ “hết” cũ đổi thành 200 dòng/lượt; chọn hết và Excel vẫn lấy toàn bộ kết quả. HTML vẫn chạy offline, không cần backend riêng.
+Tìm kiếm lưu kết quả phân loại từ khóa, chia đợt xử lý với tiến độ và bỏ tác vụ cũ khi đổi lọc. So sánh cache thành phần/thống kê, chỉ dựng 40 thẻ mỗi bên. Mặc định 50 dòng/lượt, chọn được 25/50/100/200; giá trị “hết” cũ hoặc ngoài phạm vi được chuyển về 50; chọn hết và Excel vẫn lấy toàn bộ kết quả. HTML vẫn chạy offline, không cần backend riêng.
+
+Màn hình đầu trang có viên thuốc xoay, thanh tiến độ và phần trăm chuẩn bị dữ liệu. Mở thẻ quốc gia/Hiện thêm có trạng thái đang hiển thị và dựng tối đa số dòng mỗi lượt. Bản rule filter VN để áp dụng sang công cụ khác: [VN_FILTER_RULES.md](VN_FILTER_RULES.md).

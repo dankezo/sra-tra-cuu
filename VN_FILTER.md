@@ -30,7 +30,7 @@ Các ô bật/tắt cạnh Xuất Excel áp dụng cho DAV: số SĐK không qu�
 
 Kết quả vẫn nằm trong HTML chạy offline. Tra loại từ khóa/gợi ý được cache theo từ khóa, không quét toàn bộ gợi ý trên mỗi dòng thuốc. Lọc chính, lọc trong thẻ và so sánh chia đợt, nhường luồng giao diện và hiển thị tiến độ; yêu cầu mới hủy kết quả cũ. Cache khóa thành phần, thông tin mỗi dòng và thống kê DAV giữa các lần mở. Nạp dữ liệu/lập chỉ mục chia giai đoạn có tiến độ; đọc JSON và một số bước gộp/sắp xếp vẫn đồng bộ.
 
-Lựa chọn cũ “hết” chuyển thành 200 dòng/lượt, có nút Hiện thêm; không ảnh hưởng số đếm/chọn hết/xuất toàn bộ. So sánh dựng tối đa 40 thẻ mỗi bên. Đây là giảm tải trên trình duyệt, chưa thêm máy chủ cơ sở dữ liệu.
+Mặc định 50 dòng/lượt, chọn được 25/50/100/200. Lựa chọn cũ “hết” hoặc ngoài phạm vi chuyển về 50; mở thẻ và Hiện thêm có báo đang hiển thị; không ảnh hưởng số đếm/chọn hết/xuất toàn bộ. So sánh dựng tối đa 40 thẻ mỗi bên. Đây là giảm tải trên trình duyệt, chưa thêm máy chủ cơ sở dữ liệu.
 
 ## Cập nhật và giới hạn
 

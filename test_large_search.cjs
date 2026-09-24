@@ -21,8 +21,9 @@ const {chromium}=require(process.env.SRA_PLAYWRIGHT_PATH || 'playwright'),path=r
  await page.screenshot({path:'qa-compare-new.png'});
  await page.locator('#compare-close').click();
  await page.locator('#compare-toggle').click();await page.locator('#compare-close').click();await page.waitForTimeout(100);assert.equal(await page.locator('#vn-compare').evaluate(e=>e.open),false);
- await page.locator('#page-size').selectOption('0');await done();
+ await page.locator('#page-size').selectOption('200');await done();
  await page.locator('[data-view=list]').click();await page.locator('#country-list [data-country=VN]').click();await done();
+ await page.waitForFunction(()=>document.querySelectorAll('#med-groups details[data-cc=VN] tbody tr').length===200);
  assert.equal(await page.locator('#med-groups details[data-cc=VN] tbody tr').count(),200);
  await page.evaluate(()=>{const x=document.getElementById('vn-only');x.checked=true;x.dispatchEvent(new Event('change'));x.checked=false;x.dispatchEvent(new Event('change'));});await done();
  assert.match(await page.locator('#tra-hit').innerText(),/54\.752/);

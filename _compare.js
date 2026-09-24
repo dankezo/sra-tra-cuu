@@ -6,6 +6,7 @@ function SraCompare(options) {
   const pageSize=40;
   const loupe='<svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l5 5" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
   let generation=0, leftTimer=0, rightTimer=0, s={entries:[],left:[],right:[],hits:[],focus:null,lp:0,rp:0}, exporting=false;
+  let lockLeft=false, lockRight=false;
   const innCache=new Map(), metaCache=new WeakMap();
   const keys=text=>{if(!innCache.has(text))innCache.set(text,[...new Set(SraVn.components(text).map(SraVn.key))]);return innCache.get(text);};
   const formKey=raw=>fold(raw || '').replace(/\s+/g,' ').trim();
@@ -114,6 +115,25 @@ function SraCompare(options) {
     }).join('') || '<p class="compare-empty">Không có hồ sơ DAV đạt bộ lọc VN khớp thành phần trong phạm vi này. Thử đổi từ khóa hoặc chọn dòng khác bên trái.</p>';
     pager('right',s.right.length,s.rp);
   }
+  function paintLocks(){
+    const leftBtn=el('lock-left'), rightBtn=el('lock-right');
+    if(leftBtn){leftBtn.setAttribute('aria-pressed', lockLeft ? 'true' : 'false'); leftBtn.title=lockLeft ? 'Đang khóa ô trái — click DAV không đổi danh sách/lọc bên trái' : 'Khóa ô trái: click DAV không đổi danh sách/lọc bên trái';}
+    if(rightBtn){rightBtn.setAttribute('aria-pressed', lockRight ? 'true' : 'false'); rightBtn.title=lockRight ? 'Đang khóa ô phải — click kết quả trái không đổi danh sách/lọc DAV' : 'Khóa ô phải: click kết quả trái không đổi danh sách/lọc DAV';}
+    dialog.querySelector('[data-compare-pane="left"]')?.classList.toggle('is-locked', lockLeft);
+    dialog.querySelector('[data-compare-pane="right"]')?.classList.toggle('is-locked', lockRight);
+  }
+  function paintLeftOnly(){
+    const q=fold(el('left-query').value);
+    const reverse=s.reverse?new Set(keys(s.reverse.inn)):null;
+    const left=[];
+    for(const e of s.entries){
+      const m=meta(e);
+      if((!q||e.search.includes(q))&&matchFacets('left',m.form,m.strength)&&(!reverse||m.keys.some(k=>reverse.has(k))))left.push(e);
+    }
+    if(s.focus && !left.includes(s.focus))s.focus=null;
+    s.left=left;s.lp=Math.min(s.lp,Math.max(0,Math.ceil(s.left.length/pageSize)-1));
+    paintLeft();
+  }
   async function refresh(){
     const gen=++generation;
     el('export').disabled=true;el('status').textContent='Đang đối chiếu… 0%';
@@ -121,28 +141,53 @@ function SraCompare(options) {
     if(!await prepare(gen))return;
     const q=fold(el('left-query').value), left=[], wanted=new Set();
     const reverse=s.reverse?new Set(keys(s.reverse.inn)):null;
+    const keepRight=lockRight && s.hits.length;
     if(!await chunks(s.entries,e=>{
       const m=meta(e);
       if((!q||e.search.includes(q))&&matchFacets('left',m.form,m.strength)){
         // Reverse selection narrows only the left pane; keep the DAV candidate list stable.
-        if(!s.focus || s.focus===e)for(const k of m.keys)wanted.add(k);
+        if(!keepRight && (!s.focus || s.focus===e))for(const k of m.keys)wanted.add(k);
         if(!reverse || m.keys.some(k=>reverse.has(k)))left.push(e);
       }
     },gen,'Đang lọc kết quả…'))return;
-    const hits=[], forms=new Map(), strengths=new Map();
-    if(!await chunks(eligible,r=>{
-      const matched=keys(r.inn).filter(k=>wanted.has(k));if(!matched.length)return;
-      hits.push({record:r,matched,kind:'Khớp thành phần'});
-      if(r.form)forms.set(formKey(r.form),r.form);
-      if(r.strength)strengths.set(strengthKey(r.strength),r.strength);
-    },gen,'Đang ghép DAV…'))return;
-    s.left=left;s.hits=hits;s.lp=0;s.rp=0;
-    facets('right',forms,strengths);paintLeft();paintRight();
+    let hits=s.hits, forms=new Map(), strengths=new Map();
+    if(!keepRight){
+      hits=[];
+      if(!await chunks(eligible,r=>{
+        const matched=keys(r.inn).filter(k=>wanted.has(k));if(!matched.length)return;
+        hits.push({record:r,matched,kind:'Khớp thành phần'});
+        if(r.form)forms.set(formKey(r.form),r.form);
+        if(r.strength)strengths.set(strengthKey(r.strength),r.strength);
+      },gen,'Đang ghép DAV…'))return;
+      s.hits=hits;s.rp=0;
+      facets('right',forms,strengths);
+    }
+    s.left=left;s.lp=0;
+    if(s.focus && !s.left.includes(s.focus))s.focus=null;
+    paintLeft();paintRight();
     el('status').textContent='Đã đối chiếu · 100%';el('export').disabled=false;
   }
-  function filterLeft(){s.focus=null;refresh();}
-  function focusRow(ix){s.focus=s.left[Number(ix)];s.reverse=null;refresh();}
-  function focusDAV(ix){s.reverse=s.right[Number(ix)]?.record;s.focus=null;refresh();}
+  function filterLeft(){
+    if(lockRight){s.focus=null;paintLeftOnly();return;}
+    s.focus=null;refresh();
+  }
+  function focusRow(ix){
+    s.focus=s.left[Number(ix)];
+    if(lockRight){paintLeft();return;}
+    s.reverse=null;refresh();
+  }
+  function focusDAV(ix){
+    s.reverse=s.right[Number(ix)]?.record;
+    if(lockLeft){paintLeft();paintRight();return;}
+    s.focus=null;refresh();
+  }
+  function toggleLock(side){
+    if(side==='left')lockLeft=!lockLeft; else lockRight=!lockRight;
+    paintLocks();
+    el('status').textContent=side==='right'
+      ? (lockRight ? 'Đã khóa ô DAV — click trái chỉ xem, không đổi danh sách/lọc phải.' : 'Đã mở khóa ô DAV.')
+      : (lockLeft ? 'Đã khóa ô kết quả — click DAV chỉ xem, không đổi danh sách/lọc trái.' : 'Đã mở khóa ô kết quả.');
+  }
   el('left-query').addEventListener('input',()=>{clearTimeout(leftTimer);el('export').disabled=true;leftTimer=setTimeout(filterLeft,160);});
   el('right-query').addEventListener('input',()=>{clearTimeout(rightTimer);rightTimer=setTimeout(()=>{s.rp=0;paintRight();},160);});
   for(const side of ['left','right'])for(const field of ['form','strength'])el(side+'-'+field).addEventListener('change',()=>{if(side==='left')filterLeft();else{s.rp=0;paintRight();}});
@@ -154,9 +199,12 @@ function SraCompare(options) {
     for(const suffix of ['on','max'])el(type+'-'+suffix).addEventListener('input',()=>{s.rp=0;paintRight();});
   }
   el('all').addEventListener('click',()=>{s.focus=null;s.reverse=null;refresh();});
+  el('lock-left')?.addEventListener('click',()=>toggleLock('left'));
+  el('lock-right')?.addEventListener('click',()=>toggleLock('right'));
   el('close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{
     generation++;clearTimeout(leftTimer);clearTimeout(rightTimer);document.getElementById('compare-toggle').setAttribute('aria-pressed','false');
+    lockLeft=false;lockRight=false;paintLocks();
     s={entries:[],left:[],right:[],hits:[],focus:null,lp:0,rp:0};
     el('left').replaceChildren();el('right').replaceChildren();
   });
@@ -210,6 +258,7 @@ function SraCompare(options) {
       if(e.row[3])forms.set(m.form,e.row[3]);if(e.row[4])strengths.set(m.strength,e.row[4]);
     },gen,'Đang chuẩn bị so sánh…'))return;
     s={entries,left:[],right:[],hits:[],focus:null,reverse:null,lp:0,rp:0};
+    lockLeft=false;lockRight=false;paintLocks();
     el('left-query').value='';el('right-query').value='';
     for(const side of ['left','right'])for(const type of ['form','strength'])el(side+'-'+type).value='';
     facets('left',forms,strengths);

@@ -11,10 +11,10 @@ const fs=require('fs'),assert=require('node:assert/strict');
  for(const f of ['_vn_logic.js','_data_logic.js','_compare.js'])await page.addScriptTag({path:f});
  await page.evaluate(()=>{
   const records=[['1','Alpha','tablet','10mg'],['2','Alpha','capsule','20mg'],['3','Alpha + Beta','tablet','30mg'],['4','Beta','tablet','40mg'],['5','Gamma','',''],['1','Alpha','tablet','0.01g']].map(([sdk,inn,form,strength],i)=>({id:String(i),sdk,inn,form,strength,product:'Drug '+i,registrant:'Co',expiry:'2030-01-01'}));
-  const assessments=new Map(records.map(record=>[record.id,{record,reason:'eligible'}]));
+  const assessments=new Map(records.map(record=>[record.id,{record,reason:'eligible',tagId:'TAG_XANH_LA'}]));
   const rows=[['US','Alpha','Left A','tablet','10mg','Co'],['US','Beta','Left B','capsule','40mg','Co'],['US','Alpha + Beta','Left AB','tablet','30mg','Co'],['US','Gamma','Left C','tablet','50mg','Co']];
   window.SraExcel={build:async sheets=>{window.exported=sheets;return new Uint8Array([1]);}};
-  window.compare=SraCompare({dialog:document.getElementById('vn-compare'),records,assessments:()=>assessments,reasons:{eligible:'đủ điều kiện'},countryName:x=>x,fold:x=>String(x).toLowerCase(),getResults:()=>rows.map(row=>({row,cc:'US'})),companyLink:()=>({url:'https://example.com'}),formLabel:x=>x,sourceOf:()=>({}),sourceUrl:()=>''});
+  window.compare=SraCompare({dialog:document.getElementById('vn-compare'),records,assessments:()=>assessments,selectedTags:()=>['TAG_XANH_LA'],tagLabel:()=>'Sẵn sàng dự thầu',reasons:{eligible:'đủ điều kiện'},countryName:x=>x,fold:x=>String(x).toLowerCase(),getResults:()=>rows.map(row=>({row,cc:'US'})),companyLink:()=>({url:'https://example.com'}),formLabel:x=>x,sourceOf:()=>({}),sourceUrl:()=>''});
   return compare.open();
  });
  const done=()=>page.waitForFunction(()=>document.getElementById('compare-status').textContent==='Đã đối chiếu · 100%');
@@ -46,7 +46,18 @@ const fs=require('fs'),assert=require('node:assert/strict');
  await page.locator('#compare-sdk-choice').selectOption('other');await page.locator('#compare-sdk-max').fill('0');assert.equal(await right(),0);
  await page.locator('#compare-sdk-on').uncheck();await page.locator('#compare-form-on').uncheck();await page.locator('#compare-strength-on').uncheck();
  await page.locator('#compare-right-strength').selectOption('');assert.equal(await right(),6);
+ await page.locator('#compare-right-strength').selectOption('40mg');assert.equal(await right(),1);
+ await page.locator('#compare-lock-right').click();
+ assert.equal(await page.locator('#compare-lock-right').getAttribute('aria-pressed'),'true');
+ await page.locator('#compare-left .compare-row').filter({hasText:'Left A'}).first().click();
+ await page.waitForTimeout(50);
+ assert.equal(await right(),1);
+ assert.equal(await page.locator('#compare-right-strength').inputValue(),'40mg');
+ await page.locator('#compare-lock-right').click();
+ await page.locator('#compare-right-strength').selectOption('');
+ await page.locator('#compare-all').click();await done();
+ assert.equal(await right(),6);
  for(const width of [360,768,1440]){await page.setViewportSize({width,height:950});assert.ok(await page.locator('#vn-compare').evaluate(e=>e.scrollWidth<=e.clientWidth+1));}
- assert.deepEqual(errors,[]);console.log('PASS: preset/custom controls, clickable labels, global distinct SDK/form/strength counts, missing values, same-component rules, bidirectional matching, dropdowns, Excel scope and responsive layout');
+ assert.deepEqual(errors,[]);console.log('PASS: preset/custom controls, pane locks, clickable labels, global distinct SDK/form/strength counts, missing values, same-component rules, bidirectional matching, dropdowns, Excel scope and responsive layout');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});

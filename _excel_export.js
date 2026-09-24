@@ -4,6 +4,31 @@
   const ns='http://schemas.openxmlformats.org/spreadsheetml/2006/main';
   const rel='http://schemas.openxmlformats.org/officeDocument/2006/relationships';
   function col(i){let s='';for(i++;i;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s;}
+  async function downloadBlob(data, filename, mime) {
+    const blob = data instanceof Blob ? data : new Blob([data], { type: mime || 'application/octet-stream' });
+    const fileName = filename || 'download.bin';
+    try {
+      if (navigator.canShare) {
+        const file = new File([blob], fileName, { type: blob.type || mime || 'application/octet-stream' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: fileName });
+          return 'shared';
+        }
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return 'aborted';
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    a.rel = 'noopener';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 4000);
+    return 'download';
+  }
   async function build(sheets) {
     const zip=new root.JSZip();
     let types='',links='',names='';
@@ -30,7 +55,7 @@
     zip.file('xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="${ns}" xmlns:r="${rel}"><sheets>${names}</sheets></workbook>`);
     zip.file('xl/_rels/workbook.xml.rels',`<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${links}<Relationship Id="styles" Type="${rel}/styles" Target="styles.xml"/></Relationships>`);
     zip.file('xl/styles.xml',`<?xml version="1.0"?><styleSheet xmlns="${ns}"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0F766E"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
-    return zip.generateAsync({type:'uint8array',compression:'DEFLATE',compressionOptions:{level:3}});
+    return zip.generateAsync({type:'uint8array',compression:'DEFLATE',compressionOptions:{level:1}});
   }
-  root.SraExcel={build};
+  root.SraExcel={build,downloadBlob};
 })(typeof globalThis!=='undefined'?globalThis:this);

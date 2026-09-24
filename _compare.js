@@ -201,6 +201,10 @@ function SraCompare(options) {
   el('all').addEventListener('click',()=>{s.focus=null;s.reverse=null;refresh();});
   el('lock-left')?.addEventListener('click',()=>toggleLock('left'));
   el('lock-right')?.addEventListener('click',()=>toggleLock('right'));
+  document.addEventListener('click',ev=>{
+    const pop=document.getElementById('compare-rules-pop');
+    if(pop && pop.open && !pop.contains(ev.target)) pop.open=false;
+  });
   el('close').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{
     generation++;clearTimeout(leftTimer);clearTimeout(rightTimer);document.getElementById('compare-toggle').setAttribute('aria-pressed','false');
@@ -242,9 +246,9 @@ function SraCompare(options) {
         {name:'Kết quả chính',headers:['Quốc gia','Hoạt chất','Tên thuốc','Dạng bào chế','Hàm lượng','Công ty (VN: công ty đăng ký)','SĐK VN','Nguồn'],rows:left.map(e=>[countryName(e.cc),...e.row.slice(1,6),e.row[8] || '',options.sourceUrl(e.cc)])},
         {name:'DAV đối chiếu',headers:['ID DAV','SĐK','Tên thuốc','Hoạt chất','Hàm lượng','Dạng bào chế','Công ty đăng ký','Ngày hết hạn trong DAV','Hạn xét','Trạng thái bộ lọc VN','Hoạt chất khớp','Mức khớp','Nguồn'],rows:right.map(h=>{const r=h.record;return [r.id,r.sdk,r.product,r.inn,r.strength,r.form,r.registrant,r.expiry,assessment(r)?.expiry || '',reason(r),h.matched.join('; '),h.kind,'https://dichvucong.dav.gov.vn/congbothuoc/index'];})}
       ]);
-      const url=URL.createObjectURL(new Blob([output],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}));
-      const a=document.createElement('a');a.href=url;a.download='so-sanh-thuoc-DAV.xlsx';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
-      el('status').textContent=`Đã xuất ${left.length.toLocaleString('vi-VN')} kết quả và ${right.length.toLocaleString('vi-VN')} hồ sơ DAV.`;
+      const mode=await SraExcel.downloadBlob(output,'so-sanh-thuoc-DAV.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      if(mode==='aborted')el('status').textContent='Đã hủy chia sẻ file.';
+      else el('status').textContent=`Đã xuất ${left.length.toLocaleString('vi-VN')} kết quả và ${right.length.toLocaleString('vi-VN')} hồ sơ DAV`+(mode==='shared'?' (chia sẻ).':'.');
     } catch(error){el('status').textContent='Không xuất được Excel: '+error.message;}
     finally {exporting=false;el('export').disabled=false;}
   });

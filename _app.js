@@ -435,8 +435,9 @@
       function countryName(cc) { return CC[cc] || cc; }
       function flagIso(cc) { return cc === "EMA" ? "eu" : String(cc || "").toLowerCase(); }
       function flagImg(cc) {
+        if (window.matchMedia('(max-width: 680px)').matches) return '';
         const iso = flagIso(cc);
-        return "<img class=\"flg\" width=\"20\" height=\"15\" alt=\"\" src=\"https://flagcdn.com/w20/" + iso + ".png\" srcset=\"https://flagcdn.com/w40/" + iso + ".png 2x\" />";
+        return "<img class=\"flg\" width=\"20\" height=\"15\" alt=\"\" loading=\"lazy\" decoding=\"async\" src=\"https://flagcdn.com/w20/" + iso + ".png\" srcset=\"https://flagcdn.com/w40/" + iso + ".png 2x\" />";
       }
       function hydrateFlags() {
         document.querySelectorAll("span.flag").forEach((el) => {
@@ -874,11 +875,18 @@
         }).join("");
         const html = "<html xmlns:o=\"urn:schemas-microsoft-com:office:office\" xmlns:x=\"urn:schemas-microsoft-com:office:excel\"><head><meta charset=\"utf-8\" /></head><body><table border=\"1\">" + head + body + "</table></body></html>";
         const blob = new Blob(["\uFEFF" + html], { type: "application/vnd.ms-excel;charset=utf-8" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = "sra-chon.xls";
-        a.click();
-        URL.revokeObjectURL(a.href);
+        const run = async () => {
+          if (window.SraExcel && SraExcel.downloadBlob) await SraExcel.downloadBlob(blob, "sra-chon.xls", blob.type);
+          else {
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "sra-chon.xls";
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+          }
+        };
+        run();
       }
 
       function pct(a, b) { return b ? Math.round(100 * a / b) : 0; }
@@ -1185,15 +1193,44 @@
           await buildInns();
           await buildCountryData();
           paintCountries();
-          paintSrc();
-          paintFlags();
-          paintFormChips();
-          paintMg();
+          const mobileUi = window.matchMedia('(max-width: 680px)').matches;
+          if (mobileUi) {
+            paintMg();
+            paintFilterDrawerCount();
+            const drawer = document.getElementById('filter-drawer');
+            let hydrating = false;
+            const hydrate = () => {
+              if (hydrating) return;
+              hydrating = true;
+              requestAnimationFrame(() => {
+                paintSrc();
+                paintFormChips();
+                requestAnimationFrame(() => {
+                  paintFlags();
+                  paintTagFilter();
+                  paintFilterDrawerCount();
+                  hydrating = false;
+                });
+              });
+            };
+            if (drawer) {
+              drawer.addEventListener('toggle', () => { if (drawer.open) hydrate(); });
+              // Lightweight placeholder so first open feels immediate.
+              document.getElementById('mforms').innerHTML = '<p style="padding:8px;color:var(--muted);font-size:12px">Đang mở bộ lọc…</p>';
+              document.getElementById('mflags').innerHTML = '';
+              document.getElementById('msrc').innerHTML = '';
+            } else hydrate();
+          } else {
+            paintSrc();
+            paintFlags();
+            paintFormChips();
+            paintMg();
+          }
           saveSel();
           await loadProgress(100,'Sẵn sàng');
           mmeta.textContent = MED.length.toLocaleString("vi-VN") + " dòng từ 36 nước SRA & Việt Nam · " + (d.u || "");
           paintHealth();
-          hydrateFlags();
+          if (!mobileUi) hydrateFlags();
           controls.forEach(el=>el.inert=false);
           dismissBoot();
         } catch (e) {

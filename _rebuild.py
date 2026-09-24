@@ -17,6 +17,9 @@ prefix = prefix.replace('<html lang="en" data-guide="en">', '<html lang="vi" dat
 prefix = prefix.replace('<html lang="vi" data-guide="en">', '<html lang="vi" data-guide="orig">')
 prefix = prefix.replace('<html lang="en" data-guide="orig">', '<html lang="vi" data-guide="orig">')
 
+# Keep hero title + stats; drop lede blurb and TOC chip row.
+prefix = re.sub(r'\n\s*<p class="lede">.*?</p>', "", prefix, count=1, flags=re.S)
+prefix = re.sub(r'\n\s*<nav class="toc">.*?</nav>', "", prefix, count=1, flags=re.S)
 if ".htrack i.ema" not in prefix:
     prefix = prefix.replace(
         ".htrack i.m { background: #C45C3A; }",

@@ -8,45 +8,53 @@
         </div>
         <div id="search-terms" class="search-terms" aria-label="Từ khoá đã chọn" hidden></div>
         <p class="search-help">Nhập tên rồi bấm Tìm hoặc chọn gợi ý để thêm thẻ. Kết quả khớp ít nhất một thẻ; có thể thêm nhiều cách viết của hoạt chất. Bấm × để bỏ thẻ.</p>
-        <div class="filter-row">
-          <div class="strength-filter">
-            <div class="strength-top"><label for="strength-mode">Hàm lượng</label>
-              <select id="strength-mode"><option value="exact">Nhập trực tiếp</option><option value="range">Khoảng (mg)</option></select>
-              <input id="mg-exact" type="text" aria-label="Hàm lượng cần tìm" placeholder="Ví dụ: 10 mg" />
-            </div>
-            <div id="strength-range" hidden>
-              <div class="range-values"><label>Từ (mg)<input id="mg-min" type="number" min="0" step="any" placeholder="0" /></label><span>—</span><label>Đến (mg)<input id="mg-max" type="number" min="0" step="any" placeholder="Không giới hạn" /></label></div>
-              <div class="range-sliders"><input id="mg-low-slider" type="range" min="0" max="1000" step="0.1" value="0" aria-label="Kéo hàm lượng tối thiểu" /><input id="mg-high-slider" type="range" min="0" max="1000" step="0.1" value="1000" aria-label="Kéo hàm lượng tối đa" /></div>
-              <div id="mg-val" role="status">Mọi hàm lượng</div>
-            </div>
-          </div>
-          <details class="filter-dropdown"><summary>Dạng bào chế <span id="form-count"></span></summary><div class="filter-menu"><div id="mforms" class="check-grid"></div></div></details>
-          <details class="filter-dropdown"><summary>Quốc gia <span id="region-count"></span></summary><div class="filter-menu"><input id="filter-country-query" type="search" aria-label="Tìm trong bộ lọc quốc gia" placeholder="Tìm quốc gia…" /><button type="button" class="quiet-button" id="filter-countries-clear">Bỏ lọc quốc gia</button><div id="mflags" class="check-grid"></div></div></details>
-          <details class="filter-dropdown"><summary>Nguồn dữ liệu</summary><div class="filter-menu"><div id="msrc" class="src-mini"></div></div></details>
-          <details class="filter-dropdown tag-filter" id="vn-tag-filter">
-            <summary>
-              <span class="tag-filter-summary">
-                <svg class="tag-filter-ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5zm4 6h10v2H7v-2zm3 6h4v2h-4v-2z"/></svg>
-                <span>Lọc theo trạng thái</span>
-                <span id="vn-tag-count" class="tag-filter-count"></span>
-                <span id="vn-tag-dots" class="tag-filter-dots" aria-hidden="true"></span>
-              </span>
-            </summary>
-            <div class="filter-menu tag-filter-menu" role="group" aria-label="Lọc phân loại dữ liệu SĐK">
-              <p class="tag-filter-title">Lọc phân loại dữ liệu</p>
-              <div id="vn-tag-list" class="tag-filter-list"></div>
-              <div class="tag-filter-actions">
-                <button type="button" class="quiet-button" id="vn-tag-green" title="Chỉ giữ Sẵn sàng dự thầu">Chỉ lấy Xanh</button>
-                <button type="button" class="quiet-button" id="vn-tag-all">Chọn tất cả</button>
-                <button type="button" class="quiet-button" id="vn-tag-clear">Xóa chọn</button>
+        <details class="filter-drawer" id="filter-drawer">
+          <summary class="filter-drawer-toggle">
+            <span class="filter-drawer-label">Bộ lọc</span>
+            <span id="filter-drawer-count" class="filter-drawer-count"></span>
+          </summary>
+          <div class="filter-drawer-body">
+            <div class="filter-row">
+              <div class="strength-filter">
+                <div class="strength-top"><label for="strength-mode">Hàm lượng</label>
+                  <select id="strength-mode"><option value="exact">Nhập trực tiếp</option><option value="range">Khoảng (mg)</option></select>
+                  <input id="mg-exact" type="text" aria-label="Hàm lượng cần tìm" placeholder="Ví dụ: 10 mg" />
+                </div>
+                <div id="strength-range" hidden>
+                  <div class="range-values"><label>Từ (mg)<input id="mg-min" type="number" min="0" step="any" placeholder="0" /></label><span>—</span><label>Đến (mg)<input id="mg-max" type="number" min="0" step="any" placeholder="Không giới hạn" /></label></div>
+                  <div class="range-sliders"><input id="mg-low-slider" type="range" min="0" max="1000" step="0.1" value="0" aria-label="Kéo hàm lượng tối thiểu" /><input id="mg-high-slider" type="range" min="0" max="1000" step="0.1" value="1000" aria-label="Kéo hàm lượng tối đa" /></div>
+                  <div id="mg-val" role="status">Mọi hàm lượng</div>
+                </div>
               </div>
+              <details class="filter-dropdown"><summary>Dạng bào chế <span id="form-count"></span></summary><div class="filter-menu"><div id="mforms" class="check-grid"></div></div></details>
+              <details class="filter-dropdown"><summary>Quốc gia <span id="region-count"></span></summary><div class="filter-menu"><input id="filter-country-query" type="search" aria-label="Tìm trong bộ lọc quốc gia" placeholder="Tìm quốc gia…" /><button type="button" class="quiet-button" id="filter-countries-clear">Bỏ lọc quốc gia</button><div id="mflags" class="check-grid"></div></div></details>
+              <details class="filter-dropdown"><summary>Nguồn dữ liệu</summary><div class="filter-menu"><div id="msrc" class="src-mini"></div></div></details>
+              <details class="filter-dropdown tag-filter" id="vn-tag-filter">
+                <summary>
+                  <span class="tag-filter-summary">
+                    <svg class="tag-filter-ico" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5h18v2H3V5zm4 6h10v2H7v-2zm3 6h4v2h-4v-2z"/></svg>
+                    <span>Lọc theo trạng thái</span>
+                    <span id="vn-tag-count" class="tag-filter-count"></span>
+                    <span id="vn-tag-dots" class="tag-filter-dots" aria-hidden="true"></span>
+                  </span>
+                </summary>
+                <div class="filter-menu tag-filter-menu" role="group" aria-label="Lọc phân loại dữ liệu SĐK">
+                  <p class="tag-filter-title">Lọc phân loại dữ liệu</p>
+                  <div id="vn-tag-list" class="tag-filter-list"></div>
+                  <div class="tag-filter-actions">
+                    <button type="button" class="quiet-button" id="vn-tag-green" title="Chỉ giữ Sẵn sàng dự thầu">Chỉ lấy Xanh</button>
+                    <button type="button" class="quiet-button" id="vn-tag-all">Chọn tất cả</button>
+                    <button type="button" class="quiet-button" id="vn-tag-clear">Xóa chọn</button>
+                  </div>
+                </div>
+              </details>
             </div>
-          </details>
-        </div>
-        <div class="vn-info">
-        <p id="vn-note" class="vn-note" role="status"></p>
-        </div>
-        <div class="filter-footer"><div class="lang-mini" role="group" aria-label="Ngôn ngữ dạng bào chế"><button type="button" data-guide="orig" class="on">Gốc</button><button type="button" data-guide="en">EN</button><button type="button" data-guide="vi">VI</button></div><div class="filter-file"><button id="filter-save" class="quiet-button" type="button">Lưu bộ lọc</button><button id="filter-load" class="quiet-button" type="button">Mở bộ lọc</button><input id="filter-file" type="file" accept="application/json,.json" hidden /></div><button id="filter-reset" class="quiet-button" type="button">Xóa bộ lọc</button></div>
+            <div class="vn-info">
+              <p id="vn-note" class="vn-note" role="status"></p>
+            </div>
+            <div class="filter-footer"><div class="lang-mini" role="group" aria-label="Ngôn ngữ dạng bào chế"><button type="button" data-guide="orig" class="on">Gốc</button><button type="button" data-guide="en">EN</button><button type="button" data-guide="vi">VI</button></div><div class="filter-file"><button id="filter-save" class="quiet-button" type="button">Lưu bộ lọc</button><button id="filter-load" class="quiet-button" type="button">Mở bộ lọc</button><input id="filter-file" type="file" accept="application/json,.json" hidden /></div><button id="filter-reset" class="quiet-button" type="button">Xóa bộ lọc</button></div>
+          </div>
+        </details>
       </div>
       <div class="tra-layout">
         <aside class="country-panel no-print" aria-label="Chọn quốc gia">

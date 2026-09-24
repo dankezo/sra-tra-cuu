@@ -281,6 +281,7 @@
         }).join('');
         countEl.textContent = selectedTags.size ? `Đã chọn: ${selectedTags.size}` : 'Chưa chọn';
         dots.innerHTML = tagConfigs.filter((t) => selectedTags.has(t.id)).map((t) => `<i style="background:${esc(t.colorHex)}"></i>`).join('');
+        paintFilterDrawerCount();
       }
       function paintVn(blocked=0, review=0) {
         const available = !!vnSnapshot?.records.length;
@@ -340,6 +341,20 @@
       let focusedCountry = '';
       let resultScrollFrame = 0;
       const selCountries = new Set();
+      function paintFilterDrawerCount() {
+        const el = document.getElementById('filter-drawer-count');
+        if (!el) return;
+        const n = selForms.size + selCountries.size + srcSel.size + (selectedTags.size ? 1 : 0) +
+          ((document.getElementById('mg-exact')?.value || '').trim() || mgMinEl.value || mgMaxEl.value ? 1 : 0);
+        el.textContent = n ? `${n} đang bật` : 'Hàm lượng · dạng · quốc gia · VN';
+      }
+      function syncFilterDrawer() {
+        const drawer = document.getElementById('filter-drawer');
+        if (!drawer) return;
+        const mobile = window.matchMedia('(max-width: 680px)').matches;
+        drawer.open = !mobile;
+        paintFilterDrawerCount();
+      }
       const WORLD = JSON.parse(document.getElementById('sra-world').textContent);
       const countryMap = SraCountryMap(mapSvg, WORLD, {eligible:eligibleCountries, selected:()=>focusedCountry, label:countryName, onSelect:selectCountry});
       function eligibleCountries() {
@@ -399,6 +414,11 @@
         document.querySelectorAll('[data-view]').forEach(el => el.setAttribute('aria-pressed', String(el === b)));
         paintCountries();
       }));
+      syncFilterDrawer();
+      window.addEventListener('resize', () => {
+        const drawer = document.getElementById('filter-drawer');
+        if (drawer && !window.matchMedia('(max-width: 680px)').matches) drawer.open = true;
+      });
       async function buildCountryData() {
         const ema = MED.filter(r => rowSrc(r) === 'e');
         const local = {};
@@ -498,16 +518,19 @@
         msrc.innerHTML = [["d","dump"],["e","EMA"]].map(([k, lab]) => {
           return "<button type=\"button\" data-src=\"" + k + "\" class=\"" + (srcSel.has(k) ? "on" : "") + "\" aria-pressed=\"" + srcSel.has(k) + "\">" + lab + "</button>";
         }).join("") + (srcSel.has("d") && srcSel.has("e") ? "<p class=\"src-hint\">Đang lọc thuốc có cả dump và EMA</p>" : "");
+        paintFilterDrawerCount();
       }
       function paintFlags() {
         const query = searchText(document.getElementById('filter-country-query').value);
         mflags.innerHTML = SEARCH_COUNTRIES.slice().sort((a,b)=>countryName(a).localeCompare(countryName(b),'vi')).filter(c=>searchText(c+' '+CC[c]+' '+EN[c]).includes(query)).map(c => `<label><input type="checkbox" data-country-filter="${c}" ${selCountries.has(c) ? 'checked' : ''} />${flagImg(c)}${esc(countryName(c))}</label>`).join('') || '<p>Không tìm thấy quốc gia.</p>';
         document.getElementById('region-count').textContent = selCountries.size ? '(' + selCountries.size + ')' : '';
+        paintFilterDrawerCount();
       }
       function paintFormChips() {
         const mode = root.dataset.guide === 'en' ? 'en' : 'vi';
         mforms.innerHTML = Object.keys(FORM_LBL).map(k => `<label><input type="checkbox" data-form="${k}" ${selForms.has(k) ? 'checked' : ''} />${esc(FORM_LBL[k][mode])}</label>`).join('');
         document.getElementById('form-count').textContent = selForms.size ? '(' + selForms.size + ')' : '';
+        paintFilterDrawerCount();
       }
       function paintMg() {
         const lo = mgMinEl.value, hi = mgMaxEl.value;
@@ -518,6 +541,7 @@
         for (const [id, value] of [['mg-low-slider', lo || 0], ['mg-high-slider', hi || cap]]) {
           const slider = document.getElementById(id); slider.max = cap; slider.value = value;
         }
+        paintFilterDrawerCount();
       }
 
       function termText(item) {

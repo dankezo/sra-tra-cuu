@@ -37,6 +37,16 @@
 .search-filters input, .search-filters select, .country-panel input, .country-panel select { font: inherit; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; color: var(--ink); min-width: 0; }
 #mq { width: 100%; font-size: 17px; }
 #mgo { padding: 9px 28px; }
+.filter-drawer { margin: 0; border: 0; }
+.filter-drawer > summary { list-style: none; cursor: pointer; }
+.filter-drawer > summary::-webkit-details-marker { display: none; }
+.filter-drawer-toggle {
+  display: none; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px;
+  font-size: 13px; font-weight: 700; background: #f4f8f6; color: var(--ink);
+}
+.filter-drawer-count { font-weight: 600; color: var(--muted); font-size: 12px; }
+.filter-drawer-body { display: block; }
 .filter-row { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; position: relative; }
 .filter-row > details { flex: 1; min-width: 125px; border: 1px solid var(--line); border-radius: 9px; padding: 9px 10px; position: relative; }
 .vn-filter { display: flex; align-items: center; gap: 7px; min-height: 38px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 9px; font-size: 13px; font-weight: 650; cursor: pointer; white-space: nowrap; }
@@ -254,6 +264,14 @@ details.cg > summary::after { margin-left: 4px; flex: 0 0 auto; }
   .strength-filter { min-width: 100%; }
   .search-filters { padding: 12px; }
   .country-panel { display: none !important; }
+  .filter-drawer-toggle { display: flex; margin-bottom: 0; }
+  .filter-drawer:not([open]) .filter-drawer-body { display: none; }
+  .filter-drawer[open] .filter-drawer-toggle { margin-bottom: 10px; border-color: var(--teal); background: #e9f4ee; color: var(--teal); }
+  .filter-drawer[open] .filter-drawer-body {
+    display: block; padding: 12px; border: 1px solid var(--line); border-radius: 12px;
+    background: #fff; box-shadow: 0 10px 28px #0b1c1814;
+  }
+  .filter-row > details, .strength-filter { flex: 1 1 100%; min-width: 0; }
   #mgo { padding: 9px 16px; }
   #tra .filter-row > details { min-width: 120px; }
   #tra .filter-row > details { position: static; }

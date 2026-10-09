@@ -88,13 +88,24 @@ if (typeof document !== 'undefined') (async () => {
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('source-panel').hidden) $('panel-close').click(); });
   $('more').addEventListener('click', () => { limit += 40; render(); });
   let webGeneration=0;
+  const cloudEndpoint=$('api-endpoint')?.content || '';
+  const useCloud=!!cloudEndpoint && !['127.0.0.1','localhost'].includes(location.hostname);
+  const accessFromLink=new URLSearchParams(location.hash.slice(1)).get('access');
+  if(accessFromLink && /^[A-Za-z0-9_-]{32,128}$/.test(accessFromLink)) {
+    sessionStorage.setItem('apisrc_web_access',accessFromLink);history.replaceState(null,'',location.pathname+location.search);
+  }
+  $('web-access-form').addEventListener('submit',e=>{e.preventDefault();sessionStorage.setItem('apisrc_web_access',$('web-access-code').value.trim());$('web-access-code').value='';$('web-access').close();$('web-button').click();});
+  $('web-access-cancel').addEventListener('click',()=>$('web-access').close());
   $('web-button').addEventListener('click', async () => {
     const generation=++webGeneration;
     $('web-results').hidden=false; $('web-status').textContent='Đang tìm web bổ trợ · giới hạn chờ 3 giây…';
     $('web-content').innerHTML=''; $('web-button').disabled=true;
     try {
-      const response=await fetch('./search?q='+encodeURIComponent($('query').value.trim()),{signal:AbortSignal.timeout(4200)});
-      if (!response.ok) throw new Error('Chưa có backend tìm web trên bản tĩnh. Chạy server.py để bật các API.');
+      const access=sessionStorage.getItem('apisrc_web_access');
+      if(useCloud && !access){$('web-access').showModal();$('web-status').textContent='Nhập mã truy cập để tìm thêm trên web.';return;}
+      const response=await fetch((useCloud ? cloudEndpoint+'/search' : './search')+'?q='+encodeURIComponent($('query').value.trim()),{signal:AbortSignal.timeout(4200),headers:useCloud ? {Authorization:'Bearer '+access} : {}});
+      if(response.status===401){sessionStorage.removeItem('apisrc_web_access');$('web-access').showModal();throw new Error('Mã truy cập chưa đúng. Nhập lại mã để tìm web.');}
+      if (!response.ok) throw new Error(useCloud ? 'Dịch vụ tìm web đang bận. Thử lại sau.' : 'Chưa có backend tìm web. Chạy server.py để bật các API.');
       const payload=await response.json(); if(generation!==webGeneration)return;
       $('web-status').textContent=`${payload.results.length} nguồn web · ${payload.elapsed_ms} ms${payload.providers.some(p=>p.cached) ? ' · từ cache' : ''}${payload.pending ? ' · nguồn chậm đang được lưu nền; có thể tìm lại sau' : ''}${!payload.configured.length ? ' · chưa cấu hình provider' : ''}${payload.providers.filter(p=>p.error).map(p=>' · '+p.provider+': lỗi kết nối'+(p.http_status ? ' '+p.http_status : '')).join('')}`;
       $('web-content').innerHTML=payload.results.map(r=>`<article class="supplier-card"><a href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener noreferrer">${esc(r.title || r.url)}</a><p>${esc(r.snippet)}</p><span class="chip">Nguồn web · chưa xác minh</span> <span class="muted">${esc(r.provider)} · ${date(r.fetched_at)}</span></article>`).join('');

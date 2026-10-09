@@ -1,0 +1,107 @@
+// Public HTML stays on Pages; API keys, shared cache and quotas stay here.
+const PROVIDERS = {brave:'BRAVE_SEARCH_API_KEY',tavily:'TAVILY_API_KEY',exa:'EXA_API_KEY'};
+const CAPS = {brave:100,tavily:900,exa:100};
+export const normalize = value => value.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+export function safeUrl(value) {
+ try { const u=new URL(value); return u.protocol==='https:' && !u.username && !u.password ? u.href : ''; } catch { return ''; }
+}
+export async function authorized(request, env) {
+ const header=request.headers.get('Authorization') || '';
+ if(!env.APISRC_ACCESS_KEY || header.length>512 || !header.startsWith('Bearer '))return false;
+ const enc=new TextEncoder();
+ const [actual,expected]=await Promise.all([header.slice(7),env.APISRC_ACCESS_KEY].map(v=>crypto.subtle.digest('SHA-256',enc.encode(v))));
+ if(crypto.subtle.timingSafeEqual)return crypto.subtle.timingSafeEqual(actual,expected);
+ const a=new Uint8Array(actual),b=new Uint8Array(expected);let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];return diff===0;
+}
+export async function reserve(db,provider,period,cap) {
+ return !!await db.prepare('INSERT INTO apisrc_cloud_usage VALUES(?,?,1) ON CONFLICT(provider,period) DO UPDATE SET requests=requests+1 WHERE requests<? RETURNING requests').bind(provider,period,cap).first();
+}
+async function readJson(response) {
+ if(!response.ok)throw new Error('HTTP_'+response.status);
+ // Bound upstream output before parsing; never log an upstream URL, key, or error body.
+ const reader=response.body.getReader(),parts=[];let size=0;
+ try { while(true){const {done,value}=await reader.read();if(done)break;size+=value.byteLength;if(size>1000000)throw new Error('PayloadTooLarge');parts.push(value);} }
+ finally { await reader.cancel(); }
+ const bytes=new Uint8Array(size);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.byteLength;}
+ return JSON.parse(new TextDecoder().decode(bytes));
+}
+export async function upstream(provider,query,env,fetcher=fetch) {
+ const signal=AbortSignal.timeout(4500);let response,raw;
+ if(provider==='brave') {
+  response=await fetcher('https://api.search.brave.com/res/v1/web/search?'+new URLSearchParams({q:query,count:'6'}),{headers:{'X-Subscription-Token':env.BRAVE_SEARCH_API_KEY},signal});
+  raw=(await readJson(response)).web?.results || [];
+ } else if(provider==='tavily') {
+  response=await fetcher('https://api.tavily.com/search',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TAVILY_API_KEY},body:JSON.stringify({query,search_depth:'ultra-fast',max_results:6,include_answer:false,include_raw_content:false,auto_parameters:false}),signal});
+  raw=(await readJson(response)).results || [];
+ } else if(provider==='exa') {
+  response=await fetcher('https://api.exa.ai/search',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':env.EXA_API_KEY},body:JSON.stringify({query,type:'fast',numResults:6}),signal});
+  raw=(await readJson(response)).results || [];
+ } else throw new Error('UnsupportedProvider');
+ if(!Array.isArray(raw))throw new Error('InvalidPayload');
+ const fetched_at=new Date().toISOString();
+ return {provider,results:raw.slice(0,6).filter(r=>safeUrl(r.url)).map(r=>({title:String(r.title||'').slice(0,400),url:safeUrl(r.url),snippet:String(r.description||r.content||r.text||'').slice(0,1500),provider,verification:'unknown',fetched_at}))};
+}
+async function run(provider,query,key,env) {
+ const db=env.DB,at=Date.now();
+ const lease=await db.prepare('INSERT INTO apisrc_cloud_lease VALUES(?,?) ON CONFLICT(cache_key) DO UPDATE SET expires_at=excluded.expires_at WHERE expires_at<? RETURNING cache_key').bind(key,at+15000,at).first();
+ if(!lease)return {provider,results:[],error:'InProgress'};
+ try {
+  const period=new Date().toISOString().slice(0,7);
+  if(!await reserve(db,provider,period,CAPS[provider]))throw new Error('QuotaReached');
+  if(!await reserve(db,'all_daily',new Date().toISOString().slice(0,10),30))throw new Error('DailyQuotaReached');
+  const payload=await upstream(provider,query,env);
+  await save(db,key,payload,payload.results.length ? 7*86400000 : 300000);
+  return payload;
+ } catch(error) {
+  const code=/^(HTTP_\d{3}|QuotaReached|DailyQuotaReached|PayloadTooLarge|InvalidPayload)$/.test(error.message)?error.message:'ProviderUnavailable';
+  const payload={provider,results:[],error:code};await save(db,key,payload,300000);return payload;
+ } finally { await db.prepare('DELETE FROM apisrc_cloud_lease WHERE cache_key=?').bind(key).run(); }
+}
+async function save(db,key,payload,ttl) {
+ await db.prepare('INSERT INTO apisrc_cloud_cache VALUES(?,?,?,?) ON CONFLICT(cache_key) DO UPDATE SET payload=excluded.payload,fetched_at=excluded.fetched_at,expires_at=excluded.expires_at').bind(key,JSON.stringify(payload),new Date().toISOString(),Date.now()+ttl).run();
+}
+export async function search(query,env,ctx) {
+ const started=Date.now(),names=Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),outputs=[],active=new Map();let next=0;
+ const finish=()=>({results:[...new Map(outputs.flatMap(p=>p.results).map(r=>[r.url,r])).values()],providers:outputs,configured:names,pending:active.size,elapsed_ms:Date.now()-started});
+ const job=async()=>{
+  while(!outputs.some(p=>p.results.length) && Date.now()-started<2900){
+   while(active.size<2 && next<names.length){
+    const provider=names[next++],key='search:v1:'+provider+':'+normalize(query);
+    const cached=await env.DB.prepare('SELECT payload,expires_at FROM apisrc_cloud_cache WHERE cache_key=?').bind(key).first();
+    if(cached){const payload=JSON.parse(cached.payload);outputs.push({...payload,cached:true,stale:cached.expires_at<Date.now()});if(payload.results.length){if(cached.expires_at<Date.now())ctx.waitUntil(run(provider,query,key,env).catch(()=>{}));return finish();}if(cached.expires_at>Date.now())continue;}
+    const task=run(provider,query,key,env).catch(()=>({provider,results:[],error:'StorageUnavailable'}));
+    ctx.waitUntil(task);active.set(provider,task.then(value=>({provider,value})));
+   }
+   if(!active.size)break;
+   const {provider,value}=await Promise.race(active.values());active.delete(provider);outputs.push(value);
+  }
+  return finish();
+ };
+ let timer;const task=job();ctx.waitUntil(task.catch(()=>{}));
+ try { return await Promise.race([task,new Promise(resolve=>{timer=setTimeout(()=>resolve(finish()),3000);})]); }
+ finally { clearTimeout(timer); }
+}
+export default {
+ async fetch(request,env,ctx) {
+  const url=new URL(request.url),origin=request.headers.get('Origin');
+  const allowed=(env.ALLOWED_ORIGINS||'https://dankezo.github.io').split(',');
+  const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin'};
+  if(origin && allowed.includes(origin)){headers['Access-Control-Allow-Origin']=origin;headers['Access-Control-Allow-Methods']='GET, OPTIONS';headers['Access-Control-Allow-Headers']='Authorization';}
+  const reply=(body,status=200)=>Response.json(body,{status,headers});
+  if(origin && !allowed.includes(origin))return reply({error:'OriginDenied'},403);
+  if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
+  if(request.method!=='GET')return reply({error:'MethodNotAllowed'},405);
+  if(url.pathname==='/health')return reply({service:'API Sourcing',version:'1',providers:Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),shared_cache:!!env.DB,requires_access_code:true});
+  if(url.pathname!=='/search')return reply({error:'NotFound'},404);
+  if(!await authorized(request,env))return reply({error:'AccessCodeRequired'},401);
+  const q=(url.searchParams.get('q')||'').trim();
+  if(q.length<2||q.length>200)return reply({error:'InvalidQuery'},400);
+  try {return reply(await search(q+' API manufacturer supplier GMP CEP',env,ctx));}
+  catch {return reply({error:'SearchUnavailable'},503);}
+ },
+ async scheduled(_controller,env,ctx) {
+  // Query cache may stay stale for up to 30 days; usage only needs this and last month.
+  const cutoff=new Date(Date.now()-62*86400000).toISOString().slice(0,7);
+  ctx.waitUntil(env.DB.batch([env.DB.prepare('DELETE FROM apisrc_cloud_cache WHERE expires_at<?').bind(Date.now()-30*86400000),env.DB.prepare('DELETE FROM apisrc_cloud_lease WHERE expires_at<?').bind(Date.now()),env.DB.prepare('DELETE FROM apisrc_cloud_usage WHERE period<?').bind(cutoff)]));
+ }
+};

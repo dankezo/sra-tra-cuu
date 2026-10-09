@@ -1,0 +1,12 @@
+{
+ "name": "baoan-api-sourcing",
+ "main": "cloud-worker.mjs",
+ "compatibility_date": "2026-10-09",
+ "account_id": "055fae72026ad46d008a26038695dc0b",
+ "workers_dev": true,
+ "preview_urls": false,
+ "vars": {"ALLOWED_ORIGINS":"https://dankezo.github.io,http://127.0.0.1:8766,http://localhost:8766"},
+ "d1_databases": [{"binding":"DB","database_name":"apisrc-search-cache","database_id":"b47b0390-0024-430c-ae27-a998f9904b37"}],
+ "triggers": {"crons":["45 12 * * *"]},
+ "observability": {"enabled":true,"head_sampling_rate":0.1,"logs":{"enabled":true,"invocation_logs":false}}
+}

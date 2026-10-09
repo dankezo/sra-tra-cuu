@@ -34,7 +34,8 @@ api-sourcing/.venv/Scripts/python.exe api-sourcing/server.py
 Chỉ web tĩnh: mở `api-sourcing/index.html`, không cần server hoặc Internet cho tìm hồ sơ.
 Server chỉ bind loopback, chỉ phục vụ HTML được cho phép. `.env`, SQLite, mã Python và file thô không được phục vụ.
 Không triển khai server này trực tiếp ra Internet: backend công khai cần auth và quản lý quota riêng.
-GitHub Pages vẫn phục vụ công cụ SRA/DAV và chỉ mục API Sourcing; tìm web bằng API chỉ hoạt động trên server cục bộ.
+GitHub Pages phục vụ công cụ SRA/DAV và chỉ mục API Sourcing. Tìm web online gọi Worker đã triển khai;
+server cục bộ vẫn dùng các connector Python và không yêu cầu mã cloud.
 
 Khóa Tavily hiện có được lấy từ tài khoản Google người dùng chỉ định và lưu trong `.env` bị Git bỏ qua.
 Các khóa Brave/Exa/Jina/Groq/Google/Firecrawl/SerpApi/HasData người dùng cung cấp cũng chỉ nằm trong `.env`. Không cần khóa để đọc chỉ mục.
@@ -124,8 +125,9 @@ Reader chặn địa chỉ mạng riêng, tôn trọng robots, ghi trạng thái
 chặn robots Disallow có wildcard và khác hoa/thường; không theo redirect chưa kiểm tra.
 Exa/Tavily search snippets là `unknown`. LLM chỉ nhập listing khi quote khớp nguyên văn và chứa cả công ty + hoạt chất;
 listing luôn `supplier_claimed`, không sinh chip chứng chỉ xanh.
-Groq model cấu hình đã thử trên trang NCC thật, chấp nhận 0 listing vì chưa đủ bằng chứng khớp;
-chưa coi trích xuất Tier 2 tự động là đã hoàn tất hoặc xác minh thành công.
+Groq đã trích xuất được bằng chứng nguyên văn từ trang Amlodipine của Swapnroop;
+đã kiểm tra ba tên thương mại trên cùng website, giữ một listing `supplier_claimed` với quote và URL.
+Alias được lưu và xuất cùng snapshot để giữ override qua CI/lần nhập sau. Chưa suy luận WHO-GMP từ lời quảng cáo.
 Không tự giải CAPTCHA, ngụy trang fingerprint, lấy clearance cookie hay bỏ qua access denied.
 EudraGMDP/CPHI/PharmaSources hiện có link tra cứu; chưa có ingest toàn bộ, chưa tự xác minh GMP/sự kiện.
 
@@ -140,6 +142,7 @@ link EDQM, ngày lập phiếu; không gọi là chứng chỉ hoặc xác nhậ
 python -m unittest discover -s api-sourcing -p 'test_*.py'
 node api-sourcing/test_logic.cjs
 node api-sourcing/test_browser.cjs
+node --test api-sourcing/test_cloud_worker.mjs
 ```
 
 Đã kiểm tra parser/trạng thái/ngày, idempotency, rollback, nguồn sai, cache không gọi mạng,
@@ -158,6 +161,31 @@ FDA XLSX theo quý. Không mở từng trang cho mỗi hồ sơ. Transaction gi�
 Trang NCC chỉ đọc khi cần rồi cache nội dung 30 ngày; tìm web cache 7 ngày.
 CPHI/PharmaSources/EudraGMDP/NMPA chưa có bản dump đã nhập; cần xác minh khả năng export và quyền đọc
 trước khi thêm một job có giới hạn trang. Không có bước crawl toàn bộ các website này.
+
+## Bản triển khai online
+
+Giao diện: `https://dankezo.github.io/sra-tra-cuu/api-sourcing/`.
+Backend: `https://baoan-api-sourcing.dannyphan190.workers.dev`; `/health` công khai, `/search` yêu cầu Bearer access code riêng.
+Mã truy cập nằm ở `private/web-access.txt`; `private/open-online.html` mở trang online và cấp mã cho phiên đó.
+Link dùng fragment, được xóa khỏi thanh địa chỉ sau khi lưu vào sessionStorage; không có mã trong HTML công khai hay Git.
+Không dùng mã crawl của EHE. Khi chia sẻ mã, người nhận có quyền dùng hạn mức tìm web này.
+
+Worker dùng D1 `apisrc-search-cache`, ba bảng `apisrc_cloud_*`, không sửa DB dự án EHE.
+Brave/Tavily chạy song song; Exa fallback. Cache query 7 ngày, lỗi 5 phút, stale trả ngay và refresh nền.
+Lease D1 chống request trùng giữa nhiều region; quota `INSERT ... ON CONFLICT ... RETURNING` nguyên tử.
+Mức cloud: Brave 100, Tavily 900, Exa 100 request/tháng, thêm trần tổng 30 request upstream/ngày.
+Cache hit không tiêu hao request quota. Các giới hạn cloud độc lập với giới hạn local và phần mềm khác dùng cùng API key.
+Worker có timeout phản hồi 3 giây; tác vụ đang chạy ghi cache bằng waitUntil. Cleanup D1 hằng ngày lúc 19:45 giờ Bangkok.
+Đã xác nhận Cloudflare Workers Free, không nâng gói hoặc thêm thẻ. Không gắn Browser binding, không dùng ngân sách Browser Run của MSC.
+
+Đo endpoint cloud từ máy này: amlodipine mới 1.792 ms cả mạng / 1.300 ms backend;
+cache 553 ms cả mạng / 54 ms backend. Mạng và region khác có thể thay đổi.
+Đã kiểm tra 401 khi thiếu mã, CORS đúng origin, cache và quota đồng thời trên SQLite thật.
+Pages CI kiểm tra sourcing/Worker và logic SRA/DAV trước khi publish; workflow ingest tự chạy khi được đưa vào main.
+`wrangler.jsonc` là cấu hình khôi phục backend; secrets phải đặt riêng trên Workers, không đặt vào file đó.
+
+Đã nghiên cứu lại worker EHE `baoan-public-crawl`: tái sử dụng nguyên tắc xác thực, cache, reserve ngân sách,
+đầu vào có giới hạn. Không dùng relay VSS đang lỗi mạng làm backend cho module này.
 
 Tham chiếu API: [Brave](https://api-dashboard.search.brave.com/app/documentation/web-search/get-started),
 [Firecrawl Search](https://docs.firecrawl.dev/api-reference/endpoint/search),

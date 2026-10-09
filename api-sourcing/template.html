@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>API Sourcing · Bảo An Pharma</title><style><!--STYLE--></style></head>
+<html lang="vi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta id="api-endpoint" name="apisrc-api" content="<!--API_URL-->"><title>API Sourcing · Bảo An Pharma</title><style><!--STYLE--></style></head>
 <body><main class="wrap">
 <nav class="tool-switcher" aria-label="Chuyển công cụ"><a href="../index.html">Tra cứu thuốc SRA / DAV</a><a href="./index.html" aria-current="page">API Sourcing · tìm NCC</a></nav>
 <header class="hero"><p class="eyebrow">Bảo An Pharma · Công cụ 02</p><div class="title-row"><div><h1>Tìm nguồn nguyên liệu</h1><p>Nhà cung cấp API ngoại · minh bạch từng nguồn</p></div><button id="bag-toggle" type="button">Bag <span id="bag-count">0</span></button></div></header>
@@ -14,4 +14,5 @@
 <dialog id="bag-dialog"><div class="panel-head"><h2>Bag · NCC đã lưu</h2><button id="bag-close" type="button" aria-label="Đóng Bag">×</button></div><p class="muted">Lưu trên thiết bị này. Snapshot giữ ngày và trạng thái tại lúc lưu.</p><button id="bag-export" type="button">Sao lưu Bag (.json)</button><div id="bag-content"></div></dialog>
 <p id="toast" role="status" hidden></p><section id="print-report" hidden></section>
 <footer>EDQM · FDA · WHO — tra cứu nguồn trước khi làm hồ sơ đăng ký.</footer>
+<dialog id="web-access"><form id="web-access-form"><h2>Tìm web bằng API</h2><p>Mã truy cập bảo vệ hạn mức API của bạn. Hồ sơ chính thức vẫn tìm được ngay.</p><label for="web-access-code">Mã truy cập</label><input id="web-access-code" type="password" required minlength="32" maxlength="128" autocomplete="off"><p><button type="submit">Lưu cho phiên này và tìm</button> <button id="web-access-cancel" type="button">Để sau</button></p></form></dialog>
 </main><script type="application/octet-stream" id="api-data"><!--DATA--></script><script><!--APP--></script></body></html>

@@ -232,10 +232,16 @@ def export(con):
             'substances': [dict(r) for r in con.execute('SELECT * FROM apisrc_substance')], 'certificates': certs,
             'runs': [dict(r) for r in con.execute('SELECT * FROM apisrc_ingest_run ORDER BY id DESC LIMIT 30')]}
     data['listings']=[dict(r) for r in con.execute('SELECT * FROM apisrc_listing')]
+    data['aliases']=[dict(r) for r in con.execute('SELECT * FROM apisrc_company_alias')]
     if ROOT.joinpath('vn-index.json').exists():
         data['vn'] = json.loads(ROOT.joinpath('vn-index.json').read_text(encoding='utf-8'))
     encoded = base64.b64encode(gzip.compress(json.dumps(data, ensure_ascii=False, separators=(',', ':')).encode())).decode()
     html = (ROOT / 'template.html').read_text(encoding='utf-8').replace('<!--STYLE-->', (ROOT / 'style.css').read_text(encoding='utf-8'))
+    cloud_config=ROOT/'cloud-config.json'
+    endpoint=json.loads(cloud_config.read_text(encoding='utf-8')).get('api_url','') if cloud_config.exists() else ''
+    if endpoint and (urlparse(endpoint).scheme!='https' or not urlparse(endpoint).hostname.endswith('.workers.dev')):
+        raise ValueError('Unexpected cloud API endpoint')
+    html=html.replace('<!--API_URL-->',endpoint)
     js = (ROOT / 'app.js').read_text(encoding='utf-8')
     if 'vn' in data:
         js = ROOT.parent.joinpath('_vn_logic.js').read_text(encoding='utf-8') + '\n' + js
@@ -255,7 +261,7 @@ def restore(con):
         for r in data['companies']:
             con.execute('INSERT INTO apisrc_company(id,canonical_name,name_key,country,address,website,created_at) VALUES(?,?,?,?,?,?,?)',
                         (r['id'],r['canonical_name'],norm(r['canonical_name']),r.get('country'),r.get('address'),r.get('website'),data['built_at']))
-        for table,rows in [('substance',data['substances']),('certificate',data['certificates']),('listing',data.get('listings',[])),('ingest_run',data['runs'])]:
+        for table,rows in [('substance',data['substances']),('certificate',data['certificates']),('listing',data.get('listings',[])),('company_alias',data.get('aliases',[])),('ingest_run',data['runs'])]:
             valid={r[1] for r in con.execute('PRAGMA table_info(apisrc_'+table+')')}
             for r in rows:
                 values={k:v for k,v in r.items() if k in valid}

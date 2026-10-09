@@ -164,6 +164,15 @@ trước khi thêm một job có giới hạn trang. Không có bước crawl to
 
 ## Bản triển khai online
 
+Thẻ NCC và đầu panel có link website công ty/tập đoàn. Khi xuất HTML, tái sử dụng
+`_sites.py` và `data/company-link-resolutions.json`; chỉ lấy đích `official` đã rà soát.
+`company-links.json` bổ sung một số tên, URL và nguồn đối chiếu đã kiểm tra.
+Ghép tên theo ranh giới từ; không gộp công ty và không suy luận website của nhà máy.
+Tên chưa khớp có link “Tìm website công ty”, không trình bày như website xác minh.
+Panel giữ ngày rà soát và nguồn đối chiếu. Việc ghép link không thay đổi mức xác minh hồ sơ.
+Nhãn CEP/EDQM, DMF US, WHO PQ, GMP/CPP có giải thích khi hover, focus hoặc chạm;
+Escape hoặc chạm ra ngoài đóng giải thích. Nội dung tham chiếu EDQM, FDA và WHO ở footer.
+
 Giao diện: `https://dankezo.github.io/sra-tra-cuu/api-sourcing/`.
 Backend: `https://baoan-api-sourcing.dannyphan190.workers.dev`; `/health` công khai, `/search` yêu cầu Bearer access code riêng.
 Mã truy cập nằm ở `private/web-access.txt`; `private/open-online.html` mở trang online và cấp mã cho phiên đó.

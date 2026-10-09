@@ -9,6 +9,7 @@ import json
 import os
 import re
 import sqlite3
+import sys
 import unicodedata
 import zipfile
 from contextlib import contextmanager
@@ -224,11 +225,27 @@ def fetch_source(source):
 
 
 def export(con):
+    # Reuse the audited company destinations from the existing medicine lookup.
+    sys.path.insert(0, str(ROOT.parent))
+    from _sites import company_sites
+    companies = [dict(r) for r in con.execute('SELECT id,canonical_name,country,address,website FROM apisrc_company')]
+    destinations = company_sites([{'company': r['canonical_name']} for r in companies])
+    checked = json.loads(ROOT.parent.joinpath('data/company-link-resolutions.json').read_text(encoding='utf-8'))['checkedAt']
+    supplements = json.loads(ROOT.joinpath('company-links.json').read_text(encoding='utf-8'))
+    for r in companies:
+        link = destinations[r['canonical_name']]
+        r['website'] = link['url'] if link['kind'] == 'official' else None
+        r['website_checked_at'] = checked if r['website'] else None
+        r['website_source'] = r['website']
+        for supplement in supplements:
+            if any((' ' + norm(alias) + ' ') in (' ' + norm(r['canonical_name']) + ' ') for alias in supplement['names']):
+                r.update(website=supplement['url'], website_source=supplement['source'], website_checked_at=supplement['checked_at'])
+                break
     certs = [dict(r) for r in con.execute('SELECT * FROM apisrc_certificate ORDER BY id')]
     # Raw source snippet remains in private SQLite; public report includes the exact relevant fields.
     for r in certs:
         r.pop('raw_snippet')
-    data = {'built_at': now(), 'companies': [dict(r) for r in con.execute('SELECT id,canonical_name,country,address,website FROM apisrc_company')],
+    data = {'built_at': now(), 'companies': companies,
             'substances': [dict(r) for r in con.execute('SELECT * FROM apisrc_substance')], 'certificates': certs,
             'runs': [dict(r) for r in con.execute('SELECT * FROM apisrc_ingest_run ORDER BY id DESC LIMIT 30')]}
     data['listings']=[dict(r) for r in con.execute('SELECT * FROM apisrc_listing')]

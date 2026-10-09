@@ -4,10 +4,10 @@ const assert=require('node:assert/strict');
  const browser=await chromium.launch({headless:true,channel:process.env.SRA_BROWSER_CHANNEL||'chrome'});
  const page=await browser.newPage({viewport:{width:1360,height:950}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
- await page.goto(process.env.APISRC_TEST_URL||'http://127.0.0.1:8765/api-sourcing/');
+ await page.goto(process.env.APISRC_TEST_URL||'http://127.0.0.1:8766/api-sourcing/');
  await page.waitForFunction(()=>window.APISRC_READY);
  const timings=[];
- for(const query of ['amlodipine','paracetamol','metformin']){
+ for(const query of ['amlodipine','paracetamol','metformin','103-90-2']){
   await page.locator('#query').fill(query);await page.locator('#search-button').click();
   const message=await page.locator('#result-status').innerText();assert.match(message,/\d+ NCC/);
   assert.ok(await page.locator('.supplier-card').count()>0);
@@ -18,6 +18,11 @@ const assert=require('node:assert/strict');
  assert.ok(await page.locator('.supplier-card').count()>0);
  await page.locator('[data-open]').first().click();assert.ok(await page.locator('#source-panel').isVisible());
  assert.match(await page.locator('#source-content').innerText(),/Ngày file nguồn/);
+ await page.evaluate(()=>{window.print=()=>{window.printCalled=true}});
+ await page.locator('[data-print]').first().click();
+ assert.ok(await page.evaluate(()=>window.printCalled));
+ assert.match(await page.locator('#print-report').innerText(),/không thay thế chứng chỉ CEP/);
+ await page.evaluate(()=>window.dispatchEvent(new Event('afterprint')));
  await page.locator('#panel-close').click();
  await page.locator('[data-save]').first().click();assert.equal(await page.locator('#bag-count').innerText(),'1');
  await page.locator('#bag-toggle').click();await page.locator('[data-field=note]').fill('QA note <script>');await page.locator('[data-field=note]').press('Tab');

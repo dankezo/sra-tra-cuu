@@ -1,5 +1,10 @@
 # SRA medicine search (Bảo An Pharma)
 
+Thanh công cụ phía trên chuyển giữa **Tra cứu thuốc SRA/DAV** và **API Sourcing** (`api-sourcing/index.html`).
+API Sourcing tìm nguồn API ngoại từ EDQM CEP, FDA DMF Type II và WHO PQ đã nhập sẵn,
+có panel nguồn, bộ lọc, Bag, checklist và in phiếu CEP. Tìm web dùng server cục bộ; không đưa khóa API vào GitHub Pages.
+Xem [cách chạy, nguồn dữ liệu, cache và giới hạn](api-sourcing/README.md).
+
 Public lookup of **circulating** human medicines from official national dumps and the EMA authorised list. Built for TT 12/2025 SRA / TT 40/2025 nhóm 1 work: search by INN, product or company name, grouped by country.
 
 **Use it:** type an INN (e.g. `atorvastatin`), product or company name, then press Enter / Search or pick a suggestion. Each submitted name becomes a removable chip. Chips match with OR, so multiple spellings/languages expand the results; other filters narrow those results. Saved filter files include the chips and support older single-query files. Select a country from the globe, map, or list on the left; its results open on the right. All views share the same country selection. Country and medicine searches ignore accents.

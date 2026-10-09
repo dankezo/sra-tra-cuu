@@ -11,6 +11,7 @@ import re
 import sqlite3
 import unicodedata
 import zipfile
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urljoin, urlparse
@@ -28,7 +29,7 @@ SOURCES = {
 
 
 def now():
-    return datetime.now(timezone.utc).isoformat(timespec='seconds')
+    return datetime.now(timezone.utc).isoformat(timespec='microseconds')
 
 
 def norm(value):
@@ -51,7 +52,21 @@ def database(path=None):
     con = sqlite3.connect(path or os.environ.get('APISRC_DB', str(ROOT / 'sourcing.sqlite3')))
     con.row_factory = sqlite3.Row
     con.executescript((ROOT / 'schema.sql').read_text(encoding='utf-8'))
+    existing = {r[1] for r in con.execute('PRAGMA table_info(apisrc_substance)')}
+    for column in ('normalization_source', 'normalization_fetched_at'):
+        if column not in existing:
+            con.execute(f'ALTER TABLE apisrc_substance ADD COLUMN {column} TEXT')
     return con
+
+
+@contextmanager
+def session(path=None):
+    con=database(path)
+    try:
+        with con:
+            yield con
+    finally:
+        con.close()
 
 
 def parse_edqm(text):
@@ -137,6 +152,9 @@ def ingest(con, source, content, source_url, file_date=None, date_basis='unrepor
         if not records:
             raise ValueError('Empty official file; previous snapshot retained')
         with con:
+            con.execute('CREATE TEMP TABLE IF NOT EXISTS apisrc_seen(identifier TEXT PRIMARY KEY)')
+            con.execute('DELETE FROM apisrc_seen')
+            con.executemany('INSERT OR IGNORE INTO apisrc_seen VALUES(?)',[(r['identifier'],) for r in records])
             for r in records:
                 if not r['inn'] or not r['holder'] or not r['identifier']:
                     raise ValueError('Missing source identity')
@@ -166,7 +184,8 @@ def ingest(con, source, content, source_url, file_date=None, date_basis='unrepor
                 con.execute(f'INSERT INTO apisrc_certificate({columns}) VALUES({",".join("?" for _ in payload)}) ON CONFLICT(source,identifier) DO UPDATE SET {update}', tuple(payload.values()))
                 count += 1
             # Removed records are retained as unknown, never silently left green.
-            removed = con.execute("UPDATE apisrc_certificate SET status='unknown',raw_status='Absent from latest complete source file',fetched_at=?,source_file_date=?,date_basis=? WHERE source=? AND fetched_at<>?", (started, file_date, date_basis, source, started)).rowcount
+            removed = con.execute("SELECT count(*) FROM apisrc_certificate WHERE source=? AND identifier NOT IN (SELECT identifier FROM apisrc_seen) AND (status<>'unknown' OR COALESCE(raw_status,'')<>'Absent from latest complete source file')", (source,)).fetchone()[0]
+            con.execute("UPDATE apisrc_certificate SET status='unknown',raw_status='Absent from latest complete source file',fetched_at=?,source_file_date=?,date_basis=? WHERE source=? AND identifier NOT IN (SELECT identifier FROM apisrc_seen)", (started, file_date, date_basis, source))
             changed += removed
             con.execute('UPDATE apisrc_ingest_run SET finished_at=?,rows_in=?,rows_changed=?,status=? WHERE id=?', (now(), count, changed, 'ok', run))
     except Exception as error:
@@ -212,6 +231,7 @@ def export(con):
     data = {'built_at': now(), 'companies': [dict(r) for r in con.execute('SELECT id,canonical_name,country,address,website FROM apisrc_company')],
             'substances': [dict(r) for r in con.execute('SELECT * FROM apisrc_substance')], 'certificates': certs,
             'runs': [dict(r) for r in con.execute('SELECT * FROM apisrc_ingest_run ORDER BY id DESC LIMIT 30')]}
+    data['listings']=[dict(r) for r in con.execute('SELECT * FROM apisrc_listing')]
     if ROOT.joinpath('vn-index.json').exists():
         data['vn'] = json.loads(ROOT.joinpath('vn-index.json').read_text(encoding='utf-8'))
     encoded = base64.b64encode(gzip.compress(json.dumps(data, ensure_ascii=False, separators=(',', ':')).encode())).decode()
@@ -224,10 +244,33 @@ def export(con):
     return {'certificates': len(certs), 'html_bytes': len(html.encode())}
 
 
+def restore(con):
+    if con.execute('SELECT count(*) FROM apisrc_certificate').fetchone()[0]:
+        return {'restored':False,'reason':'existing DB retained'}
+    html=ROOT.joinpath('index.html').read_text(encoding='utf-8')
+    match=re.search(r'<script type="application/octet-stream" id="api-data">(.*?)</script>',html,re.S)
+    if not match:raise ValueError('Public snapshot missing')
+    data=json.loads(gzip.decompress(base64.b64decode(match[1].strip())))
+    with con:
+        for r in data['companies']:
+            con.execute('INSERT INTO apisrc_company(id,canonical_name,name_key,country,address,website,created_at) VALUES(?,?,?,?,?,?,?)',
+                        (r['id'],r['canonical_name'],norm(r['canonical_name']),r.get('country'),r.get('address'),r.get('website'),data['built_at']))
+        for table,rows in [('substance',data['substances']),('certificate',data['certificates']),('listing',data.get('listings',[])),('ingest_run',data['runs'])]:
+            valid={r[1] for r in con.execute('PRAGMA table_info(apisrc_'+table+')')}
+            for r in rows:
+                values={k:v for k,v in r.items() if k in valid}
+                con.execute(f'INSERT INTO apisrc_{table}({",".join(values)}) VALUES({",".join("?" for _ in values)})',tuple(values.values()))
+        for c in data['certificates']:
+            con.execute('INSERT OR IGNORE INTO apisrc_company_alias(company_id,alias_raw,alias_norm,source) VALUES(?,?,?,?)',(c['company_id'],c['holder'],norm(c['holder']),c['source']))
+    return {'restored':True,'certificates':len(data['certificates'])}
+
+
 def normalize_substance(con, query):
     url = 'https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + quote(query, safe='') + '/synonyms/JSON'
     response = requests.get(url, timeout=15)
     response.raise_for_status()
+    if urlparse(response.url).hostname != 'pubchem.ncbi.nlm.nih.gov' or 'json' not in response.headers.get('Content-Type', ''):
+        raise ValueError('PubChem access blocked; use normalize-gsrs instead')
     info = response.json()['InformationList']['Information']
     if len(info) != 1:
         raise ValueError('Ambiguous PubChem identity; manual review required')
@@ -238,10 +281,38 @@ def normalize_substance(con, query):
     ids = [r['id'] for r in con.execute('SELECT id,inn_clean_key FROM apisrc_substance') if r['inn_clean_key'] in keys]
     with con:
         for substance in ids:
-            con.execute('UPDATE apisrc_substance SET cas=?,synonyms=?,updated_at=? WHERE id=?', (cas, json.dumps(synonyms[:150], ensure_ascii=False), now(), substance))
+            con.execute('UPDATE apisrc_substance SET cas=?,synonyms=?,updated_at=?,normalization_source=?,normalization_fetched_at=? WHERE id=?', (cas, json.dumps(synonyms[:150], ensure_ascii=False), now(), url, now(), substance))
     ROOT.joinpath('raw').mkdir(exist_ok=True)
     ROOT.joinpath('raw', 'pubchem-' + hashlib.sha256(query.encode()).hexdigest()[:12] + '.json').write_text(json.dumps({'url': url, 'fetched_at': now(), 'data': info}), encoding='utf-8')
     return {'query': query, 'cid': info[0]['CID'], 'matched_substances': len(ids), 'cas': cas}
+
+
+def normalize_gsrs(con, query):
+    url = 'https://gsrs.ncats.nih.gov/ginas/app/api/v1/substances/search'
+    response = requests.get(url, params={'q':'root_names_name:"^'+query.upper()+'$"', 'top':2}, timeout=15)
+    response.raise_for_status()
+    data = response.json()
+    if data.get('total') != 1 or len(data.get('content', [])) != 1:
+        raise ValueError('Ambiguous GSRS identity; manual review required')
+    record = data['content'][0]
+    if 'names' not in record:
+        detail_url = record.get('_self', '')
+        if urlparse(detail_url).hostname != 'gsrs.ncats.nih.gov' or urlparse(detail_url).scheme != 'https':
+            raise ValueError('Unexpected GSRS detail URL')
+        detail = requests.get(detail_url, timeout=15)
+        detail.raise_for_status()
+        record = detail.json()
+    synonyms = [n['name'] for n in record['names']]
+    primary = [c['code'] for c in record['codes'] if c['codeSystem']=='CAS' and c.get('type')=='PRIMARY']
+    cas = primary[0] if len(primary)==1 else None
+    keys = {norm(s) for s in synonyms}
+    ids = [r['id'] for r in con.execute('SELECT id,inn_clean_key FROM apisrc_substance') if r['inn_clean_key'] in keys]
+    with con:
+        for sid in ids:
+            con.execute('UPDATE apisrc_substance SET cas=?,unii=?,synonyms=?,updated_at=?,normalization_source=?,normalization_fetched_at=? WHERE id=?',
+                        (cas, record.get('approvalID'), json.dumps(synonyms,ensure_ascii=False), now(), record.get('_self',response.url), now(), sid))
+    ROOT.joinpath('raw','gsrs-'+hashlib.sha256(query.encode()).hexdigest()[:12]+'.json').write_text(json.dumps({'url':response.url,'data':data}),encoding='utf-8')
+    return {'query':query,'unii':record.get('approvalID'),'cas':cas,'matched_substances':len(ids)}
 
 
 def main():
@@ -258,18 +329,25 @@ def main():
     pull = sub.add_parser('fetch')
     pull.add_argument('source', choices=SOURCES)
     sub.add_parser('export')
+    sub.add_parser('restore')
     normalization = sub.add_parser('normalize')
     normalization.add_argument('query')
+    gsrs = sub.add_parser('normalize-gsrs')
+    gsrs.add_argument('query')
     args = parser.parse_args()
-    with database(args.db) as con:
+    with session(args.db) as con:
         if args.action == 'import':
             result = ingest(con, args.source, args.file.read_bytes(), args.url, args.file_date, args.date_basis)
         elif args.action == 'fetch':
             result = ingest(con, args.source, *fetch_source(args.source))
         elif args.action == 'export':
             result = export(con)
+        elif args.action == 'restore':
+            result = restore(con)
         elif args.action == 'normalize':
             result = normalize_substance(con, args.query)
+        elif args.action == 'normalize-gsrs':
+            result = normalize_gsrs(con, args.query)
         else:
             result = {'schema': 'ready'}
     print(json.dumps(result))

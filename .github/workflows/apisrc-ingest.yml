@@ -1,0 +1,40 @@
+name: Refresh official API sourcing index
+on:
+  schedule:
+    # 12:20 UTC = 13:20 CET (14:20 CEST), always after EDQM daily update window.
+    - cron: '20 12 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: apisrc-ingest
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: python -m pip install 'requests>=2.31,<3'
+      - run: node api-sourcing/build_vn.cjs
+      - run: python api-sourcing/refresh.py
+      - run: python -m unittest discover -s api-sourcing -p test_pipeline.py
+      - name: Save public snapshot
+        run: |
+          git add api-sourcing/index.html api-sourcing/vn-index.json
+          if ! git diff --cached --quiet; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git commit -m 'chore(apisrc): refresh official source snapshot'
+            git push
+          fi
+      - name: Publish through Pages workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages.yml

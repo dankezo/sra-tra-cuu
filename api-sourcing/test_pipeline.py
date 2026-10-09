@@ -3,6 +3,7 @@ import sqlite3
 import unittest
 import zipfile
 from pathlib import Path
+from unittest.mock import patch
 from pipeline import database, ingest, parse_edqm, parse_fda, parse_who
 
 EDQM = 'Substance\tCertificate (CEP) Holder\tCertificate (CEP) Number\tStatus CEP\tType CEP\tIssue Date CEP\tEnd date CEP\nAmlodipine\tTest Company IN\tR0-CEP 2000-001\tSuspended by EDQM GMP non-compliance\tChemical\t01/01/2020\t\n'
@@ -49,6 +50,17 @@ class ParserTests(unittest.TestCase):
     def test_unofficial_url_rejected(self):
         with self.assertRaises(ValueError):
             ingest(database(':memory:'), 'EDQM', EDQM.encode(), 'https://example.com/edqm')
+    def test_missing_record_becomes_unknown(self):
+        con=database(':memory:')
+        url='https://extranet.edqm.eu/4DLink1/4DCGI/EXPORT_WEB_CEP.txt'
+        header,row=EDQM.splitlines()
+        newer=row.replace('2000-001','2000-002')
+        with patch('pipeline.now',return_value='2026-10-09T00:00:00+00:00'):
+            ingest(con,'EDQM',(header+'\n'+row+'\n'+newer+'\n').encode(),url)
+            ingest(con,'EDQM',(header+'\n'+newer+'\n').encode(),url)
+        missing=con.execute("SELECT status FROM apisrc_certificate WHERE identifier='R0-CEP 2000-001'").fetchone()
+        self.assertEqual(missing[0],'unknown')
+        self.assertEqual(ingest(con,'EDQM',(header+'\n'+newer+'\n').encode(),url)['changed'],0)
 
     def test_quarter_and_stale_file(self):
         con = database(':memory:')

@@ -1,7 +1,8 @@
 PRAGMA foreign_keys = ON;
 CREATE TABLE IF NOT EXISTS apisrc_substance (
  id INTEGER PRIMARY KEY, inn TEXT NOT NULL, inn_clean_key TEXT NOT NULL UNIQUE,
- cas TEXT, unii TEXT, synonyms TEXT NOT NULL DEFAULT '[]', updated_at TEXT NOT NULL);
+ cas TEXT, unii TEXT, synonyms TEXT NOT NULL DEFAULT '[]', updated_at TEXT NOT NULL,
+ normalization_source TEXT, normalization_fetched_at TEXT);
 CREATE INDEX IF NOT EXISTS apisrc_cas ON apisrc_substance(cas);
 CREATE TABLE IF NOT EXISTS apisrc_company (
  id INTEGER PRIMARY KEY, canonical_name TEXT NOT NULL, name_key TEXT NOT NULL UNIQUE,
@@ -49,3 +50,10 @@ CREATE TABLE IF NOT EXISTS apisrc_ingest_run (
  id INTEGER PRIMARY KEY, source TEXT NOT NULL, source_file_date TEXT, date_basis TEXT,
  started_at TEXT NOT NULL, finished_at TEXT, rows_in INTEGER DEFAULT 0,
  rows_changed INTEGER DEFAULT 0, status TEXT NOT NULL, error TEXT);
+CREATE TABLE IF NOT EXISTS apisrc_cache (
+ cache_key TEXT PRIMARY KEY, payload TEXT NOT NULL, fetched_at TEXT NOT NULL, expires_at REAL NOT NULL);
+CREATE TABLE IF NOT EXISTS apisrc_usage (
+ provider TEXT, month TEXT, requests INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(provider,month));
+CREATE TABLE IF NOT EXISTS apisrc_fetch_log (
+ id INTEGER PRIMARY KEY, source_url TEXT NOT NULL, engine TEXT NOT NULL, fetched_at TEXT NOT NULL,
+ duration_ms INTEGER NOT NULL, status TEXT NOT NULL, error TEXT);

@@ -15,7 +15,7 @@ if (typeof document !== 'undefined') (async () => {
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const { norm, safeUrl, state } = ApiSourcing;
-  const labels = {CEP:'CEP', DMF_US:'DMF US · II', WHO_PQ:'WHO PQ'};
+  const labels = {CEP:'CEP', DMF_US:'DMF US · II', WHO_PQ:'WHO PQ', LISTING:'NCC tuyên bố'};
   const states = {valid:'Còn hiệu lực', active:'Active', expired:'Hết hạn', suspended:'Đình chỉ', withdrawn:'Đã rút', inactive:'Inactive', unknown:'Chưa rõ'};
   const date = s => s ? new Date(s.length === 10 ? s + 'T00:00:00' : s).toLocaleDateString('vi-VN') : 'Không công bố';
   const notice = text => { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(notice.timer); notice.timer = setTimeout(() => $('toast').hidden = true, 4000); };
@@ -27,13 +27,13 @@ if (typeof document !== 'undefined') (async () => {
   const saveBag = () => { try { localStorage.setItem('apisrc-bag-v1', JSON.stringify(bag)); bagCount(); return true; } catch { notice('Không lưu được Bag. Hãy sao lưu trước khi đóng trang.'); return false; } };
   const countryName = code => { try { return new Intl.DisplayNames(['vi'], {type:'region'}).of(code); } catch { return code; } };
   const countryText = company => company.country ? `${countryName(company.country)} (${company.country})` : 'Quốc gia chưa rõ từ nguồn';
-  const cardState = r => r.certificates.some(c => state(c) === 'bad') ? 'bad' : r.certificates.some(c => state(c) === 'good') ? 'good' : 'unknown';
+  const cardState = r => r.certificates.some(c => state(c) === 'bad') ? 'bad' : r.certificates.some(c => state(c) === 'good') ? 'good' : r.certificates.some(c=>state(c)==='claim') ? 'claim' : 'unknown';
   const vnRefs = text => !data?.vn ? [] : (data.vn.index[SraVn.key(text)] || []).filter(r => r.expiry >= new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}));
   function render() {
     $('results').innerHTML = results.length ? results.slice(0, limit).map((r, i) => {
       const status = cardState(r);
       const types = [...new Set(r.certificates.map(c => c.type))];
-      return `<article class="supplier-card ${selected === i ? 'selected' : ''}"><div class="card-top"><button class="supplier-name" data-open="${i}">${esc(r.company.canonical_name)}</button><button class="save-button" data-save="${i}">${bag.some(b => b.key === r.key) ? '✓ Đã lưu' : '+ Bag'}</button></div><p class="card-meta">${esc(countryText(r.company))} · Nhà máy chưa xác định</p><p class="card-substances">${esc([...new Set(r.certificates.map(c => substances.get(c.substance_id).inn))].slice(0, 3).join(' · '))}</p><div class="chips">${types.map(t => { const certs = r.certificates.filter(c => c.type === t); const s = certs.some(c => state(c) === 'bad') ? 'bad' : certs.some(c => state(c) === 'good') ? 'good' : 'unknown'; return `<span class="chip ${s}" title="Bản ghi có nguồn chính thức; xem từng trạng thái trong panel">${esc(labels[t] || t)} · ${s === 'good' ? 'Nguồn chính thức' : s === 'bad' ? 'Có hồ sơ không còn hiệu lực' : 'Chưa rõ'}</span>`; }).join('')}<span class="chip">GMP / CPP: chưa có dữ liệu</span></div><p class="card-meta status-dot ${status}">● ${status === 'bad' ? 'Có hồ sơ không còn hiệu lực — xem nguồn' : status === 'good' ? 'Có hồ sơ chính thức còn hiệu lực / Active' : 'Chưa rõ trạng thái'} · ${r.certificates.length} bản ghi</p></article>`;
+      return `<article class="supplier-card ${selected === i ? 'selected' : ''}"><div class="card-top"><button class="supplier-name" data-open="${i}">${esc(r.company.canonical_name)}</button><button class="save-button" data-save="${i}">${bag.some(b => b.key === r.key) ? '✓ Đã lưu' : '+ Bag'}</button></div><p class="card-meta">${esc(countryText(r.company))} · Nhà máy chưa xác định</p><p class="card-substances">${esc([...new Set(r.certificates.map(c => substances.get(c.substance_id).inn))].slice(0, 3).join(' · '))}</p><div class="chips">${types.map(t => { const certs = r.certificates.filter(c => c.type === t); const s = certs.some(c => state(c) === 'bad') ? 'bad' : certs.some(c => state(c) === 'good') ? 'good' : certs.some(c=>state(c)==='claim') ? 'claim' : 'unknown'; return `<span class="chip ${s}" title="${t === 'LISTING' ? 'Tuyên bố của NCC; chưa xác minh' : 'Bản ghi có nguồn chính thức; xem từng trạng thái trong panel'}">${esc(labels[t] || t)} · ${s === 'good' ? 'Nguồn chính thức' : s === 'bad' ? 'Có hồ sơ không còn hiệu lực' : s === 'claim' ? 'Chưa xác minh' : 'Chưa rõ'}</span>`; }).join('')}<span class="chip">GMP / CPP: chưa có dữ liệu</span></div><p class="card-meta status-dot ${status}">● ${status === 'bad' ? 'Có hồ sơ không còn hiệu lực — xem nguồn' : status === 'good' ? 'Bản nguồn: còn hiệu lực / Active' : status==='claim' ? 'Chỉ có tuyên bố của NCC, chưa xác minh' : 'Chưa rõ trạng thái'} · ${r.certificates.length} bản ghi</p></article>`;
     }).join('') : '<div class="empty">Chưa có kết quả khớp trong các nguồn đã nạp. Có thể tìm web bổ trợ hoặc mở cổng nguồn ở bên dưới.</div>';
     $('more').hidden = results.length <= limit;
   }
@@ -46,7 +46,7 @@ if (typeof document !== 'undefined') (async () => {
     let terms = [normalized];
     for (const s of data.substances) {
       const synonyms = JSON.parse(s.synonyms || '[]');
-      if (s.cas === query || norm(s.inn) === normalized || synonyms.some(x => norm(x) === normalized)) terms.push(norm(s.inn), ...synonyms.map(norm));
+      if (s.cas === query || s.unii === query.toUpperCase() || norm(s.inn) === normalized || synonyms.some(x => norm(x) === normalized)) terms.push(norm(s.inn), ...synonyms.map(norm));
     }
     terms = [...new Set(terms.filter(Boolean))];
     const groups = new Map();
@@ -68,8 +68,8 @@ if (typeof document !== 'undefined') (async () => {
     $('web-button').disabled = false;
   }
   function sourceRecord(c) {
-    const url = safeUrl(c.source_url);
-    return `<article class="source-record"><strong>${esc(labels[c.type] || c.type)} · ${esc(c.identifier)}</strong> <span class="chip ${state(c)}">${esc(states[c.status] || c.status)}</span><dl><dt>Hoạt chất / subject</dt><dd>${esc(substances.get(c.substance_id)?.inn)}</dd><dt>Chủ hồ sơ gốc</dt><dd>${esc(c.holder)}</dd><dt>Trạng thái gốc</dt><dd>${esc(c.raw_status)}</dd><dt>Loại CEP</dt><dd>${esc(c.cep_type || '—')}</dd><dt>Ngày cấp / nộp</dt><dd>${date(c.issued_at)}</dd><dt>Hạn / kết thúc</dt><dd>${date(c.expires_at)}</dd><dt>Ngày file nguồn</dt><dd>${date(c.source_file_date)}${c.date_basis === 'quarter_end' ? ' (cuối quý)' : ''}</dd><dt>Ngày lấy dữ liệu</dt><dd>${date(c.fetched_at)}</dd></dl>${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Mở bản nguồn ${esc(c.source)} ↗</a>` : ''}${c.type === 'CEP' ? ' · <button type="button" data-print="'+c.id+'">In phiếu tra cứu CEP / PDF</button>' : ''}</article>`;
+    const url = safeUrl(c.source_url), subject = substances.get(c.substance_id);
+    return `<article class="source-record"><strong>${esc(labels[c.type] || c.type)} · ${esc(c.identifier)}</strong> <span class="chip ${state(c)}">${esc(states[c.status] || c.status)}</span><dl><dt>Hoạt chất / subject</dt><dd>${esc(subject?.inn)}</dd><dt>CAS / UNII</dt><dd>${esc([subject?.cas,subject?.unii].filter(Boolean).join(' / ') || 'Chưa chuẩn hóa')}</dd><dt>Chủ hồ sơ gốc</dt><dd>${esc(c.holder)}</dd><dt>Trạng thái gốc</dt><dd>${esc(c.raw_status)}</dd><dt>Loại CEP</dt><dd>${esc(c.cep_type || '—')}</dd><dt>Ngày cấp / nộp</dt><dd>${date(c.issued_at)}</dd><dt>Hạn / kết thúc</dt><dd>${date(c.expires_at)}</dd><dt>Ngày file nguồn</dt><dd>${date(c.source_file_date)}${c.date_basis === 'quarter_end' ? ' (cuối quý)' : ''}</dd><dt>Ngày lấy dữ liệu</dt><dd>${date(c.fetched_at)}</dd></dl>${safeUrl(subject?.normalization_source) ? `<p><a href="${esc(safeUrl(subject.normalization_source))}" target="_blank" rel="noopener noreferrer">Nguồn chuẩn hóa hoạt chất ↗</a> · ${date(subject.normalization_fetched_at)}</p>` : ''}${c.type === 'LISTING' ? `<blockquote>${esc(c.raw_snippet || 'Chưa có đoạn bằng chứng')}</blockquote>` : ''}${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Mở bản nguồn ${esc(c.source)} ↗</a>` : ''}${c.type === 'CEP' ? ' · <button type="button" data-print="'+c.id+'">In phiếu tra cứu CEP / PDF</button>' : ''}</article>`;
   }
   function open(i) {
     selected = i;
@@ -87,11 +87,26 @@ if (typeof document !== 'undefined') (async () => {
   $('panel-close').addEventListener('click', () => { $('source-panel').hidden = true; selected = null; render(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('source-panel').hidden) $('panel-close').click(); });
   $('more').addEventListener('click', () => { limit += 40; render(); });
+  let webGeneration=0;
+  $('web-button').addEventListener('click', async () => {
+    const generation=++webGeneration;
+    $('web-results').hidden=false; $('web-status').textContent='Đang tìm web bổ trợ · giới hạn chờ 3 giây…';
+    $('web-content').innerHTML=''; $('web-button').disabled=true;
+    try {
+      const response=await fetch('./search?q='+encodeURIComponent($('query').value.trim()),{signal:AbortSignal.timeout(4200)});
+      if (!response.ok) throw new Error('Chưa có backend tìm web trên bản tĩnh. Chạy server.py để bật các API.');
+      const payload=await response.json(); if(generation!==webGeneration)return;
+      $('web-status').textContent=`${payload.results.length} nguồn web · ${payload.elapsed_ms} ms${payload.providers.some(p=>p.cached) ? ' · từ cache' : ''}${payload.pending ? ' · nguồn chậm đang được lưu nền; có thể tìm lại sau' : ''}${!payload.configured.length ? ' · chưa cấu hình provider' : ''}${payload.providers.filter(p=>p.error).map(p=>' · '+p.provider+': lỗi kết nối'+(p.http_status ? ' '+p.http_status : '')).join('')}`;
+      $('web-content').innerHTML=payload.results.map(r=>`<article class="supplier-card"><a href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener noreferrer">${esc(r.title || r.url)}</a><p>${esc(r.snippet)}</p><span class="chip">Nguồn web · chưa xác minh</span> <span class="muted">${esc(r.provider)} · ${date(r.fetched_at)}</span></article>`).join('');
+    } catch(error) { if(generation===webGeneration)$('web-status').textContent=error.name==='TimeoutError' ? 'Nguồn web chậm. Kết quả chính thức vẫn sẵn sàng; tác vụ nền có thể lưu cho lần tìm sau.' : error.message; }
+    finally { if(generation===webGeneration)$('web-button').disabled=false; }
+  });
   try {
     const bytes = Uint8Array.from(atob($('api-data').textContent.trim()), c => c.charCodeAt(0));
     data = await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'))).json();
     companies = new Map(data.companies.map(c => [c.id,c])); substances = new Map(data.substances.map(s => [s.id,s]));
-    indexed = data.certificates.map(cert => ({cert, company:companies.get(cert.company_id), text:` ${norm(substances.get(cert.substance_id).inn)} `, companyText:` ${norm(companies.get(cert.company_id).canonical_name)} `}));
+    const listings=(data.listings||[]).map(l=>({...l,id:'listing:'+l.id,type:'LISTING',identifier:'Listing',status:'unknown',raw_status:'NCC tuyên bố, chưa xác minh',holder:companies.get(l.company_id).canonical_name}));
+    indexed = [...data.certificates,...listings].map(cert => ({cert, company:companies.get(cert.company_id), text:` ${norm(substances.get(cert.substance_id).inn)} `, companyText:` ${norm(companies.get(cert.company_id).canonical_name)} `}));
     const counts = [...new Set(data.companies.map(c => c.country).filter(Boolean))].sort();
     $('country').innerHTML += counts.map(c => `<option value="${esc(c)}">${esc(countryName(c))} (${esc(c)})</option>`).join('');
     $('suggestions').innerHTML = data.substances.filter(s => s.inn.length < 75).slice(0,2500).map(s => `<option value="${esc(s.inn)}"></option>`).join('');

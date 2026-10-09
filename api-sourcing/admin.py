@@ -1,7 +1,7 @@
 """Explicit local company merge/split. Aliases preserve the override on re-ingestion."""
 import argparse
 import json
-from pipeline import database, norm, now
+from pipeline import session, norm, now
 
 
 def merge(con, old, new):
@@ -32,5 +32,5 @@ if __name__ == '__main__':
     m=sub.add_parser('merge');m.add_argument('old',type=int);m.add_argument('new',type=int)
     s=sub.add_parser('split');s.add_argument('certificate',type=int)
     args=p.parse_args()
-    with database(args.db) as con:
+    with session(args.db) as con:
         print(json.dumps(merge(con,args.old,args.new) if args.action=='merge' else split(con,args.certificate)))

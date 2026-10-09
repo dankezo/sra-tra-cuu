@@ -1,0 +1,4 @@
+# Only for the user-requested optional engines, isolated in api-sourcing/.venv.
+requests>=2.31,<3
+ddgs==9.16.0
+crawl4ai==0.9.4

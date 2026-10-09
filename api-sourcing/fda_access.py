@@ -1,5 +1,7 @@
 """Single-flight accessdata connector: respects robots, 30s between requests, no redirects."""
 import re
+import os
+from contextlib import contextmanager
 import threading
 import time
 from pathlib import Path
@@ -9,6 +11,27 @@ import requests
 ROOT=Path(__file__).resolve().parent
 HOST='www.accessdata.fda.gov'
 LOCK=threading.Lock()
+
+
+@contextmanager
+def process_lock():
+    ROOT.joinpath('private').mkdir(exist_ok=True)
+    with (ROOT/'private/fda-request.lock').open('a+b') as f:
+        if f.tell()==0:f.write(b'0');f.flush()
+        f.seek(0)
+        if os.name=='nt':
+            import msvcrt
+            while True:
+                try:msvcrt.locking(f.fileno(),msvcrt.LK_NBLCK,1);break
+                except OSError:time.sleep(.25)
+        else:
+            import fcntl
+            fcntl.flock(f.fileno(),fcntl.LOCK_EX)
+        try:yield
+        finally:
+            f.seek(0)
+            if os.name=='nt':msvcrt.locking(f.fileno(),msvcrt.LK_UNLCK,1)
+            else:fcntl.flock(f.fileno(),fcntl.LOCK_UN)
 
 
 def allowed(robots, path):
@@ -27,7 +50,7 @@ def fetch(url):
     parsed=urlparse(url)
     if parsed.scheme!='https' or parsed.hostname!=HOST or parsed.username or parsed.password:
         raise ValueError('Only official accessdata HTTPS URLs accepted')
-    with LOCK:
+    with LOCK,process_lock():
         # Shared filesystem timestamp also covers other invocations through this process.
         ROOT.joinpath('private').mkdir(exist_ok=True)
         stamp=ROOT/'private/fda-last-request'

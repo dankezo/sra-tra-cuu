@@ -19,3 +19,4 @@ _patch_vn_tags.py
 api-sourcing/raw/
 api-sourcing/*.sqlite3*
 api-sourcing/private/
+api-sourcing/.venv/

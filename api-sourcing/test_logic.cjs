@@ -1,0 +1,12 @@
+const assert = require('node:assert/strict');
+const {state, safeUrl, termsMatch} = require('./app.js');
+assert.equal(state({status:'valid', verification:'supplier_claimed'}), 'claim');
+assert.equal(state({status:'valid', verification:'unknown'}), 'unknown');
+assert.equal(state({status:'suspended', verification:'official_verified'}), 'bad');
+assert.equal(state({status:'valid', verification:'official_verified', expires_at:'2020-01-01'}), 'bad');
+assert.equal(state({status:'active', verification:'official_verified'}), 'good');
+assert.equal(safeUrl('javascript:alert(1)'), '');
+assert.equal(safeUrl('https://user:pw@example.com/'), '');
+assert.equal(termsMatch('amlodipine besilate', ['amlodipine']), true);
+assert.equal(termsMatch('betamethasone', ['meth']), false);
+console.log('PASS: trust/status separation, URL safety, whole-word matching');

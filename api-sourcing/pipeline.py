@@ -235,6 +235,9 @@ def export(con):
     for r in companies:
         link = destinations[r['canonical_name']]
         r['website'] = link['url'] if link['kind'] == 'official' else None
+        # "Cadila" alone does not distinguish Cadila Pharmaceuticals from Zydus.
+        if ' cadila ' in (' ' + norm(r['canonical_name']) + ' ') and ' cadila healthcare ' not in (' ' + norm(r['canonical_name']) + ' '):
+            r['website'] = None
         r['website_checked_at'] = checked if r['website'] else None
         r['website_source'] = r['website']
         for supplement in supplements:

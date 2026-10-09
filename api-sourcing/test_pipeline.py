@@ -1,10 +1,15 @@
 import io
+import base64
+import gzip
+import json
+import re
 import sqlite3
+import tempfile
 import unittest
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
-from pipeline import database, ingest, parse_edqm, parse_fda, parse_who
+from pipeline import ROOT, database, export, ingest, norm, parse_edqm, parse_fda, parse_who
 
 EDQM = 'Substance\tCertificate (CEP) Holder\tCertificate (CEP) Number\tStatus CEP\tType CEP\tIssue Date CEP\tEnd date CEP\nAmlodipine\tTest Company IN\tR0-CEP 2000-001\tSuspended by EDQM GMP non-compliance\tChemical\t01/01/2020\t\n'
 WHO = 'WHO Product ID,INN,Applicant,Date of prequalification\nWHOAPI-test,Test API,Test Co,"5  Sep,  2017"\n'
@@ -23,6 +28,29 @@ def fda_fixture(status='A', kind='II'):
 
 
 class ParserTests(unittest.TestCase):
+    def test_export_distinguishes_cadila_identities(self):
+        con = database(':memory:')
+        names = ['CADILA PHARMACEUTICALS LTD', 'CADILA HEALTHCARE LTD', 'CADILA LTD']
+        for i, name in enumerate(names, 1):
+            con.execute('INSERT INTO apisrc_company(id,canonical_name,name_key,created_at) VALUES(?,?,?,?)', (i, name, norm(name), '2026-10-09'))
+        with tempfile.TemporaryDirectory() as folder:
+            target = Path(folder) / 'api-sourcing'
+            target.mkdir()
+            (target.parent / 'data').mkdir()
+            (target.parent / 'data/company-link-resolutions.json').write_bytes((ROOT.parent / 'data/company-link-resolutions.json').read_bytes())
+            for filename in ['template.html', 'style.css', 'app.js', 'company-links.json']:
+                (target / filename).write_bytes((ROOT / filename).read_bytes())
+            with patch('pipeline.ROOT', target):
+                export(con)
+            html = (target / 'index.html').read_text(encoding='utf-8')
+            data = json.loads(gzip.decompress(base64.b64decode(re.search(r'id="api-data">(.*?)</script>', html, re.S)[1])))
+        companies = {r['canonical_name']: r for r in data['companies']}
+        self.assertEqual(set(companies), set(names))
+        self.assertEqual(companies[names[0]]['website'], 'https://cadilapharma.com/')
+        self.assertIn('zyduslife.com', companies[names[1]]['website'])
+        self.assertIsNone(companies[names[2]]['website'])
+        con.close()
+
     def test_edqm_suspended_not_valid(self):
         r = list(parse_edqm(EDQM))[0]
         self.assertEqual(r['status'], 'suspended')

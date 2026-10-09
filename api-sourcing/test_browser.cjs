@@ -17,6 +17,8 @@ const assert=require('node:assert/strict');
  await page.locator('#query').fill('amlodipine');await page.locator('#search-button').click();
  const alkem=page.locator('.supplier-card').filter({has:page.locator('.supplier-name', {hasText:'ALKEM LABORATORIES LTD'})});
  assert.match(await alkem.locator('.company-link').getAttribute('href'),/^https:\/\/www\.alkemlabs\.com\/?$/);
+ const cadila=page.locator('.supplier-card').filter({has:page.locator('.supplier-name', {hasText:'CADILA PHARMACEUTICALS LTD'})});
+ assert.equal(await cadila.locator('.company-link').getAttribute('href'),'https://cadilapharma.com/');
  await alkem.locator('[data-open]').click();
  assert.equal(await page.locator('#source-content .company-link').getAttribute('href'),await alkem.locator('.company-link').getAttribute('href'));
  await page.locator('#panel-close').click();

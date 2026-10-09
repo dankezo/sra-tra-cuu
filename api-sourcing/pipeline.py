@@ -212,9 +212,14 @@ def export(con):
     data = {'built_at': now(), 'companies': [dict(r) for r in con.execute('SELECT id,canonical_name,country,address,website FROM apisrc_company')],
             'substances': [dict(r) for r in con.execute('SELECT * FROM apisrc_substance')], 'certificates': certs,
             'runs': [dict(r) for r in con.execute('SELECT * FROM apisrc_ingest_run ORDER BY id DESC LIMIT 30')]}
+    if ROOT.joinpath('vn-index.json').exists():
+        data['vn'] = json.loads(ROOT.joinpath('vn-index.json').read_text(encoding='utf-8'))
     encoded = base64.b64encode(gzip.compress(json.dumps(data, ensure_ascii=False, separators=(',', ':')).encode())).decode()
     html = (ROOT / 'template.html').read_text(encoding='utf-8').replace('<!--STYLE-->', (ROOT / 'style.css').read_text(encoding='utf-8'))
-    html = html.replace('<!--DATA-->', encoded).replace('<!--APP-->', (ROOT / 'app.js').read_text(encoding='utf-8'))
+    js = (ROOT / 'app.js').read_text(encoding='utf-8')
+    if 'vn' in data:
+        js = ROOT.parent.joinpath('_vn_logic.js').read_text(encoding='utf-8') + '\n' + js
+    html = html.replace('<!--DATA-->', encoded).replace('<!--APP-->', js)
     ROOT.joinpath('index.html').write_text(html, encoding='utf-8')
     return {'certificates': len(certs), 'html_bytes': len(html.encode())}
 

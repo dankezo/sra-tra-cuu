@@ -28,6 +28,7 @@ if (typeof document !== 'undefined') (async () => {
   const countryName = code => { try { return new Intl.DisplayNames(['vi'], {type:'region'}).of(code); } catch { return code; } };
   const countryText = company => company.country ? `${countryName(company.country)} (${company.country})` : 'Quốc gia chưa rõ từ nguồn';
   const cardState = r => r.certificates.some(c => state(c) === 'bad') ? 'bad' : r.certificates.some(c => state(c) === 'good') ? 'good' : 'unknown';
+  const vnRefs = text => !data?.vn ? [] : (data.vn.index[SraVn.key(text)] || []).filter(r => r.expiry >= new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}));
   function render() {
     $('results').innerHTML = results.length ? results.slice(0, limit).map((r, i) => {
       const status = cardState(r);
@@ -53,6 +54,7 @@ if (typeof document !== 'undefined') (async () => {
       const {cert, company, text, companyText} = entry;
       if (!terms.some(t => text.includes(` ${t} `) || companyText.includes(` ${t} `))) continue;
       if ($('country').value && company.country !== $('country').value) continue;
+      if ($('vn-filter').checked && !vnRefs(substances.get(cert.substance_id).inn).length) continue;
       const want = $('status').value, actual = state(cert);
       if (want && want !== actual) continue;
       const kind = $('certificate').value;
@@ -74,9 +76,12 @@ if (typeof document !== 'undefined') (async () => {
     const r = results[i];
     $('source-content').innerHTML = `<p><strong>${esc(r.company.canonical_name)}</strong></p><p class="muted">Tên chủ hồ sơ được giữ nguyên. Không suy luận địa chỉ nhà máy. Xác minh = khớp bản dữ liệu chính thức, tách biệt với hiệu lực.</p>` + [...r.certificates].sort((a,b) => (state(a) === 'good' ? 0:1)-(state(b) === 'good' ? 0:1) || a.type.localeCompare(b.type)).map(sourceRecord).join('');
     $('source-panel').hidden = false; render(); $('panel-close').focus();
+    const references = [...new Map(r.certificates.flatMap(c => vnRefs(substances.get(c.substance_id).inn)).map(ref => [ref.sdk,ref])).values()];
+    $('source-content').insertAdjacentHTML('beforeend', `<article class="source-record"><strong>Đối chiếu DAV theo hoạt chất</strong><p class="muted">${references.length ? references.map(ref=>esc(ref.sdk)+' · hạn '+date(ref.expiry)).join('<br>') : 'Chưa tìm thấy SĐK thuốc còn hạn khớp cách chuẩn hóa trong bản DAV đã nạp.'}</p><p class="muted">Bản DAV: ${esc(data.vn?.updated || 'Chưa nạp')}. Không xác nhận nguồn API/nhà máy đã được DAV duyệt. Chưa có dữ liệu SĐK nguyên liệu riêng.</p><p><a href="https://eudragmdp.ema.europa.eu/" target="_blank" rel="noopener noreferrer">Tra GMP EU ↗</a> · <a href="https://www.cphi.com/" target="_blank" rel="noopener noreferrer">Tra CPHI ↗</a> · <a href="https://www.pharmasources.com/" target="_blank" rel="noopener noreferrer">PharmaSources ↗</a></p><p class="muted">GMP / CPP / tham dự CPHI: chưa có dữ liệu đã kiểm chứng cho NCC này.</p></article>`);
   }
   $('search-form').addEventListener('submit', e => { e.preventDefault(); search(); });
   $('filters').addEventListener('change', search);
+  $('vn-filter').addEventListener('change', search);
   document.querySelectorAll('[data-query]').forEach(b => b.addEventListener('click', () => { $('query').value = b.dataset.query; search(); }));
   $('results').addEventListener('click', e => { const openButton = e.target.closest('[data-open]'); if (openButton) open(+openButton.dataset.open); const save = e.target.closest('[data-save]'); if (save) { const r = results[+save.dataset.save]; if (!bag.some(b => b.key === r.key)) { const snapshot = structuredClone(r); snapshot.substances = [...new Set(r.certificates.map(c => c.substance_id))].map(id => structuredClone(substances.get(id))); bag.push({key:r.key, snapshot, saved_at:new Date().toISOString(), note:'', docs:{}, quote:{status:'not_sent'}}); saveBag(); render(); notice('Đã lưu snapshot NCC vào Bag'); } } });
   $('panel-close').addEventListener('click', () => { $('source-panel').hidden = true; selected = null; render(); });

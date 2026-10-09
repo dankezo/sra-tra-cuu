@@ -78,7 +78,7 @@ if (typeof document !== 'undefined') (async () => {
   $('search-form').addEventListener('submit', e => { e.preventDefault(); search(); });
   $('filters').addEventListener('change', search);
   document.querySelectorAll('[data-query]').forEach(b => b.addEventListener('click', () => { $('query').value = b.dataset.query; search(); }));
-  $('results').addEventListener('click', e => { const openButton = e.target.closest('[data-open]'); if (openButton) open(+openButton.dataset.open); const save = e.target.closest('[data-save]'); if (save) { const r = results[+save.dataset.save]; if (!bag.some(b => b.key === r.key)) { bag.push({key:r.key, snapshot:structuredClone(r), saved_at:new Date().toISOString(), note:'', docs:{}, quote:{status:'not_sent'}}); saveBag(); render(); notice('Đã lưu snapshot NCC vào Bag'); } } });
+  $('results').addEventListener('click', e => { const openButton = e.target.closest('[data-open]'); if (openButton) open(+openButton.dataset.open); const save = e.target.closest('[data-save]'); if (save) { const r = results[+save.dataset.save]; if (!bag.some(b => b.key === r.key)) { const snapshot = structuredClone(r); snapshot.substances = [...new Set(r.certificates.map(c => c.substance_id))].map(id => structuredClone(substances.get(id))); bag.push({key:r.key, snapshot, saved_at:new Date().toISOString(), note:'', docs:{}, quote:{status:'not_sent'}}); saveBag(); render(); notice('Đã lưu snapshot NCC vào Bag'); } } });
   $('panel-close').addEventListener('click', () => { $('source-panel').hidden = true; selected = null; render(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('source-panel').hidden) $('panel-close').click(); });
   $('more').addEventListener('click', () => { limit += 40; render(); });
@@ -103,3 +103,50 @@ if (typeof document !== 'undefined') (async () => {
     document.dispatchEvent(new Event('apisrc-ready'));
   } catch (error) { $('result-status').textContent = 'Không đọc được chỉ mục: ' + error.message; }
 })();
+
+if (typeof document !== 'undefined') document.addEventListener('apisrc-ready', () => {
+  const {data, bag, saveBag, notice, esc, date, $, render, substances} = window.APISRC_UI;
+  const documentLabels = {gmp:'GMP / CPP-COPP của nhà máy', cep:'CEP hoặc hồ sơ chất lượng API', coa:'CoA lô', stability:'Số liệu ổn định', license:'Giấy phép sản xuất', authorization:'Thư ủy quyền / Letter of access', legal:'Hợp pháp hóa lãnh sự / căn cứ miễn'};
+  function paintBag() {
+    $('bag-content').innerHTML = bag.length ? bag.map((item,i) => {
+      const r = item.snapshot;
+      const quote = item.quote || {status:'not_sent'};
+      const docs = item.docs || {};
+      const subject = `Request for quotation: ${r.query}`;
+      const body = `Dear ${r.company.canonical_name},\n\nPlease quote ${r.query}: price, MOQ, lead time, availability and manufacturing site. Please provide current GMP/CPP, CEP or quality dossier, CoA, stability data and letter of authorization.\n\nOur public-source references: ${r.certificates.map(c => c.type+' '+c.identifier).join('; ')}.\n\nBest regards,\nBao An Pharma`;
+      return `<article class="bag-item" data-bag="${i}"><h3>${esc(r.company.canonical_name)}</h3><p>${esc(r.query)} · <span class="muted">Lưu ${date(item.saved_at)} · snapshot ${r.certificates.length} hồ sơ</span></p><details><summary>Nguồn tại lúc lưu</summary>${r.certificates.map(c=>`<p class="muted">${esc(c.type)} ${esc(c.identifier)} · ${esc(c.raw_status)} · ngày file ${date(c.source_file_date)} · lấy ${date(c.fetched_at)} <a target="_blank" rel="noopener noreferrer" href="${esc(ApiSourcing.safeUrl(c.source_url))}">Nguồn ↗</a></p>`).join('')}</details><label>Ghi chú<textarea data-field="note" maxlength="5000">${esc(item.note)}</textarea></label><details><summary>Checklist hồ sơ DAV</summary><p class="muted">Tự kiểm tra tài liệu nhận được và hạn dùng. Cần pháp chế xác nhận; không tự suy luận miễn hồ sơ từ SĐK thuốc.</p><div class="docs">${Object.entries(documentLabels).map(([key,label])=>`<label><input type="checkbox" data-doc="${key}" ${docs[key]?.received ? 'checked':''}>${label}</label><input type="date" aria-label="Hạn ${label}" data-expiry="${key}" value="${esc(docs[key]?.expiry || '')}">`).join('')}</div></details><details><summary>Theo dõi báo giá</summary><label>Trạng thái <select data-quote="status">${[['not_sent','Chưa gửi'],['sent','Đã gửi (tự ghi nhận)'],['replied','Đã trả lời'],['no_reply','Chưa phản hồi']].map(([v,l])=>`<option value="${v}" ${quote.status===v?'selected':''}>${l}</option>`).join('')}</select></label> <label>Giá <input data-quote="quoted_price" value="${esc(quote.quoted_price||'')}" maxlength="100"></label> <label>Đơn vị <input data-quote="price_unit" value="${esc(quote.price_unit||'')}" maxlength="80" placeholder="USD/kg"></label> <label>Ngày <input type="date" data-quote="price_date" value="${esc(quote.price_date||'')}"></label></details><div class="bag-actions"><a href="mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}">Soạn email hỏi giá</a><button type="button" data-copy-quote="${i}">Sao chép nội dung WhatsApp</button><button type="button" data-remove-bag="${i}">Bỏ khỏi Bag</button></div><p class="muted">Soạn thư không thay đổi trạng thái sang “đã gửi”. Không có email / số điện thoại NCC đã xác minh.</p></article>`;
+    }).join('') : '<p class="empty">Bag chưa có NCC. Bấm + Bag trên một thẻ tìm kiếm.</p>';
+  }
+  $('bag-toggle').addEventListener('click', () => {paintBag(); $('bag-dialog').showModal();});
+  $('bag-close').addEventListener('click', () => $('bag-dialog').close());
+  $('bag-content').addEventListener('change', e => {
+    const node = e.target.closest('[data-bag]'); if (!node) return;
+    const item = bag[+node.dataset.bag], target=e.target;
+    item.docs ||= {}; item.quote ||= {status:'not_sent'};
+    if (target.dataset.field === 'note') item.note = target.value;
+    if (target.dataset.doc) { item.docs[target.dataset.doc] ||= {}; item.docs[target.dataset.doc].received = target.checked; }
+    if (target.dataset.expiry) { item.docs[target.dataset.expiry] ||= {}; item.docs[target.dataset.expiry].expiry = target.value; }
+    if (target.dataset.quote) { item.quote[target.dataset.quote] = target.value; if (target.dataset.quote === 'status' && target.value === 'sent') item.quote.sent_at = new Date().toISOString(); }
+    saveBag();
+  });
+  $('bag-content').addEventListener('click', async e => {
+    const remove=e.target.closest('[data-remove-bag]');
+    if (remove) { bag.splice(+remove.dataset.removeBag,1); saveBag(); paintBag(); render(); }
+    const copy=e.target.closest('[data-copy-quote]');
+    if (copy) { const r=bag[+copy.dataset.copyQuote].snapshot; try { await navigator.clipboard.writeText(`Dear ${r.company.canonical_name}, please quote ${r.query}: MOQ, price, delivery and current GMP/CEP/CoA documents. Bao An Pharma.`); notice('Đã sao chép nội dung để bạn gửi WhatsApp'); } catch { notice('Không truy cập được clipboard; dùng nút soạn email.'); } }
+  });
+  $('bag-export').addEventListener('click', () => {
+    const url=URL.createObjectURL(new Blob([JSON.stringify({version:1,exported_at:new Date().toISOString(),items:bag},null,2)],{type:'application/json'}));
+    const a=document.createElement('a');a.href=url;a.download='api-sourcing-bag.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  });
+  $('source-content').addEventListener('click', e => {
+    const button=e.target.closest('[data-print]'); if (!button) return;
+    const c=data.certificates.find(c=>c.id===+button.dataset.print);
+    if (!c || c.source!=='EDQM' || c.verification!=='official_verified') return;
+    const subject=substances.get(c.substance_id);
+    const report=$('print-report');
+    report.innerHTML=`<h1>Phiếu tra cứu CEP</h1><p>Bảo An Pharma · phiếu nội bộ, không thay thế chứng chỉ CEP</p><dl><dt>Tên nguyên liệu</dt><dd>${esc(subject.inn)}</dd><dt>Chủ CEP</dt><dd>${esc(c.holder)}</dd><dt>Số CEP</dt><dd>${esc(c.identifier)}</dd><dt>Ngày cấp</dt><dd>${date(c.issued_at)}</dd><dt>Trạng thái</dt><dd>${esc(c.raw_status)}</dd><dt>Loại CEP</dt><dd>${esc(c.cep_type)}</dd><dt>Chuyên luận Ph.Eur.</dt><dd>${esc(c.monograph || 'Không công bố')}</dd><dt>Ngày gia hạn dự kiến</dt><dd>${date(c.renewal_due)}</dd><dt>Ngày hết hạn/kết thúc</dt><dd>${date(c.expires_at)}</dd><dt>Ngày file EDQM TXT</dt><dd>${date(c.source_file_date)} (${esc(c.date_basis)})</dd><dt>Ngày lấy file</dt><dd>${date(c.fetched_at)}</dd><dt>Ngày lập phiếu</dt><dd>${new Date().toLocaleString('vi-VN',{timeZone:'Asia/Bangkok'})}</dd></dl><p><a href="https://extranet.edqm.eu/publications/recherches_CEP.shtml">Tra cứu trực tiếp EDQM</a></p><p>Nguồn: <a href="${esc(ApiSourcing.safeUrl(c.source_url))}">${esc(c.source_url)}</a></p><p>Chưa xác nhận lại trạng thái trực tuyến tại ngày lập phiếu. Các mốc của bản dữ liệu được giữ riêng. Cần kèm chứng chỉ CEP điện tử, chữ ký EDQM và thư ủy quyền/letter of access nếu áp dụng; pháp chế kiểm tra đầy đủ hồ sơ trước khi nộp DAV.</p>`;
+    report.hidden=false; window.print();
+  });
+  window.addEventListener('afterprint', ()=>$('print-report').hidden=true);
+});

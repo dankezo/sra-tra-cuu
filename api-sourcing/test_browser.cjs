@@ -13,6 +13,11 @@ const assert=require('node:assert/strict');
   assert.ok(await page.locator('.supplier-card').count()>0);
   const ms=Number(message.match(/(\d+) ms/)[1]);timings.push({query,ms,message});assert.ok(ms<1000);
  }
+ await page.locator('#query').fill('Swapnroop Drugs and Pharmaceuticals');await page.locator('#search-button').click();
+ assert.equal(await page.locator('.supplier-card').count(),1);assert.equal(await page.locator('.chip.good').count(),0);
+ assert.match(await page.locator('.chip.claim').innerText(),/Chưa xác minh/);
+ await page.locator('[data-open]').click();assert.ok(await page.locator('#source-content blockquote').isVisible());
+ assert.match(await page.locator('#source-content').innerText(),/tuyên bố của NCC không phải xác nhận/);await page.locator('#panel-close').click();
  await page.locator('#query').fill('amlodipine');await page.locator('#search-button').click();
  await page.locator('#filters summary').click();await page.locator('#certificate').selectOption('CEP');
  assert.ok(await page.locator('.supplier-card').count()>0);

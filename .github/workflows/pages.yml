@@ -26,6 +26,8 @@ jobs:
         run: |
           mkdir -p site
           cp index.html README.md .nojekyll site/
+          mkdir -p site/api-sourcing
+          cp api-sourcing/index.html site/api-sourcing/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

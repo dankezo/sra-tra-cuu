@@ -13,6 +13,10 @@ if cut < 0:
     raise SystemExit("json marker missing")
 prefix = raw[:cut]
 
+# Shared navigation stays above the existing app; module data/UI live separately.
+prefix = re.sub(r'\s*<nav id="tool-switcher".*?</nav>', '', prefix, flags=re.S)
+prefix = prefix.replace('<div class="wrap">', '<div class="wrap">\n    <nav id="tool-switcher" aria-label="Chuyển công cụ" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px"><a href="./index.html" aria-current="page" style="padding:8px 14px;border-radius:10px;background:#0F6F68;color:white;text-decoration:none">Tra cứu thuốc SRA / DAV</a><a href="./api-sourcing/index.html" style="padding:8px 14px;border-radius:10px;border:1px solid #E4DCD0;color:#1C1917;text-decoration:none">API Sourcing · tìm NCC</a></nav>', 1)
+
 prefix = prefix.replace('<html lang="en" data-guide="en">', '<html lang="vi" data-guide="orig">')
 prefix = prefix.replace('<html lang="vi" data-guide="en">', '<html lang="vi" data-guide="orig">')
 prefix = prefix.replace('<html lang="en" data-guide="orig">', '<html lang="vi" data-guide="orig">')

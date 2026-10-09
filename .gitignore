@@ -13,3 +13,9 @@ qa-*.xlsx
 qa-compare-counts.json
 node_modules/
 _patch_vn_tags.py
+.env
+.env.*
+!.env.example
+api-sourcing/raw/
+api-sourcing/*.sqlite3*
+api-sourcing/private/

@@ -1,7 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {compassListings,validateLabels,translateLabels} from './enrichment.mjs';
 import {publicPageUrl} from './enrichment.mjs';
-import {evidencedSuppliers,harvestPages} from './harvest.mjs';
+import {evidencedSuppliers,harvestPages,explicitSuppliers} from './harvest.mjs';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
 test('directory records preserve source identity and never manufacture certificates',()=>{
@@ -27,6 +27,13 @@ test('outside sources require literal company and ingredient evidence',()=>{
  const rows=evidencedSuppliers([{company:'Supplier One',quote:'Supplier One manufactures paracetamol API.'},{company:'Supplier Two',quote:'Supplier Two manufactures paracetamol API.'},{company:'Supplier One',quote:'Supplier One manufactures ibuprofen API.'}],text,'paracetamol','https://supplier.example/product');
  assert.equal(rows.length,1);assert.equal(rows[0].verification,'supplier_claimed');assert.equal(rows[0].source_url,'https://supplier.example/product');
  for(const url of ['https://127.0.0.1','https://[::1]','https://x.internal','https://accessdata.fda.gov/test','http://example.com','https://user:password@example.com'])assert.equal(publicPageUrl(url),'');
+});
+test('literal manufacturer statements work without AI paraphrasing',()=>{
+ const text='IOL Chemicals and Pharmaceuticals Limited is a trusted manufacturer of Paracetamol API, with a dedicated production facility.';
+ const rows=evidencedSuppliers(explicitSuppliers(text,'Paracetamol'),text,'Paracetamol','https://www.iolcp.com/paracetamol');
+ assert.equal(rows.length,1);assert.equal(rows[0].company,'IOL Chemicals and Pharmaceuticals Limited');assert.equal(rows[0].raw_snippet,text);
+ assert.equal(explicitSuppliers('This API is a manufacturer of Paracetamol.','Paracetamol').length,0);
+ assert.equal(explicitSuppliers(text,'Ibuprofen').length,0);
 });
 test('multi-source reading reuses stored text and isolates a blocked source',async()=>{
  const sqlite=new DatabaseSync(':memory:');sqlite.exec(readFileSync(new URL('./cloud-schema.sql',import.meta.url),'utf8'));

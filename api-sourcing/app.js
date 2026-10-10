@@ -154,6 +154,7 @@ if (typeof document !== 'undefined') (async () => {
           if(!item.company||!safeUrl(item.source_url)||item.verification!=='supplier_claimed')continue;
           let company=[...companies.values()].find(c=>norm(c.canonical_name)===norm(item.company));
           if(!company){company={id:'web:'+norm(item.company),canonical_name:item.company,country:item.country,website:safeUrl(item.website)||null,website_source:item.source_url,website_origin:'directory'};companies.set(company.id,company);}
+          else if(!safeUrl(company.website)&&safeUrl(item.website)){company.website=safeUrl(item.website);company.website_source=item.source_url;company.website_origin='directory';}
           let subject=substance;if(!subject){subject={id:'web:'+norm(ingredient),inn:ingredient,synonyms:'[]'};substances.set(subject.id,subject);if(!data.substances.some(s=>s.id===subject.id))data.substances.push(subject);}
           const id='directory:'+item.profile_url+':'+norm(item.company)+':'+norm(ingredient);if(indexed.some(e=>e.cert.id===id))continue;
           const cert={...item,id,type:'LISTING',identifier:'Nguồn NCC',status:'unknown',raw_status:'Directory liệt kê, chưa xác minh',holder:item.company,company_id:company.id,substance_id:subject.id};

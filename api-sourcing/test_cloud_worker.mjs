@@ -46,6 +46,11 @@ test('cache lease deduplicates simultaneous requests across instances',async()=>
  try {await Promise.all([search('single query',env,ctx),search('single query',env,ctx)]);await Promise.all(pending);assert.equal(calls,1);}
  finally {globalThis.fetch=previous;db.sqlite.close();}
 });
+test('search combines broad web and directory engines before returning',async()=>{
+ const db=database(),pending=[],previous=globalThis.fetch,seen=[];
+ globalThis.fetch=async(url,options)=>{const isTavily=url.includes('tavily');seen.push(isTavily?'tavily':'brave');if(isTavily){assert.deepEqual(JSON.parse(options.body).include_domains,['pharmasources.com','cphi-online.com']);await new Promise(resolve=>setTimeout(resolve,30));return Response.json({results:[{url:'https://pharmasources.com/product',title:'Supplier'}]});}return Response.json({web:{results:[{url:'https://supplier.example/product'}]}});};
+ try{const result=await search('paracetamol API manufacturer supplier GMP CEP',{DB:db,BRAVE_SEARCH_API_KEY:'private',TAVILY_API_KEY:'private'},{waitUntil(p){pending.push(p)}});await Promise.all(pending);assert.equal(result.results.length,2);assert.deepEqual(seen,['brave','tavily']);assert.equal(result.pending,0);}finally{globalThis.fetch=previous;db.sqlite.close()}
+});
 test('additional rounds use separate cache keys and Brave result offsets',async()=>{
  const db=database(),pending=[],ctx={waitUntil(p){pending.push(p);}},env={DB:db,BRAVE_SEARCH_API_KEY:'test'};
  const previous=globalThis.fetch,offsets=[];

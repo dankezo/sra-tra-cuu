@@ -9,7 +9,7 @@ import unittest
 import zipfile
 from pathlib import Path
 from unittest.mock import patch
-from pipeline import ROOT, database, export, ingest, norm, parse_edqm, parse_fda, parse_who
+from pipeline import ROOT, database, export, restore, ingest, norm, parse_edqm, parse_fda, parse_who
 
 EDQM = 'Substance\tCertificate (CEP) Holder\tCertificate (CEP) Number\tStatus CEP\tType CEP\tIssue Date CEP\tEnd date CEP\nAmlodipine\tTest Company IN\tR0-CEP 2000-001\tSuspended by EDQM GMP non-compliance\tChemical\t01/01/2020\t\n'
 WHO = 'WHO Product ID,INN,Applicant,Date of prequalification\nWHOAPI-test,Test API,Test Co,"5  Sep,  2017"\n'
@@ -42,12 +42,20 @@ class ParserTests(unittest.TestCase):
                 (target.parent / 'vendor' / filename).write_bytes((ROOT.parent / 'vendor' / filename).read_bytes())
             (target.parent / '_excel_export.js').write_bytes((ROOT.parent / '_excel_export.js').read_bytes())
             (target.parent / 'data/company-link-resolutions.json').write_bytes((ROOT.parent / 'data/company-link-resolutions.json').read_bytes())
-            for filename in ['template.html', 'style.css', 'app.js', 'company-links.json']:
+            for filename in ['template.html', 'style.css', 'app.js', 'company-links.json', 'schema.sql']:
                 (target / filename).write_bytes((ROOT / filename).read_bytes())
             with patch('pipeline.ROOT', target):
                 export(con)
+                restored=database(':memory:')
+                restore(restored)
+                self.assertEqual([r[0] for r in restored.execute('SELECT canonical_name FROM apisrc_company ORDER BY id')],names)
+                restored.close()
             html = (target / 'index.html').read_text(encoding='utf-8')
-            data = json.loads(gzip.decompress(base64.b64decode(re.search(r'id="api-data">(.*?)</script>', html, re.S)[1])))
+            self.assertNotIn('application/octet-stream',html)
+            self.assertLess(len(html.encode()),100000)
+            self.assertTrue((target/'excel.js').exists())
+            data = json.loads(gzip.decompress((target/'snapshot.json.gz').read_bytes()))
+            data = {k:[dict(zip(v['fields'],row)) for row in v['rows']] if isinstance(v,dict) and 'fields' in v and 'rows' in v else v for k,v in data.items()}
         companies = {r['canonical_name']: r for r in data['companies']}
         self.assertEqual(set(companies), set(names))
         self.assertEqual(companies[names[0]]['website'], 'https://cadilapharma.com/')

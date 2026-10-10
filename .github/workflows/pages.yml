@@ -33,6 +33,7 @@ jobs:
           python -m pip install 'requests>=2.31,<3'
           python -m unittest discover -s api-sourcing -p 'test_*.py'
           node --test api-sourcing/test_cloud_worker.mjs
+          node --test api-sourcing/test_enrichment.mjs
           node api-sourcing/test_logic.cjs
           node api-sourcing/test_excel.cjs
           node test_vn_logic.js
@@ -43,7 +44,7 @@ jobs:
           mkdir -p site
           cp index.html README.md .nojekyll site/
           mkdir -p site/api-sourcing
-          cp api-sourcing/index.html site/api-sourcing/
+          cp api-sourcing/index.html api-sourcing/snapshot.json.gz api-sourcing/excel.js site/api-sourcing/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

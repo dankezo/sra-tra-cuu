@@ -79,7 +79,8 @@ python api-sourcing/pipeline.py export
 giữ nguồn cũ nếu tải/parse lỗi. Record biến mất khỏi file đầy đủ mới chuyển `unknown`, không giữ xanh.
 `apisrc_ingest_run` lưu số dòng, số thay đổi, lỗi và ngày nguồn. Schema/parser sai thì không phát hành dữ liệu mới.
 Workflow `.github/workflows/apisrc-ingest.yml` chạy 12:20 UTC = 13:20 CET / 14:20 CEST, có hiệu lực sau khi vào nhánh mặc định.
-Job chỉ commit hai snapshot công khai và gọi workflow Pages. Cần quyền GitHub Actions ghi nội dung/actions.
+Job commit các artifact công khai (HTML, snapshot nén, Excel runtime, chỉ mục DAV) và gọi workflow Pages.
+Cần quyền GitHub Actions ghi nội dung/actions. Snapshot dạng bảng cột vẫn giữ đủ dữ liệu để phục hồi DB.
 
 ## Tìm web, reader và crawl
 
@@ -97,7 +98,7 @@ Job chỉ commit hai snapshot công khai và gọi workflow Pages. Cần quyền
 | HasData | Timeout ở mức chờ ngắn; khi tăng timeout trả kết quả trong 4.796 ms, để tùy chọn vì chậm |
 
 Mặc định Brave + Tavily; Exa được gọi khi nguồn trước lỗi và vẫn còn thời gian.
-Tối đa hai provider đồng thời cho một truy vấn, trả ngay khi một nguồn có kết quả,
+Tối đa hai provider đồng thời cho một truy vấn, gateway local trả ngay khi một nguồn có kết quả,
 chờ tối đa 3 giây cho cả chuỗi fallback. Provider chậm tiếp tục lưu cache nền. HTTP read timeout riêng 4 giây;
 DNS/TLS có thể làm tổng thời gian provider dài hơn, nhưng UI không chờ hết tác vụ đó.
 Thay `APISRC_SEARCH_PROVIDERS` để chọn các adapter khác; không gọi tất cả API mỗi lần tìm.
@@ -129,11 +130,16 @@ Groq đã trích xuất được bằng chứng nguyên văn từ trang Amlodipi
 đã kiểm tra ba tên thương mại trên cùng website, giữ một listing `supplier_claimed` với quote và URL.
 Alias được lưu và xuất cùng snapshot để giữ override qua CI/lần nhập sau. Chưa suy luận WHO-GMP từ lời quảng cáo.
 Không tự giải CAPTCHA, ngụy trang fingerprint, lấy clearance cookie hay bỏ qua access denied.
-EudraGMDP/CPHI/PharmaSources hiện có link tra cứu; chưa có ingest toàn bộ, chưa tự xác minh GMP/sự kiện.
+CPHI/PharmaSources được tìm qua Tavily có giới hạn domain; Brave tìm ngoài các directory. Worker đọc tối đa 3 URL mỗi lượt bằng Jina Reader rồi Groq trích xuất công ty + hoạt chất + đoạn trích nguyên văn. PharmaCompass có parser riêng. Đây là ingest theo truy vấn, chưa phải ingest toàn bộ hay xác minh GMP/sự kiện.
 
 ## Tìm kiếm, Bag và hồ sơ Việt Nam
 
-Tìm NCC trả kết quả từ chỉ mục ngay; “Tự tìm web ở nền” mặc định bật, không yêu cầu mã truy cập.
+Mỗi lần bấm tìm đều tra chỉ mục và tìm web song song, không có checkbox hay mã truy cập.
+HTML khoảng 81 KB mở giao diện trước; snapshot gzip khoảng 2,22 MB tải ở nền và lưu trong Cache Storage.
+Lần mở sau dùng dữ liệu đã lưu; URL chứa hash để tự tải lại khi dữ liệu đổi. Nếu cache không dùng được,
+trình duyệt tải trực tiếp. Bộ xuất Excel chỉ tải khi xuất Bag. Không tải CSV hay chuyển đổi qua dịch vụ ngoài.
+Ô trạng thái tìm kiếm chờ tối đa 6,5 giây; dữ liệu chậm vẫn có thể bổ sung hồ sơ sau đó.
+Worker trả trong deadline 5 giây, frontend giới hạn request web 6,2 giây; gateway local vẫn 3 giây.
 “Tìm thêm” giữ nguồn trước, khử trùng URL và lấy lượt 0–4:
 Brave dùng offset; Tavily/Exa và gateway local mở rộng truy vấn theo lượt. Mỗi lượt có cache riêng,
 giữ giới hạn deadline/quota. Lỗi nguồn không xóa kết quả; đổi truy vấn xóa phần web của truy vấn trước.
@@ -141,12 +147,12 @@ Bộ lọc chứng chỉ chọn nhiều loại theo một trong / tất cả, ch
 GMP và CPP/COPP chưa nạp nguồn riêng, không suy luận từ CEP/DMF/WHO PQ.
 
 Tên Việt là nhãn hỗ trợ đọc cho các INN có bảng quy đổi; giữ tên gốc, muối/hydrat và tiêu chuẩn riêng.
-Tên chưa được quy đổi hiển thị rõ chưa chuẩn hóa. Google mở tab ngoài theo hoạt chất + công ty.
+Tên chưa có bảng quy đổi được dịch bằng Groq phía Worker, lưu 30 ngày, ghi AI hỗ trợ và giữ nguyên tên nguồn. Không dịch được thì hiển thị một dòng Chưa có tên Việt. Google mở tab ngoài theo hoạt chất + công ty.
 Bag đánh số, có thư mẫu sửa trực tiếp và lưu nội dung; không tự gửi thư.
 Xuất XLSX dùng JSZip có sẵn: worksheet NCC có 12 cột và hyperlink nguồn; worksheet email giữ bản sửa.
 “Không” nghĩa là chưa có bằng chứng trong snapshot. Hồ sơ inactive/hết hạn vẫn ghi trạng thái; tài liệu tự nhập
 cần link bằng chứng và được ghi chưa xác minh. DAV chỉ đối chiếu thuốc theo hoạt chất, không phê duyệt nguồn API.
-Giữ JSON để sao lưu. Trang phân tích bên dưới dẫn nguồn cơ quan cấp / pháp luật Việt Nam,
+Bag chỉ tải Excel; lưu nội bộ trong trình duyệt. Trang phân tích bên dưới dẫn nguồn cơ quan cấp / pháp luật Việt Nam,
 mốc hiệu lực và dự thảo riêng; cập nhật nội dung thủ công, không tự tuyên bố mọi sửa đổi đã được bao quát.
 
 ## Quản trị và kiểm tra
@@ -203,7 +209,7 @@ Brave/Tavily chạy song song; Exa fallback. Cache query 7 ngày, lỗi 5 phút,
 Lease D1 chống request trùng giữa nhiều region; quota `INSERT ... ON CONFLICT ... RETURNING` nguyên tử.
 Mức cloud: Brave 100, Tavily 900, Exa 100 request/tháng, thêm trần tổng 30 request upstream/ngày.
 Cache hit không tiêu hao request quota. Các giới hạn cloud độc lập với giới hạn local và phần mềm khác dùng cùng API key.
-Worker có timeout phản hồi 3 giây; tác vụ đang chạy ghi cache bằng waitUntil. Cleanup D1 hằng ngày lúc 19:45 giờ Bangkok.
+Worker có timeout phản hồi 5 giây; tác vụ đang chạy ghi cache bằng waitUntil. Cleanup D1 hằng ngày lúc 19:45 giờ Bangkok.
 Đã xác nhận Cloudflare Workers Free, không nâng gói hoặc thêm thẻ. Không gắn Browser binding, không dùng ngân sách Browser Run của MSC.
 
 Đo endpoint cloud từ máy này: amlodipine mới 1.792 ms cả mạng / 1.300 ms backend;
@@ -221,5 +227,7 @@ Tham chiếu API: [Brave](https://api-dashboard.search.brave.com/app/documentati
 [Google](https://developers.google.com/custom-search/v1/overview) đóng đăng ký Custom Search mới,
 ngừng dịch vụ 01/01/2027; không đặt làm phụ thuộc chính.
 
-Ngoài module chỉ thay `_rebuild.py` (nav), `index.html` (rebuild), `.gitignore`, `.env.example`,
-workflow Pages (copy route mới), workflow cập nhật riêng và README gốc. Không sửa logic SRA/DAV.
+Các thay đổi hiệu năng và xuất dữ liệu nằm trong module API Sourcing; giữ trang SRA/DAV hiện có.
+
+### Đọc trang tìm được trên Worker
+Mỗi lượt luôn gọi tìm web (Brave + Tavily song song, Exa fallback); cache chung có thể trả nhanh. Đọc directory và website chạy nền, không chặn giao diện quá 6,5 giây. Nguồn lỗi/bị chặn được báo riêng; NCC có nguồn web có nút lọc riêng và không được coi là chứng chỉ. Trích xuất chỉ nhận công ty và hoạt chất cùng xuất hiện trong đoạn trích thật. Nội dung trang lưu 30 ngày để không đọc lặp; danh sách PharmaCompass lưu 7 ngày. Giới hạn 10 lượt directory/ngày, 10 lượt đọc trang/ngày, 30 lô tên Việt/ngày; không nâng gói thanh toán. Worker dùng thêm secrets JINA_API_KEY và GROQ_API_KEY.

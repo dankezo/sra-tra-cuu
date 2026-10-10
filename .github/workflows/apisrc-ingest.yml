@@ -27,7 +27,7 @@ jobs:
       - run: python -m unittest discover -s api-sourcing -p test_pipeline.py
       - name: Save public snapshot
         run: |
-          git add api-sourcing/index.html api-sourcing/vn-index.json
+          git add api-sourcing/index.html api-sourcing/snapshot.json.gz api-sourcing/excel.js api-sourcing/vn-index.json
           if ! git diff --cached --quiet; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

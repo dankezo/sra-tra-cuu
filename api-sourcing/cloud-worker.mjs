@@ -1,3 +1,5 @@
+import {readCompass,translateLabels,publicPageUrl} from './enrichment.mjs';
+import {harvestPages} from './harvest.mjs';
 // Public HTML stays on Pages; API keys, shared cache and quotas stay here.
 const PROVIDERS = {brave:'BRAVE_SEARCH_API_KEY',tavily:'TAVILY_API_KEY',exa:'EXA_API_KEY'};
 const CAPS = {brave:100,tavily:900,exa:100};
@@ -20,12 +22,12 @@ async function readJson(response) {
 export async function upstream(provider,query,env,fetcher=fetch,page=0) {
  const signal=AbortSignal.timeout(4500);let response,raw;
  const variants=['',' GMP CPP COPP manufacturing site',' bulk API exporter pharmaceutical ingredients',' API manufacturer CEP quality dossier',' pharmaceutical API producer contact'];
- const expanded=query+(provider==='brave' ? '' : variants[page]);
+ const expanded=provider==='tavily' ? query.replace(/ API manufacturer supplier GMP CEP$/, '')+' API supplier'+variants[page] : query+(provider==='brave' ? '' : variants[page]);
  if(provider==='brave') {
   response=await fetcher('https://api.search.brave.com/res/v1/web/search?'+new URLSearchParams({q:query,count:'6',offset:String(page)}),{headers:{'X-Subscription-Token':env.BRAVE_SEARCH_API_KEY},signal});
   raw=(await readJson(response)).web?.results || [];
  } else if(provider==='tavily') {
-  response=await fetcher('https://api.tavily.com/search',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TAVILY_API_KEY},body:JSON.stringify({query:expanded,search_depth:'ultra-fast',max_results:6,include_answer:false,include_raw_content:false,auto_parameters:false}),signal});
+  response=await fetcher('https://api.tavily.com/search',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TAVILY_API_KEY},body:JSON.stringify({query:expanded,search_depth:'ultra-fast',max_results:6,include_answer:false,include_raw_content:false,auto_parameters:false,include_domains:['pharmasources.com','cphi-online.com']}),signal});
   raw=(await readJson(response)).results || [];
  } else if(provider==='exa') {
   response=await fetcher('https://api.exa.ai/search',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':env.EXA_API_KEY},body:JSON.stringify({query:expanded,type:'fast',numResults:6}),signal});
@@ -54,27 +56,38 @@ async function run(provider,query,key,env,page=0) {
 async function save(db,key,payload,ttl) {
  await db.prepare('INSERT INTO apisrc_cloud_cache VALUES(?,?,?,?) ON CONFLICT(cache_key) DO UPDATE SET payload=excluded.payload,fetched_at=excluded.fetched_at,expires_at=excluded.expires_at').bind(key,JSON.stringify(payload),new Date().toISOString(),Date.now()+ttl).run();
 }
-export async function search(query,env,ctx,page=0) {
- const started=Date.now(),names=Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),outputs=[],active=new Map();let next=0;
- const finish=()=>({results:[...new Map(outputs.flatMap(p=>p.results).map(r=>[r.url,r])).values()],providers:outputs,configured:names,pending:active.size,elapsed_ms:Date.now()-started});
- const job=async()=>{
-  while(!outputs.some(p=>p.results.length) && Date.now()-started<2900){
-   while(active.size<2 && next<names.length){
-    const provider=names[next++],key=(page ? 'search:v2:page'+page+':' : 'search:v1:')+provider+':'+normalize(query);
-    const cached=await env.DB.prepare('SELECT payload,expires_at FROM apisrc_cloud_cache WHERE cache_key=?').bind(key).first();
-    if(cached){const payload=JSON.parse(cached.payload);outputs.push({...payload,cached:true,stale:cached.expires_at<Date.now()});if(payload.results.length){if(cached.expires_at<Date.now())ctx.waitUntil(run(provider,query,key,env,page).catch(()=>{}));return finish();}if(cached.expires_at>Date.now())continue;}
-    const task=run(provider,query,key,env,page).catch(()=>({provider,results:[],error:'StorageUnavailable'}));
-    ctx.waitUntil(task);active.set(provider,task.then(value=>({provider,value})));
-   }
-   if(!active.size)break;
-   const {provider,value}=await Promise.race(active.values());active.delete(provider);outputs.push(value);
-  }
-  return finish();
- };
- let timer;const task=job();ctx.waitUntil(task.catch(()=>{}));
- try { return await Promise.race([task,new Promise(resolve=>{timer=setTimeout(()=>resolve(finish()),3000);})]); }
- finally { clearTimeout(timer); }
+async function enrich(kind,input,env,ctx) {
+ const key=kind+':v1:'+JSON.stringify(input),at=Date.now(),db=env.DB;
+ const existing=await db.prepare('SELECT payload,expires_at FROM apisrc_cloud_cache WHERE cache_key=?').bind(key).first();
+ if(existing && existing.expires_at>at)return {...JSON.parse(existing.payload),cached:true};
+ const lease=await db.prepare('INSERT INTO apisrc_cloud_lease VALUES(?,?) ON CONFLICT(cache_key) DO UPDATE SET expires_at=excluded.expires_at WHERE expires_at<? RETURNING cache_key').bind(key,at+30000,at).first();
+ if(!lease)return {pending:true};
+ const task=(async()=>{try{
+  if(!await reserve(db,kind,new Date().toISOString().slice(0,10),kind==='labels'?30:10))throw new Error('QuotaReached');
+  const payload=kind==='directory'?await readCompass(input,env):kind==='pages'?await harvestPages(input,env):await translateLabels(input,env);
+  await save(db,key,payload,kind==='directory'?7*86400000:kind==='pages'&&payload.sources.some(s=>s.status==='unavailable')?300000:30*86400000);return payload;
+ }catch(error){const payload={error:'SourceUnavailable',reason:/^(SourceHTTP_\d{3}|QuotaReached|InvalidSource|ReaderFetchFailed|ReaderBodyFailed|SourceBlocked|SourceIdentityMissing)$/.test(error.message)?error.message:'ReadFailed',pending:false};await save(db,key,payload,300000);return payload}
+ finally{await db.prepare('DELETE FROM apisrc_cloud_lease WHERE cache_key=?').bind(key).run()}})();
+ ctx.waitUntil(task.catch(()=>{}));let timer;
+ try{return await Promise.race([task,new Promise(resolve=>{timer=setTimeout(()=>resolve({pending:true}),4700)})])}finally{clearTimeout(timer)}
 }
+export async function search(query,env,ctx,page=0) {
+ const started=Date.now(),names=Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),outputs=[];let pending=0;
+ const finish=()=>({results:[...new Map(outputs.flatMap(p=>p.results).map(r=>[r.url,r])).values()],providers:outputs,configured:names,pending,elapsed_ms:Date.now()-started});
+ async function lookup(provider){
+  const key=(provider==='tavily'?'search:v4:page'+page+':':page?'search:v2:page'+page+':':'search:v1:')+provider+':'+normalize(query);
+  const cached=await env.DB.prepare('SELECT payload,expires_at FROM apisrc_cloud_cache WHERE cache_key=?').bind(key).first();
+  if(cached){const payload=JSON.parse(cached.payload);if(payload.results.length||cached.expires_at>Date.now()){
+   if(cached.expires_at<Date.now())ctx.waitUntil(run(provider,query,key,env,page).catch(()=>{}));
+   outputs.push({...payload,cached:true,stale:cached.expires_at<Date.now()});return;
+  }}
+  pending++;try{outputs.push(await run(provider,query,key,env,page))}catch{outputs.push({provider,results:[],error:'StorageUnavailable'})}finally{pending--}
+ }
+ const task=(async()=>{await Promise.all(names.slice(0,2).map(lookup));if(!outputs.some(p=>p.results.length)&&Date.now()-started<4900&&names[2])await lookup(names[2]);return finish()})();
+ ctx.waitUntil(task.catch(()=>{}));let timer;
+ try{return await Promise.race([task,new Promise(resolve=>{timer=setTimeout(()=>resolve(finish()),5000)})])}finally{clearTimeout(timer)}
+}
+
 export default {
  async fetch(request,env,ctx) {
   const url=new URL(request.url),origin=request.headers.get('Origin');
@@ -85,7 +98,22 @@ export default {
   if(origin && !allowed.includes(origin))return reply({error:'OriginDenied'},403);
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   if(request.method!=='GET')return reply({error:'MethodNotAllowed'},405);
-  if(url.pathname==='/health')return reply({service:'API Sourcing',version:'2',providers:Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),shared_cache:!!env.DB,requires_access_code:false});
+  if(url.pathname==='/health')return reply({service:'API Sourcing',version:'3',discovery:['PharmaCompass','PharmaSources','CPHI','websites from web search'],page_reader:!!env.JINA_API_KEY,ai_labels:!!env.GROQ_API_KEY,providers:Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),shared_cache:!!env.DB,requires_access_code:false});
+  if(url.pathname==='/labels'){
+   let names;try{names=JSON.parse(url.searchParams.get('names')||'[]')}catch{return reply({error:'InvalidNames'},400)}
+   if(!Array.isArray(names)||!names.length||names.length>10||names.some(s=>typeof s!=='string'||s.length<2||s.length>400))return reply({error:'InvalidNames'},400);
+   try{return reply(await enrich('labels',[...new Set(names)].sort(),env,ctx))}catch{return reply({error:'SourceUnavailable'},503)}
+  }
+  if(url.pathname==='/discover'){
+   const q=(url.searchParams.get('q')||'').trim();if(!/^[A-Za-z0-9][A-Za-z0-9 ,().+\/-]{1,199}$/.test(q))return reply({error:'InvalidQuery'},400);
+   try{return reply(await enrich('directory',q.toLowerCase(),env,ctx))}catch{return reply({error:'SourceUnavailable'},503)}
+  }
+  if(url.pathname==='/harvest'){
+   const query=(url.searchParams.get('q')||'').trim();let urls;
+   try{urls=JSON.parse(url.searchParams.get('urls')||'[]')}catch{return reply({error:'InvalidSources'},400)}
+   if(query.length<2||query.length>200||!Array.isArray(urls)||!urls.length||urls.length>3||urls.some(u=>typeof u!=='string'||u.length>1000||!publicPageUrl(u)))return reply({error:'InvalidSources'},400);
+   try{return reply(await enrich('pages',{query,urls:[...new Set(urls)].sort()},env,ctx))}catch{return reply({error:'SourceUnavailable'},503)}
+  }
   if(url.pathname!=='/search')return reply({error:'NotFound'},404);
   const q=(url.searchParams.get('q')||'').trim();
   if(q.length<2||q.length>200)return reply({error:'InvalidQuery'},400);

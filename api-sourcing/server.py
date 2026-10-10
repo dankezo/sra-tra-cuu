@@ -43,6 +43,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(200,json.dumps({'providers':gateway.providers(),'reader':bool(os.environ.get('JINA_API_KEY')),'local_only':True}),'application/json')
         files={'/':ROOT.parent/'index.html','/index.html':ROOT.parent/'index.html','/api-sourcing/':ROOT/'index.html','/api-sourcing/index.html':ROOT/'index.html'}
         if parsed.path in files:return self.respond(200,files[parsed.path].read_bytes())
+        assets={'/api-sourcing/snapshot.json.gz':('snapshot.json.gz','application/gzip'),'/api-sourcing/excel.js':('excel.js','application/javascript; charset=utf-8')}
+        if parsed.path in assets:
+            filename,kind=assets[parsed.path]
+            return self.respond(200,ROOT.joinpath(filename).read_bytes(),kind)
         return self.respond(404,'Not found')
 
     def do_POST(self):

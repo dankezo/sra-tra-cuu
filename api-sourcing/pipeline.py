@@ -255,7 +255,12 @@ def export(con):
     data['aliases']=[dict(r) for r in con.execute('SELECT * FROM apisrc_company_alias')]
     if ROOT.joinpath('vn-index.json').exists():
         data['vn'] = json.loads(ROOT.joinpath('vn-index.json').read_text(encoding='utf-8'))
-    encoded = base64.b64encode(gzip.compress(json.dumps(data, ensure_ascii=False, separators=(',', ':')).encode())).decode()
+    # Columnar rows avoid repeating every key; the browser and refresh job use the same snapshot.
+    packed = {k: {'fields': list(v[0]), 'rows': [[r.get(c) for c in v[0]] for r in v]} if isinstance(v, list) and v else v for k, v in data.items()}
+    packed['format'] = 2
+    compressed = gzip.compress(json.dumps(packed, ensure_ascii=False, separators=(',', ':')).encode(), mtime=0)
+    ROOT.joinpath('snapshot.json.gz').write_bytes(compressed)
+    data_url = './snapshot.json.gz?v=' + hashlib.sha256(compressed).hexdigest()[:16]
     html = (ROOT / 'template.html').read_text(encoding='utf-8').replace('<!--STYLE-->', (ROOT / 'style.css').read_text(encoding='utf-8'))
     cloud_config=ROOT/'cloud-config.json'
     endpoint=json.loads(cloud_config.read_text(encoding='utf-8')).get('api_url','') if cloud_config.exists() else ''
@@ -263,13 +268,14 @@ def export(con):
         raise ValueError('Unexpected cloud API endpoint')
     html=html.replace('<!--API_URL-->',endpoint)
     js = (ROOT / 'app.js').read_text(encoding='utf-8')
-    js = '\n'.join([ROOT.parent.joinpath('vendor/jszip.min.js').read_text(encoding='utf-8'), ROOT.parent.joinpath('_excel_export.js').read_text(encoding='utf-8'), js])
-    js = '/*\n' + ROOT.parent.joinpath('vendor/JSZIP-LICENSE').read_text(encoding='utf-8').replace('*/','* /') + '\n' + ROOT.parent.joinpath('vendor/PAKO-LICENSE').read_text(encoding='utf-8').replace('*/','* /') + '\n*/\n' + js
+    excel = '\n'.join([ROOT.parent.joinpath('vendor/jszip.min.js').read_text(encoding='utf-8'), ROOT.parent.joinpath('_excel_export.js').read_text(encoding='utf-8')])
+    excel = '/*\n' + ROOT.parent.joinpath('vendor/JSZIP-LICENSE').read_text(encoding='utf-8').replace('*/','* /') + '\n' + ROOT.parent.joinpath('vendor/PAKO-LICENSE').read_text(encoding='utf-8').replace('*/','* /') + '\n*/\n' + excel
+    ROOT.joinpath('excel.js').write_text(excel, encoding='utf-8')
     if 'vn' in data:
         js = ROOT.parent.joinpath('_vn_logic.js').read_text(encoding='utf-8') + '\n' + js
-    html = html.replace('<!--DATA-->', encoded).replace('<!--APP-->', js)
+    html = html.replace('<!--DATA_URL-->', data_url).replace('<!--APP-->', js)
     ROOT.joinpath('index.html').write_text(html, encoding='utf-8')
-    return {'certificates': len(certs), 'html_bytes': len(html.encode())}
+    return {'certificates': len(certs), 'html_bytes': len(html.encode()), 'snapshot_bytes': len(compressed)}
 
 
 def restore(con):
@@ -277,8 +283,13 @@ def restore(con):
         return {'restored':False,'reason':'existing DB retained'}
     html=ROOT.joinpath('index.html').read_text(encoding='utf-8')
     match=re.search(r'<script type="application/octet-stream" id="api-data">(.*?)</script>',html,re.S)
-    if not match:raise ValueError('Public snapshot missing')
-    data=json.loads(gzip.decompress(base64.b64decode(match[1].strip())))
+    if match:
+        data=json.loads(gzip.decompress(base64.b64decode(match[1].strip())))
+    elif ROOT.joinpath('snapshot.json.gz').exists():
+        data=json.loads(gzip.decompress(ROOT.joinpath('snapshot.json.gz').read_bytes()))
+        if data.get('format')!=2:raise ValueError('Unsupported snapshot format')
+        data={k:[dict(zip(v['fields'],row)) for row in v['rows']] if isinstance(v,dict) and 'fields' in v and 'rows' in v else v for k,v in data.items()}
+    else:raise ValueError('Public snapshot missing')
     with con:
         for r in data['companies']:
             con.execute('INSERT INTO apisrc_company(id,canonical_name,name_key,country,address,website,created_at) VALUES(?,?,?,?,?,?,?)',

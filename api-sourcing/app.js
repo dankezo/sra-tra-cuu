@@ -181,13 +181,14 @@ if (typeof document !== 'undefined') (async () => {
   async function harvestWebPages(query,generation,rows) {
     if(!await dataReady || generation!==searchGeneration)return;
     const ingredient=data.substances.find(s=>s.cas===query||norm(s.inn)===norm(query))?.inn||query;
-    const urls=[...new Set(rows.filter(r=>ApiSourcing.termsMatch([r.title,r.snippet,r.url].join(' '),[ingredient,query])).map(r=>safeUrl(r.url)).filter(url=>url&&!/(?:pharmacompass\.com|fda\.gov|who\.int|edqm\.eu|pubchem)/i.test(new URL(url).hostname)))].sort((a,b)=>Number(/pharmasources\.com|cphi-online\.com/.test(b))-Number(/pharmasources\.com|cphi-online\.com/.test(a))).slice(0,3);
+    const candidates=[...new Set(rows.filter(r=>ApiSourcing.termsMatch([r.title,r.snippet,r.url].join(' '),[ingredient,query])).map(r=>safeUrl(r.url)).filter(url=>url&&!/(?:pharmacompass\.com|fda\.gov|who\.int|edqm\.eu|pubchem)/i.test(new URL(url).hostname)))].sort((a,b)=>Number(/pharmasources\.com|cphi-online\.com/.test(b))-Number(/pharmasources\.com|cphi-online\.com/.test(a)));
+    const byHost=new Map();for(const url of candidates){const host=new URL(url).hostname.replace(/^www\./,'');if(!byHost.has(host))byHost.set(host,url);}const urls=[...byHost.values()].slice(0,3);
     if(!urls.length)return;const key=JSON.stringify([query,urls]);if(harvested.has(key))return;harvested.add(key);
     $('harvest-status').textContent=`Đang đọc ${urls.length} trang tìm được trên mạng · sẽ tự bổ sung NCC có bằng chứng…`;
     try {
       for(let attempt=0;attempt<6;attempt++){
         if(generation!==searchGeneration)return;
-        const response=await fetch(cloudEndpoint+'/harvest?'+new URLSearchParams({q:ingredient,urls:JSON.stringify(urls)}),{signal:AbortSignal.timeout(6000)});if(!response.ok)throw new Error('Unavailable');const payload=await response.json();
+        const response=await fetch(cloudEndpoint+'/harvest?'+new URLSearchParams({q:ingredient,urls:JSON.stringify(urls)}),{signal:AbortSignal.timeout(10000)});if(!response.ok)throw new Error('Unavailable');const payload=await response.json();
         if(generation!==searchGeneration||$('query').value.trim()!==query)return;
         if(payload.pending){if(attempt<5){await new Promise(resolve=>setTimeout(resolve,2000));continue;}harvested.delete(key);$('harvest-status').textContent='Các trang chậm đang lưu ở nền; tìm lại sẽ dùng dữ liệu đã lưu.';return;}
         if(payload.error)throw new Error('Unavailable');addSupplierListings(payload.listings||[],query);search();

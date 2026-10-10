@@ -5,14 +5,6 @@ export const normalize = value => value.normalize('NFKD').replace(/[\u0300-\u036
 export function safeUrl(value) {
  try { const u=new URL(value); return u.protocol==='https:' && !u.username && !u.password ? u.href : ''; } catch { return ''; }
 }
-export async function authorized(request, env) {
- const header=request.headers.get('Authorization') || '';
- if(!env.APISRC_ACCESS_KEY || header.length>512 || !header.startsWith('Bearer '))return false;
- const enc=new TextEncoder();
- const [actual,expected]=await Promise.all([header.slice(7),env.APISRC_ACCESS_KEY].map(v=>crypto.subtle.digest('SHA-256',enc.encode(v))));
- if(crypto.subtle.timingSafeEqual)return crypto.subtle.timingSafeEqual(actual,expected);
- const a=new Uint8Array(actual),b=new Uint8Array(expected);let diff=0;for(let i=0;i<a.length;i++)diff|=a[i]^b[i];return diff===0;
-}
 export async function reserve(db,provider,period,cap) {
  return !!await db.prepare('INSERT INTO apisrc_cloud_usage VALUES(?,?,1) ON CONFLICT(provider,period) DO UPDATE SET requests=requests+1 WHERE requests<? RETURNING requests').bind(provider,period,cap).first();
 }
@@ -88,14 +80,13 @@ export default {
   const url=new URL(request.url),origin=request.headers.get('Origin');
   const allowed=(env.ALLOWED_ORIGINS||'https://dankezo.github.io').split(',');
   const headers={'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Vary':'Origin'};
-  if(origin && allowed.includes(origin)){headers['Access-Control-Allow-Origin']=origin;headers['Access-Control-Allow-Methods']='GET, OPTIONS';headers['Access-Control-Allow-Headers']='Authorization';}
+  if(origin && allowed.includes(origin)){headers['Access-Control-Allow-Origin']=origin;headers['Access-Control-Allow-Methods']='GET, OPTIONS';}
   const reply=(body,status=200)=>Response.json(body,{status,headers});
   if(origin && !allowed.includes(origin))return reply({error:'OriginDenied'},403);
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   if(request.method!=='GET')return reply({error:'MethodNotAllowed'},405);
-  if(url.pathname==='/health')return reply({service:'API Sourcing',version:'1',providers:Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),shared_cache:!!env.DB,requires_access_code:true});
+  if(url.pathname==='/health')return reply({service:'API Sourcing',version:'2',providers:Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),shared_cache:!!env.DB,requires_access_code:false});
   if(url.pathname!=='/search')return reply({error:'NotFound'},404);
-  if(!await authorized(request,env))return reply({error:'AccessCodeRequired'},401);
   const q=(url.searchParams.get('q')||'').trim();
   if(q.length<2||q.length>200)return reply({error:'InvalidQuery'},400);
   const pageText=url.searchParams.get('page') || '0';

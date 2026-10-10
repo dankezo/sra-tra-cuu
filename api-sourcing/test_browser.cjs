@@ -6,14 +6,16 @@ const assert=require('node:assert/strict');
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const requests=[];
  await page.route('**/search?*',async route=>{
+  assert.equal(route.request().headers().authorization,undefined);
   const u=new URL(route.request().url()),q=u.searchParams.get('q'),round=u.searchParams.get('page');requests.push({q,round});
   if(round==='2')return route.fulfill({status:503,body:'unavailable'});
   const results=[{url:'https://web.example/'+encodeURIComponent(q),title:q+' manufacturer',snippet:'Search evidence',provider:'brave'},...(round==='1' ? [{url:'https://new.example/'+encodeURIComponent(q),title:'Additional supplier',snippet:'Second round',provider:'brave'}] : [])];
   await new Promise(r=>setTimeout(r,30));
   await route.fulfill({json:{results,elapsed_ms:50,providers:[{provider:'brave',cached:true}],configured:['brave'],pending:0}});
  });
- await page.addInitScript(()=>sessionStorage.setItem('apisrc_web_access','test-access-code'));
  await page.goto(process.env.APISRC_TEST_URL||'http://127.0.0.1:8766/api-sourcing/');
+ assert.equal(await page.evaluate(()=>sessionStorage.getItem('apisrc_web_access')),null);
+ assert.equal(await page.locator('#web-access').count(),0);
  await page.waitForFunction(()=>window.APISRC_READY);
  const timings=[];
  for(const query of ['amlodipine','paracetamol','metformin','103-90-2']){

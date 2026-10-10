@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync} from 'node:fs';
-import worker,{authorized,reserve,search,upstream,safeUrl} from './cloud-worker.mjs';
+import worker,{reserve,search,upstream,safeUrl} from './cloud-worker.mjs';
 function database(){
  const sqlite=new DatabaseSync(':memory:');sqlite.exec(readFileSync(new URL('./cloud-schema.sql',import.meta.url),'utf8'));
  return {sqlite,prepare(sql){
@@ -11,12 +11,15 @@ function database(){
   }};
  }};
 }
-test('protected search rejects missing code and hostile origin',async()=>{
- const env={APISRC_ACCESS_KEY:'valid-private-access-code'},ctx={waitUntil(){}};
- assert.equal((await worker.fetch(new Request('https://example.com/search?q=test'),env,ctx)).status,401);
+test('public search needs no code and rejects hostile browser origins',async()=>{
+ const db=database(),env={DB:db,BRAVE_SEARCH_API_KEY:'secret'},ctx={waitUntil(){}};
+ db.sqlite.prepare('INSERT INTO apisrc_cloud_cache VALUES(?,?,?,?)').run('search:v1:brave:test api manufacturer supplier gmp cep',JSON.stringify({provider:'brave',results:[{url:'https://example.com/proof'}]}),'2026-10-10',Date.now()+60000);
+ const response=await worker.fetch(new Request('https://example.com/search?q=test',{headers:{Origin:'https://dankezo.github.io'}}),env,ctx);
+ assert.equal(response.status,200);assert.equal((await response.json()).results.length,1);
+ assert.equal(response.headers.get('Access-Control-Allow-Origin'),'https://dankezo.github.io');
  assert.equal((await worker.fetch(new Request('https://example.com/health',{headers:{Origin:'https://evil.example'}}),env,ctx)).status,403);
- assert.equal(await authorized(new Request('https://example.com',{headers:{Authorization:'Bearer valid-private-access-code'}}),env),true);
- assert.equal(await authorized(new Request('https://example.com',{headers:{Authorization:'Bearer different-private-access-code'}}),env),false);
+ assert.equal((await (await worker.fetch(new Request('https://example.com/health'),env,ctx)).json()).requires_access_code,false);
+ assert.equal(db.sqlite.prepare('SELECT count(*) n FROM apisrc_cloud_usage').get().n,0);db.sqlite.close();
 });
 test('atomic quota permits exactly the cap under concurrent attempts',async()=>{
  const db=database();const result=await Promise.all(Array.from({length:20},()=>reserve(db,'brave','2026-10',3)));
@@ -50,7 +53,6 @@ test('additional rounds use separate cache keys and Brave result offsets',async(
  try {const first=await search('round test',env,ctx,0),second=await search('round test',env,ctx,1);await Promise.all(pending);
  assert.notEqual(first.results[0].url,second.results[0].url);assert.deepEqual(offsets,['0','1']);
  const cached=await search('round test',env,ctx,1);assert.equal(cached.providers[0].cached,true);assert.equal(offsets.length,2);
- const auth={headers:{Authorization:'Bearer valid-private-access-code'}};
- for(const page of ['-1','5','1.1','foo'])assert.equal((await worker.fetch(new Request('https://example.com/search?q=test&page='+page,auth),{...env,APISRC_ACCESS_KEY:'valid-private-access-code'},ctx)).status,400);
+ for(const page of ['-1','5','1.1','foo'])assert.equal((await worker.fetch(new Request('https://example.com/search?q=test&page='+page),env,ctx)).status,400);
  } finally {globalThis.fetch=previous;db.sqlite.close();}
 });

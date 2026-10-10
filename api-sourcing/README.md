@@ -133,8 +133,8 @@ EudraGMDP/CPHI/PharmaSources hiện có link tra cứu; chưa có ingest toàn b
 
 ## Tìm kiếm, Bag và hồ sơ Việt Nam
 
-Tìm NCC trả kết quả từ chỉ mục ngay; “Tự tìm web ở nền” mặc định bật. Online cần mã truy cập một lần mỗi phiên,
-không tự mở hộp thoại khi tìm nền. “Tìm thêm” giữ nguồn trước, khử trùng URL và lấy lượt 0–4:
+Tìm NCC trả kết quả từ chỉ mục ngay; “Tự tìm web ở nền” mặc định bật, không yêu cầu mã truy cập.
+“Tìm thêm” giữ nguồn trước, khử trùng URL và lấy lượt 0–4:
 Brave dùng offset; Tavily/Exa và gateway local mở rộng truy vấn theo lượt. Mỗi lượt có cache riêng,
 giữ giới hạn deadline/quota. Lỗi nguồn không xóa kết quả; đổi truy vấn xóa phần web của truy vấn trước.
 Bộ lọc chứng chỉ chọn nhiều loại theo một trong / tất cả, chỉ tính hồ sơ chính thức còn hiệu lực.
@@ -193,10 +193,10 @@ Nhãn CEP/EDQM, DMF US, WHO PQ, GMP/CPP có giải thích khi hover, focus hoặ
 Escape hoặc chạm ra ngoài đóng giải thích. Nội dung tham chiếu EDQM, FDA và WHO ở footer.
 
 Giao diện: `https://dankezo.github.io/sra-tra-cuu/api-sourcing/`.
-Backend: `https://baoan-api-sourcing.dannyphan190.workers.dev`; `/health` công khai, `/search` yêu cầu Bearer access code riêng.
-Mã truy cập nằm ở `private/web-access.txt`; `private/open-online.html` mở trang online và cấp mã cho phiên đó.
-Link dùng fragment, được xóa khỏi thanh địa chỉ sau khi lưu vào sessionStorage; không có mã trong HTML công khai hay Git.
-Không dùng mã crawl của EHE. Khi chia sẻ mã, người nhận có quyền dùng hạn mức tìm web này.
+Backend: `https://baoan-api-sourcing.dannyphan190.workers.dev`; `/health` và `/search` công khai, không cần mã.
+Khóa provider chỉ lưu trên Worker, không xuất vào HTML. CORS cho phép origin của trang đã cấu hình;
+CORS không phải xác thực cho client ngoài trình duyệt. Mọi truy vấn dùng chung cache và quota miễn phí bên dưới.
+Các launcher/mã truy cập cũ trong thư mục private không còn cần dùng; fragment access cũ được xóa khỏi thanh địa chỉ.
 
 Worker dùng D1 `apisrc-search-cache`, ba bảng `apisrc_cloud_*`, không sửa DB dự án EHE.
 Brave/Tavily chạy song song; Exa fallback. Cache query 7 ngày, lỗi 5 phút, stale trả ngay và refresh nền.
@@ -208,7 +208,7 @@ Worker có timeout phản hồi 3 giây; tác vụ đang chạy ghi cache bằng
 
 Đo endpoint cloud từ máy này: amlodipine mới 1.792 ms cả mạng / 1.300 ms backend;
 cache 553 ms cả mạng / 54 ms backend. Mạng và region khác có thể thay đổi.
-Đã kiểm tra 401 khi thiếu mã, CORS đúng origin, cache và quota đồng thời trên SQLite thật.
+Đã kiểm tra tìm web không có mã/Authorization, CORS đúng origin, cache và quota đồng thời trên SQLite thật.
 Pages CI kiểm tra sourcing/Worker và logic SRA/DAV trước khi publish; workflow ingest tự chạy khi được đưa vào main.
 `wrangler.jsonc` là cấu hình khôi phục backend; secrets phải đặt riêng trên Workers, không đặt vào file đó.
 

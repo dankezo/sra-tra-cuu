@@ -129,7 +129,7 @@ if (typeof document !== 'undefined') (async () => {
     $('web-button').disabled = false;
     $('google-search').href=googleUrl(query);
     if(webQuery!==query){webQuery=query;webPage=-1;webRows=[];webGeneration++;webAbort?.abort();$('web-content').innerHTML='';$('web-results').hidden=true;}
-    if(web && $('auto-web').checked)void searchWeb(false,false);
+    if(web && $('auto-web').checked)void searchWeb(false);
   }
   function sourceRecord(c) {
     const url = safeUrl(c.source_url), subject = substances.get(c.substance_id);
@@ -148,7 +148,7 @@ if (typeof document !== 'undefined') (async () => {
   $('vn-filter').addEventListener('change', ()=>search());
   document.querySelectorAll('[data-query]').forEach(b => b.addEventListener('click', () => { $('query').value = b.dataset.query; search({web:true}); }));
   $('query').addEventListener('input',()=>{$('google-search').href=googleUrl($('query').value.trim());});
-  $('auto-web').addEventListener('change',()=>{if($('auto-web').checked && $('query').value.trim())void searchWeb(false,false);});
+  $('auto-web').addEventListener('change',()=>{if($('auto-web').checked && $('query').value.trim())void searchWeb(false);});
   $('results').addEventListener('click', e => { const openButton = e.target.closest('[data-open]'); if (openButton) open(+openButton.dataset.open); const save = e.target.closest('[data-save]'); if (save) { const r = results[+save.dataset.save]; if (!bag.some(b => b.key === r.key)) { const snapshot = structuredClone(r); snapshot.substances = [...new Set(r.certificates.map(c => c.substance_id))].map(id => structuredClone(substances.get(id))); bag.push({key:r.key, snapshot, saved_at:new Date().toISOString(), note:'', docs:{}, quote:{status:'not_sent'}}); saveBag(); render(); notice('Đã lưu snapshot NCC vào Bag'); } } });
   $('panel-close').addEventListener('click', () => { $('source-panel').hidden = true; selected = null; render(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('source-panel').hidden) $('panel-close').click(); });
@@ -156,13 +156,9 @@ if (typeof document !== 'undefined') (async () => {
   let webGeneration=0,webQuery='',webPage=-1,webRows=[],webAbort;
   const cloudEndpoint=$('api-endpoint')?.content || '';
   const useCloud=!!cloudEndpoint && !['127.0.0.1','localhost'].includes(location.hostname);
-  const accessFromLink=new URLSearchParams(location.hash.slice(1)).get('access');
-  if(accessFromLink && /^[A-Za-z0-9_-]{32,128}$/.test(accessFromLink)) {
-    sessionStorage.setItem('apisrc_web_access',accessFromLink);history.replaceState(null,'',location.pathname+location.search);
-  }
-  $('web-access-form').addEventListener('submit',e=>{e.preventDefault();sessionStorage.setItem('apisrc_web_access',$('web-access-code').value.trim());$('web-access-code').value='';$('web-access').close();$('web-button').click();});
-  $('web-access-cancel').addEventListener('click',()=>$('web-access').close());
-  async function searchWeb(more=true,interactive=true) {
+  // Remove legacy access fragments from old bookmarks; search no longer uses a code.
+  if(new URLSearchParams(location.hash.slice(1)).has('access'))history.replaceState(null,'',location.pathname+location.search);
+  async function searchWeb(more=true) {
     const query=$('query').value.trim();if(query.length<2)return;
     if(webQuery!==query){webQuery=query;webPage=-1;webRows=[];$('web-content').innerHTML='';}
     if(!more && webPage>=0)return;
@@ -173,11 +169,8 @@ if (typeof document !== 'undefined') (async () => {
     $('web-results').hidden=false; $('web-status').textContent='Đang tìm web bổ trợ · giới hạn chờ 3 giây…';
     $('web-button').disabled=true;
     try {
-      const access=sessionStorage.getItem('apisrc_web_access');
-      if(useCloud && !access){if(interactive)$('web-access').showModal();$('web-status').textContent='Tìm trong dữ liệu đã nạp luôn sẵn sàng. Bấm “Tìm thêm trên web” để nhập mã truy cập một lần cho phiên này.';return;}
-      const response=await fetch((useCloud ? cloudEndpoint+'/search' : './search')+'?'+new URLSearchParams({q:query,page}),{signal:AbortSignal.any([webAbort.signal,AbortSignal.timeout(4200)]),headers:useCloud ? {Authorization:'Bearer '+access} : {}});
+      const response=await fetch((useCloud ? cloudEndpoint+'/search' : './search')+'?'+new URLSearchParams({q:query,page}),{signal:AbortSignal.any([webAbort.signal,AbortSignal.timeout(4200)])});
       if(generation!==webGeneration)return;
-      if(response.status===401){sessionStorage.removeItem('apisrc_web_access');if(interactive)$('web-access').showModal();throw new Error('Mã truy cập chưa đúng. Bấm tìm thêm để nhập lại.');}
       if (!response.ok) throw new Error(useCloud ? 'Dịch vụ tìm web đang bận. Thử lại sau.' : 'Chưa có backend tìm web. Chạy server.py để bật các API.');
       const payload=await response.json(); if(generation!==webGeneration)return;
       const before=webRows.length;webRows=mergeWeb(webRows,payload.results || []);

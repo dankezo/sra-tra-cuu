@@ -189,11 +189,11 @@ if (typeof document !== 'undefined') (async () => {
         if(generation!==searchGeneration)return;
         const response=await fetch(cloudEndpoint+'/harvest?'+new URLSearchParams({q:ingredient,urls:JSON.stringify(urls)}),{signal:AbortSignal.timeout(6000)});if(!response.ok)throw new Error('Unavailable');const payload=await response.json();
         if(generation!==searchGeneration||$('query').value.trim()!==query)return;
-        if(payload.pending){if(attempt<5){await new Promise(resolve=>setTimeout(resolve,2000));continue;}$('harvest-status').textContent='Các trang chậm đang lưu ở nền; tìm lại sẽ dùng dữ liệu đã lưu.';return;}
+        if(payload.pending){if(attempt<5){await new Promise(resolve=>setTimeout(resolve,2000));continue;}harvested.delete(key);$('harvest-status').textContent='Các trang chậm đang lưu ở nền; tìm lại sẽ dùng dữ liệu đã lưu.';return;}
         if(payload.error)throw new Error('Unavailable');addSupplierListings(payload.listings||[],query);search();
         $('harvest-status').innerHTML=(payload.sources||[]).map(source=>`<a href="${esc(safeUrl(source.url))}" target="_blank" rel="noopener noreferrer">${esc(new URL(source.url).hostname)}</a>: ${source.status==='read' ? 'đã đọc · '+source.count+' NCC có bằng chứng' : 'chưa đọc được'}`).join(' · ');return;
       }
-    } catch {if(generation===searchGeneration)$('harvest-status').textContent='Chưa đọc được một số trang lượt này; các link web và NCC đã tìm được vẫn được giữ.';}
+    } catch {harvested.delete(key);if(generation===searchGeneration)$('harvest-status').textContent='Chưa đọc được một số trang lượt này; các link web và NCC đã tìm được vẫn được giữ.';}
   }
   const labelAttempts=new Set();
   async function fillVietnameseLabels() {

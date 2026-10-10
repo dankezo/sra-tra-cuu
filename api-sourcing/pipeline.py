@@ -263,6 +263,8 @@ def export(con):
         raise ValueError('Unexpected cloud API endpoint')
     html=html.replace('<!--API_URL-->',endpoint)
     js = (ROOT / 'app.js').read_text(encoding='utf-8')
+    js = '\n'.join([ROOT.parent.joinpath('vendor/jszip.min.js').read_text(encoding='utf-8'), ROOT.parent.joinpath('_excel_export.js').read_text(encoding='utf-8'), js])
+    js = '/*\n' + ROOT.parent.joinpath('vendor/JSZIP-LICENSE').read_text(encoding='utf-8').replace('*/','* /') + '\n' + ROOT.parent.joinpath('vendor/PAKO-LICENSE').read_text(encoding='utf-8').replace('*/','* /') + '\n*/\n' + js
     if 'vn' in data:
         js = ROOT.parent.joinpath('_vn_logic.js').read_text(encoding='utf-8') + '\n' + js
     html = html.replace('<!--DATA-->', encoded).replace('<!--APP-->', js)

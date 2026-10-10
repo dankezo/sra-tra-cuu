@@ -25,23 +25,25 @@ async function readJson(response) {
  const bytes=new Uint8Array(size);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.byteLength;}
  return JSON.parse(new TextDecoder().decode(bytes));
 }
-export async function upstream(provider,query,env,fetcher=fetch) {
+export async function upstream(provider,query,env,fetcher=fetch,page=0) {
  const signal=AbortSignal.timeout(4500);let response,raw;
+ const variants=['',' GMP CPP COPP manufacturing site',' bulk API exporter pharmaceutical ingredients',' API manufacturer CEP quality dossier',' pharmaceutical API producer contact'];
+ const expanded=query+(provider==='brave' ? '' : variants[page]);
  if(provider==='brave') {
-  response=await fetcher('https://api.search.brave.com/res/v1/web/search?'+new URLSearchParams({q:query,count:'6'}),{headers:{'X-Subscription-Token':env.BRAVE_SEARCH_API_KEY},signal});
+  response=await fetcher('https://api.search.brave.com/res/v1/web/search?'+new URLSearchParams({q:query,count:'6',offset:String(page)}),{headers:{'X-Subscription-Token':env.BRAVE_SEARCH_API_KEY},signal});
   raw=(await readJson(response)).web?.results || [];
  } else if(provider==='tavily') {
-  response=await fetcher('https://api.tavily.com/search',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TAVILY_API_KEY},body:JSON.stringify({query,search_depth:'ultra-fast',max_results:6,include_answer:false,include_raw_content:false,auto_parameters:false}),signal});
+  response=await fetcher('https://api.tavily.com/search',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+env.TAVILY_API_KEY},body:JSON.stringify({query:expanded,search_depth:'ultra-fast',max_results:6,include_answer:false,include_raw_content:false,auto_parameters:false}),signal});
   raw=(await readJson(response)).results || [];
  } else if(provider==='exa') {
-  response=await fetcher('https://api.exa.ai/search',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':env.EXA_API_KEY},body:JSON.stringify({query,type:'fast',numResults:6}),signal});
+  response=await fetcher('https://api.exa.ai/search',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':env.EXA_API_KEY},body:JSON.stringify({query:expanded,type:'fast',numResults:6}),signal});
   raw=(await readJson(response)).results || [];
  } else throw new Error('UnsupportedProvider');
  if(!Array.isArray(raw))throw new Error('InvalidPayload');
  const fetched_at=new Date().toISOString();
  return {provider,results:raw.slice(0,6).filter(r=>safeUrl(r.url)).map(r=>({title:String(r.title||'').slice(0,400),url:safeUrl(r.url),snippet:String(r.description||r.content||r.text||'').slice(0,1500),provider,verification:'unknown',fetched_at}))};
 }
-async function run(provider,query,key,env) {
+async function run(provider,query,key,env,page=0) {
  const db=env.DB,at=Date.now();
  const lease=await db.prepare('INSERT INTO apisrc_cloud_lease VALUES(?,?) ON CONFLICT(cache_key) DO UPDATE SET expires_at=excluded.expires_at WHERE expires_at<? RETURNING cache_key').bind(key,at+15000,at).first();
  if(!lease)return {provider,results:[],error:'InProgress'};
@@ -49,7 +51,7 @@ async function run(provider,query,key,env) {
   const period=new Date().toISOString().slice(0,7);
   if(!await reserve(db,provider,period,CAPS[provider]))throw new Error('QuotaReached');
   if(!await reserve(db,'all_daily',new Date().toISOString().slice(0,10),30))throw new Error('DailyQuotaReached');
-  const payload=await upstream(provider,query,env);
+  const payload=await upstream(provider,query,env,fetch,page);
   await save(db,key,payload,payload.results.length ? 7*86400000 : 300000);
   return payload;
  } catch(error) {
@@ -60,16 +62,16 @@ async function run(provider,query,key,env) {
 async function save(db,key,payload,ttl) {
  await db.prepare('INSERT INTO apisrc_cloud_cache VALUES(?,?,?,?) ON CONFLICT(cache_key) DO UPDATE SET payload=excluded.payload,fetched_at=excluded.fetched_at,expires_at=excluded.expires_at').bind(key,JSON.stringify(payload),new Date().toISOString(),Date.now()+ttl).run();
 }
-export async function search(query,env,ctx) {
+export async function search(query,env,ctx,page=0) {
  const started=Date.now(),names=Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),outputs=[],active=new Map();let next=0;
  const finish=()=>({results:[...new Map(outputs.flatMap(p=>p.results).map(r=>[r.url,r])).values()],providers:outputs,configured:names,pending:active.size,elapsed_ms:Date.now()-started});
  const job=async()=>{
   while(!outputs.some(p=>p.results.length) && Date.now()-started<2900){
    while(active.size<2 && next<names.length){
-    const provider=names[next++],key='search:v1:'+provider+':'+normalize(query);
+    const provider=names[next++],key=(page ? 'search:v2:page'+page+':' : 'search:v1:')+provider+':'+normalize(query);
     const cached=await env.DB.prepare('SELECT payload,expires_at FROM apisrc_cloud_cache WHERE cache_key=?').bind(key).first();
-    if(cached){const payload=JSON.parse(cached.payload);outputs.push({...payload,cached:true,stale:cached.expires_at<Date.now()});if(payload.results.length){if(cached.expires_at<Date.now())ctx.waitUntil(run(provider,query,key,env).catch(()=>{}));return finish();}if(cached.expires_at>Date.now())continue;}
-    const task=run(provider,query,key,env).catch(()=>({provider,results:[],error:'StorageUnavailable'}));
+    if(cached){const payload=JSON.parse(cached.payload);outputs.push({...payload,cached:true,stale:cached.expires_at<Date.now()});if(payload.results.length){if(cached.expires_at<Date.now())ctx.waitUntil(run(provider,query,key,env,page).catch(()=>{}));return finish();}if(cached.expires_at>Date.now())continue;}
+    const task=run(provider,query,key,env,page).catch(()=>({provider,results:[],error:'StorageUnavailable'}));
     ctx.waitUntil(task);active.set(provider,task.then(value=>({provider,value})));
    }
    if(!active.size)break;
@@ -96,7 +98,9 @@ export default {
   if(!await authorized(request,env))return reply({error:'AccessCodeRequired'},401);
   const q=(url.searchParams.get('q')||'').trim();
   if(q.length<2||q.length>200)return reply({error:'InvalidQuery'},400);
-  try {return reply(await search(q+' API manufacturer supplier GMP CEP',env,ctx));}
+  const pageText=url.searchParams.get('page') || '0';
+  if(!/^[0-4]$/.test(pageText))return reply({error:'InvalidPage'},400);
+  try {return reply(await search(q+' API manufacturer supplier GMP CEP',env,ctx,Number(pageText)));}
   catch {return reply({error:'SearchUnavailable'},503);}
  },
  async scheduled(_controller,env,ctx) {

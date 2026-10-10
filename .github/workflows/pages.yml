@@ -34,6 +34,7 @@ jobs:
           python -m unittest discover -s api-sourcing -p 'test_*.py'
           node --test api-sourcing/test_cloud_worker.mjs
           node api-sourcing/test_logic.cjs
+          node api-sourcing/test_excel.cjs
           node test_vn_logic.js
           node test_vn_policy.js
           node test_compare_logic.js

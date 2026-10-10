@@ -33,7 +33,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.respond(200,'<html lang="vi"><meta charset="utf-8"><title>Cấu hình API Sourcing cục bộ</title><h1>Cấu hình khóa Tavily</h1><p>Khóa chỉ lưu trong .env bị Git bỏ qua, không xuất vào HTML.</p><form method="post" action="/setup"><input type="hidden" name="token" value="'+html.escape(token)+'"><label>Khóa Tavily <input type="password" name="key" autocomplete="off" required></label><button>Lưu cấu hình cục bộ</button></form></html>')
         if parsed.path=='/api-sourcing/search':
             try:
-                result=gateway.search(parse_qs(parsed.query).get('q',[''])[0])
+                fields=parse_qs(parsed.query)
+                page=fields.get('page',['0'])[0]
+                if page not in ('0','1','2','3','4'):raise ValueError('Invalid search round')
+                result=gateway.search(fields.get('q',[''])[0],int(page))
                 return self.respond(200,json.dumps(result),'application/json')
             except ValueError as error:return self.respond(400,json.dumps({'error':str(error)}),'application/json')
         if parsed.path=='/api-sourcing/health':

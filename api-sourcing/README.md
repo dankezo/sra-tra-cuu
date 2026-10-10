@@ -131,6 +131,24 @@ Alias được lưu và xuất cùng snapshot để giữ override qua CI/lần 
 Không tự giải CAPTCHA, ngụy trang fingerprint, lấy clearance cookie hay bỏ qua access denied.
 EudraGMDP/CPHI/PharmaSources hiện có link tra cứu; chưa có ingest toàn bộ, chưa tự xác minh GMP/sự kiện.
 
+## Tìm kiếm, Bag và hồ sơ Việt Nam
+
+Tìm NCC trả kết quả từ chỉ mục ngay; “Tự tìm web ở nền” mặc định bật. Online cần mã truy cập một lần mỗi phiên,
+không tự mở hộp thoại khi tìm nền. “Tìm thêm” giữ nguồn trước, khử trùng URL và lấy lượt 0–4:
+Brave dùng offset; Tavily/Exa và gateway local mở rộng truy vấn theo lượt. Mỗi lượt có cache riêng,
+giữ giới hạn deadline/quota. Lỗi nguồn không xóa kết quả; đổi truy vấn xóa phần web của truy vấn trước.
+Bộ lọc chứng chỉ chọn nhiều loại theo một trong / tất cả, chỉ tính hồ sơ chính thức còn hiệu lực.
+GMP và CPP/COPP chưa nạp nguồn riêng, không suy luận từ CEP/DMF/WHO PQ.
+
+Tên Việt là nhãn hỗ trợ đọc cho các INN có bảng quy đổi; giữ tên gốc, muối/hydrat và tiêu chuẩn riêng.
+Tên chưa được quy đổi hiển thị rõ chưa chuẩn hóa. Google mở tab ngoài theo hoạt chất + công ty.
+Bag đánh số, có thư mẫu sửa trực tiếp và lưu nội dung; không tự gửi thư.
+Xuất XLSX dùng JSZip có sẵn: worksheet NCC có 12 cột và hyperlink nguồn; worksheet email giữ bản sửa.
+“Không” nghĩa là chưa có bằng chứng trong snapshot. Hồ sơ inactive/hết hạn vẫn ghi trạng thái; tài liệu tự nhập
+cần link bằng chứng và được ghi chưa xác minh. DAV chỉ đối chiếu thuốc theo hoạt chất, không phê duyệt nguồn API.
+Giữ JSON để sao lưu. Trang phân tích bên dưới dẫn nguồn cơ quan cấp / pháp luật Việt Nam,
+mốc hiệu lực và dự thảo riêng; cập nhật nội dung thủ công, không tự tuyên bố mọi sửa đổi đã được bao quát.
+
 ## Quản trị và kiểm tra
 
 Admin local: `python api-sourcing/admin.py merge <id-cu> <id-dich>` hoặc `split <certificate-id>`.
@@ -141,6 +159,7 @@ link EDQM, ngày lập phiếu; không gọi là chứng chỉ hoặc xác nhậ
 ```powershell
 python -m unittest discover -s api-sourcing -p 'test_*.py'
 node api-sourcing/test_logic.cjs
+node api-sourcing/test_excel.cjs
 node api-sourcing/test_browser.cjs
 node --test api-sourcing/test_cloud_worker.mjs
 ```

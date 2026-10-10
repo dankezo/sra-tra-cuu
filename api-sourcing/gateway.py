@@ -142,10 +142,13 @@ def submit(provider,query):
         return future
 
 
-def search(query):
+def search(query,page=0):
     started=time.perf_counter()
     if not 2<=len(query.strip())<=200:raise ValueError('Query must have 2–200 characters')
+    if not isinstance(page,int) or not 0<=page<=4:raise ValueError('Invalid search round')
+    variants=['',' GMP CPP COPP manufacturing site',' bulk API exporter pharmaceutical ingredients',' API manufacturer CEP quality dossier',' pharmaceutical API producer contact']
     query=query.strip()+' API manufacturer supplier GMP CEP'
+    query+=variants[page]
     outputs=[];pending=[];used=[]
     names=providers()
     deadline=min(5,max(.1,float(os.environ.get('APISRC_WEB_DEADLINE_SECONDS','3'))))

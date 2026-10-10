@@ -36,15 +36,22 @@
       const {name,headers,rows}=sheets[i];
       if(rows.length>1048575)throw new Error('Phạm vi vượt số dòng tối đa của Excel. Hãy thu hẹp tìm kiếm.');
       const end=col(headers.length-1)+(rows.length+1);
-      const parts=[`<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="${ns}"><dimension ref="A1:${end}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>`];
+      const hyperlinks=[],relationships=[];
+      const parts=[`<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="${ns}" xmlns:r="${rel}"><dimension ref="A1:${end}"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>`];
       headers.forEach((_,j)=>parts.push(`<col min="${j+1}" max="${j+1}" width="${j===0?12:28}" customWidth="1"/>`));
       parts.push('</cols><sheetData>');
       for(let r=0;r<=rows.length;r++) {
         const values=r===0?headers:rows[r-1];
-        parts.push(`<row r="${r+1}">`+values.map((v,c)=>`<c r="${col(c)}${r+1}" t="inlineStr" s="${r===0?1:0}"><is><t xml:space="preserve">${xml(v)}</t></is></c>`).join('')+'</row>');
+        parts.push(`<row r="${r+1}">`+values.map((v,c)=>{
+          const ref=col(c)+(r+1),cell=v && typeof v==='object' ? v : {text:v};let link='';
+          try {const url=new URL(cell.link);if(url.protocol==='https:' && !url.username && !url.password)link=url.href;} catch {}
+          if(link && r>0){const id='rId'+(relationships.length+1);hyperlinks.push(`<hyperlink ref="${ref}" r:id="${id}"/>`);relationships.push(`<Relationship Id="${id}" Type="${rel}/hyperlink" Target="${xml(link)}" TargetMode="External"/>`);}
+          return `<c r="${ref}" t="inlineStr" s="${r===0?1:link?2:0}"><is><t xml:space="preserve">${xml(cell.text)}</t></is></c>`;
+        }).join('')+'</row>');
         if(r%2000===0)await new Promise(resolve=>setTimeout(resolve,0));
       }
-      parts.push(`</sheetData><autoFilter ref="A1:${end}"/></worksheet>`);
+      parts.push(`</sheetData><autoFilter ref="A1:${end}"/>${hyperlinks.length ? '<hyperlinks>'+hyperlinks.join('')+'</hyperlinks>' : ''}</worksheet>`);
+      if(relationships.length)zip.file(`xl/worksheets/_rels/sheet${i+1}.xml.rels`,`<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relationships.join('')}</Relationships>`);
       zip.file(`xl/worksheets/sheet${i+1}.xml`,parts.join(''));
       types+=`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`;
       links+=`<Relationship Id="rId${i+1}" Type="${rel}/worksheet" Target="worksheets/sheet${i+1}.xml"/>`;
@@ -54,7 +61,7 @@
     zip.file('_rels/.rels',`<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${rel}/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
     zip.file('xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="${ns}" xmlns:r="${rel}"><sheets>${names}</sheets></workbook>`);
     zip.file('xl/_rels/workbook.xml.rels',`<?xml version="1.0"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${links}<Relationship Id="styles" Type="${rel}/styles" Target="styles.xml"/></Relationships>`);
-    zip.file('xl/styles.xml',`<?xml version="1.0"?><styleSheet xmlns="${ns}"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0F766E"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
+    zip.file('xl/styles.xml',`<?xml version="1.0"?><styleSheet xmlns="${ns}"><fonts count="3"><font><sz val="11"/><name val="Calibri"/></font><font><b/><color rgb="FFFFFFFF"/><sz val="11"/><name val="Calibri"/></font><font><sz val="11"/><name val="Calibri"/><color rgb="FF0F766E"/><u/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF0F766E"/><bgColor indexed="64"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="3"><xf numFmtId="49" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf><xf numFmtId="49" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="49" fontId="2" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`);
     return zip.generateAsync({type:'uint8array',compression:'DEFLATE',compressionOptions:{level:1}});
   }
   root.SraExcel={build,downloadBlob};

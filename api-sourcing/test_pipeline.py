@@ -37,6 +37,10 @@ class ParserTests(unittest.TestCase):
             target = Path(folder) / 'api-sourcing'
             target.mkdir()
             (target.parent / 'data').mkdir()
+            (target.parent / 'vendor').mkdir()
+            for filename in ['jszip.min.js', 'JSZIP-LICENSE', 'PAKO-LICENSE']:
+                (target.parent / 'vendor' / filename).write_bytes((ROOT.parent / 'vendor' / filename).read_bytes())
+            (target.parent / '_excel_export.js').write_bytes((ROOT.parent / '_excel_export.js').read_bytes())
             (target.parent / 'data/company-link-resolutions.json').write_bytes((ROOT.parent / 'data/company-link-resolutions.json').read_bytes())
             for filename in ['template.html', 'style.css', 'app.js', 'company-links.json']:
                 (target / filename).write_bytes((ROOT / filename).read_bytes())

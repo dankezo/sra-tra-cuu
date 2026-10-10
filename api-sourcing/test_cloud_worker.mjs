@@ -43,3 +43,14 @@ test('cache lease deduplicates simultaneous requests across instances',async()=>
  try {await Promise.all([search('single query',env,ctx),search('single query',env,ctx)]);await Promise.all(pending);assert.equal(calls,1);}
  finally {globalThis.fetch=previous;db.sqlite.close();}
 });
+test('additional rounds use separate cache keys and Brave result offsets',async()=>{
+ const db=database(),pending=[],ctx={waitUntil(p){pending.push(p);}},env={DB:db,BRAVE_SEARCH_API_KEY:'test'};
+ const previous=globalThis.fetch,offsets=[];
+ globalThis.fetch=async(url)=>{const page=new URL(url).searchParams.get('offset');offsets.push(page);return Response.json({web:{results:[{url:'https://example.com/page'+page}]}});};
+ try {const first=await search('round test',env,ctx,0),second=await search('round test',env,ctx,1);await Promise.all(pending);
+ assert.notEqual(first.results[0].url,second.results[0].url);assert.deepEqual(offsets,['0','1']);
+ const cached=await search('round test',env,ctx,1);assert.equal(cached.providers[0].cached,true);assert.equal(offsets.length,2);
+ const auth={headers:{Authorization:'Bearer valid-private-access-code'}};
+ for(const page of ['-1','5','1.1','foo'])assert.equal((await worker.fetch(new Request('https://example.com/search?q=test&page='+page,auth),{...env,APISRC_ACCESS_KEY:'valid-private-access-code'},ctx)).status,400);
+ } finally {globalThis.fetch=previous;db.sqlite.close();}
+});

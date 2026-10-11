@@ -18,7 +18,7 @@ const assert=require('node:assert/strict');
   assert.deepEqual(queries,['amlodipine']);assert.equal(await page.evaluate(()=>!!window.APISRC_READY),false);
   assert.ok(await page.locator('#search-progress').isVisible());
   await page.locator('[data-query=metformin]').click();await page.waitForFunction(()=>document.querySelector('#web-content').textContent.includes('metformin'));
-  release();await page.waitForFunction(()=>window.APISRC_READY);await page.locator('#search-progress').waitFor({state:'hidden'});
+  release();await page.waitForFunction(()=>window.APISRC_READY);await page.locator('#profiles-tab').click();await page.locator('#search-progress').waitFor({state:'hidden'});
   assert.match(await page.locator('#results').innerText(),/Metformin/i);assert.doesNotMatch(await page.locator('#results').innerText(),/Amlodipine/i);
   assert.equal(excels,0,'Excel runtime is deferred until export');
   await page.waitForFunction(async()=>{const cache=await caches.open('apisrc-snapshot-v2');return (await cache.keys()).length===1});

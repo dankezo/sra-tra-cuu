@@ -1,0 +1,15 @@
+{
+  "MHRA": {
+    "count": 216,
+    "fetched_at": "2026-10-11T11:49:20.730439+00:00",
+    "source_url": "https://cms.mhra.gov.uk/mhra/api-reg",
+    "download_url": "https://cms.mhra.gov.uk/mhra/api-reg?_format=xlsx",
+    "fields": [
+      "Registration Number",
+      "Registration Holder",
+      "Site Details",
+      "Issue Date"
+    ],
+    "scope": "Đăng ký cơ sở API tại UK; bản Excel không có trường hoạt chất. Không phải chứng nhận GMP."
+  }
+}

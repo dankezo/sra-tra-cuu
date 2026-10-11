@@ -267,6 +267,7 @@ def export(con):
     if endpoint and (urlparse(endpoint).scheme!='https' or not urlparse(endpoint).hostname.endswith('.workers.dev')):
         raise ValueError('Unexpected cloud API endpoint')
     html=html.replace('<!--API_URL-->',endpoint)
+    html=html.replace('<!--PUBLIC_SOURCES-->', ROOT.joinpath('public-sources.json').read_text(encoding='utf-8'))
     js = (ROOT / 'app.js').read_text(encoding='utf-8')
     excel = '\n'.join([ROOT.parent.joinpath('vendor/jszip.min.js').read_text(encoding='utf-8'), ROOT.parent.joinpath('_excel_export.js').read_text(encoding='utf-8')])
     excel = '/*\n' + ROOT.parent.joinpath('vendor/JSZIP-LICENSE').read_text(encoding='utf-8').replace('*/','* /') + '\n' + ROOT.parent.joinpath('vendor/PAKO-LICENSE').read_text(encoding='utf-8').replace('*/','* /') + '\n*/\n' + excel

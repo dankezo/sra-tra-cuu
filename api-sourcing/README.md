@@ -147,7 +147,7 @@ Bộ lọc chứng chỉ chọn nhiều loại theo một trong / tất cả, ch
 GMP và CPP/COPP chưa nạp nguồn riêng, không suy luận từ CEP/DMF/WHO PQ.
 
 Tên Việt là nhãn hỗ trợ đọc cho các INN có bảng quy đổi; giữ tên gốc, muối/hydrat và tiêu chuẩn riêng.
-Tên chưa có bảng quy đổi được dịch bằng Groq phía Worker, lưu 30 ngày, ghi AI hỗ trợ và giữ nguyên tên nguồn. Không dịch được thì hiển thị một dòng Chưa có tên Việt. Google mở tab ngoài theo hoạt chất + công ty.
+Không dùng AI dịch tên hoạt chất. Chỉ giữ bảng quy đổi tên/dạng có sẵn; tên chưa có quy đổi chỉ hiển thị nguyên văn nguồn. Google mở tab ngoài theo hoạt chất + công ty.
 Bag đánh số, có thư mẫu sửa trực tiếp và lưu nội dung; không tự gửi thư.
 Xuất XLSX dùng JSZip có sẵn: worksheet NCC có 12 cột và hyperlink nguồn; worksheet email giữ bản sửa.
 “Không” nghĩa là chưa có bằng chứng trong snapshot. Hồ sơ inactive/hết hạn vẫn ghi trạng thái; tài liệu tự nhập
@@ -230,4 +230,12 @@ ngừng dịch vụ 01/01/2027; không đặt làm phụ thuộc chính.
 Các thay đổi hiệu năng và xuất dữ liệu nằm trong module API Sourcing; giữ trang SRA/DAV hiện có.
 
 ### Đọc trang tìm được trên Worker
-Mỗi lượt luôn gọi tìm web (Brave + Tavily song song, Exa fallback); cache chung có thể trả nhanh. Đọc directory và website chạy nền, không chặn giao diện quá 6,5 giây. Nguồn lỗi/bị chặn được báo riêng; NCC có nguồn web có nút lọc riêng và không được coi là chứng chỉ. Trích xuất chỉ nhận công ty và hoạt chất cùng xuất hiện trong đoạn trích thật. Nội dung trang lưu 30 ngày để không đọc lặp; danh sách PharmaCompass lưu 7 ngày. Giới hạn 10 lượt directory/ngày, 10 lượt đọc trang/ngày, 30 lô tên Việt/ngày; không nâng gói thanh toán. Worker dùng thêm secrets JINA_API_KEY và GROQ_API_KEY.
+Mỗi lượt luôn gọi tìm web (Brave + Tavily song song, Exa fallback); cache chung có thể trả nhanh. Đọc directory và website chạy nền, không chặn giao diện quá 6,5 giây. Nguồn lỗi/bị chặn được báo riêng; Nguồn NCC nằm trong view Online và không được coi là chứng chỉ. Trích xuất chỉ nhận công ty và hoạt chất cùng xuất hiện trong đoạn trích thật. Nội dung trang lưu 30 ngày để không đọc lặp; danh sách PharmaCompass lưu 7 ngày. Giới hạn 10 lượt directory/ngày, 10 lượt đọc trang/ngày; không nâng gói thanh toán. Worker dùng JINA_API_KEY, GROQ_API_KEY (trích xuất có bằng chứng) và FIRECRAWL_API_KEY. Không dùng AI dịch tên hoạt chất.
+
+
+### Views and public page readers (2026-10-11)
+Hồ sơ shows imported EDQM/FDA/WHO metadata; Online shows supplier claims and web search links. Every submission still searches the web automatically; changing view/filter does not spend another search call. Whole cards open a native modal, and the save button toggles Bag membership. Unknown Vietnamese names do not produce a duplicate annotation or AI request.
+
+Readers try ordinary public HTTP (5s), Jina (7s), Exa Contents (4s, 20 calls/month), then Firecrawl public scrape (9s, 25 calls/month). Bodies are capped at 1MB. CPHI Drug/Product JSON-LD with an explicit manufacturer preserves product/form and source text; it never creates an official certificate. Reading runs in the background and caches pages and extraction separately for 30 days. Unreadable sources keep their original links and source search shortcuts. Source search buttons explain whether they open native site search or a Google site filter.
+
+MHRA API Register was checked from its public XLSX (216 site registrations); that export lacks ingredient names, so it is offered as a portal, not ingested as ingredient evidence. EudraGMDP is also an online portal; neither is claimed as imported GMP proof. Ingredient search results continue to cite actual imported sources and file/download dates.

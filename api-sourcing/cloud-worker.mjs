@@ -1,4 +1,4 @@
-import {readCompass,translateLabels,publicPageUrl} from './enrichment.mjs';
+import {readCompass,publicPageUrl} from './enrichment.mjs';
 import {harvestPages} from './harvest.mjs';
 // Public HTML stays on Pages; API keys, shared cache and quotas stay here.
 const PROVIDERS = {brave:'BRAVE_SEARCH_API_KEY',tavily:'TAVILY_API_KEY',exa:'EXA_API_KEY'};
@@ -57,16 +57,16 @@ async function save(db,key,payload,ttl) {
  await db.prepare('INSERT INTO apisrc_cloud_cache VALUES(?,?,?,?) ON CONFLICT(cache_key) DO UPDATE SET payload=excluded.payload,fetched_at=excluded.fetched_at,expires_at=excluded.expires_at').bind(key,JSON.stringify(payload),new Date().toISOString(),Date.now()+ttl).run();
 }
 async function enrich(kind,input,env,ctx) {
- const key=kind+':v1:'+JSON.stringify(input),at=Date.now(),db=env.DB;
+ const key=kind+(kind==='pages'?':v5:':':v2:')+JSON.stringify(input),at=Date.now(),db=env.DB;
  const existing=await db.prepare('SELECT payload,expires_at FROM apisrc_cloud_cache WHERE cache_key=?').bind(key).first();
  if(existing && existing.expires_at>at)return {...JSON.parse(existing.payload),cached:true};
  const lease=await db.prepare('INSERT INTO apisrc_cloud_lease VALUES(?,?) ON CONFLICT(cache_key) DO UPDATE SET expires_at=excluded.expires_at WHERE expires_at<? RETURNING cache_key').bind(key,at+30000,at).first();
  if(!lease)return {pending:true};
  const task=(async()=>{try{
-  if(!await reserve(db,kind,new Date().toISOString().slice(0,10),kind==='labels'?30:10))throw new Error('QuotaReached');
-  const payload=kind==='directory'?await readCompass(input,env):kind==='pages'?await harvestPages(input,env):await translateLabels(input,env);
+  if(!await reserve(db,kind,new Date().toISOString().slice(0,10),10))throw new Error('QuotaReached');
+  const payload=kind==='directory'?await readCompass(input,env):await harvestPages(input,env);
   await save(db,key,payload,kind==='directory'?7*86400000:kind==='pages'&&payload.sources.some(s=>s.status==='unavailable')?300000:30*86400000);return payload;
- }catch(error){const payload={error:'SourceUnavailable',reason:/^(SourceHTTP_\d{3}|QuotaReached|InvalidSource|ReaderFetchFailed|ReaderBodyFailed|SourceBlocked|SourceIdentityMissing)$/.test(error.message)?error.message:'ReadFailed',pending:false};await save(db,key,payload,300000);return payload}
+ }catch(error){const payload={error:'SourceUnavailable',reason:/^(SourceHTTP_\d{3}|QuotaReached|InvalidSource|ReaderFetchFailed|ReaderBodyFailed|SourceBlocked|SourceUnreadable|SourceIdentityMissing)$/.test(error.message)?error.message:'ReadFailed',pending:false};await save(db,key,payload,300000);return payload}
  finally{await db.prepare('DELETE FROM apisrc_cloud_lease WHERE cache_key=?').bind(key).run()}})();
  ctx.waitUntil(task.catch(()=>{}));let timer;
  try{return await Promise.race([task,new Promise(resolve=>{timer=setTimeout(()=>resolve({pending:true}),4700)})])}finally{clearTimeout(timer)}
@@ -98,12 +98,7 @@ export default {
   if(origin && !allowed.includes(origin))return reply({error:'OriginDenied'},403);
   if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
   if(request.method!=='GET')return reply({error:'MethodNotAllowed'},405);
-  if(url.pathname==='/health')return reply({service:'API Sourcing',version:'3',discovery:['PharmaCompass','PharmaSources','CPHI','websites from web search'],page_reader:!!env.JINA_API_KEY,ai_labels:!!env.GROQ_API_KEY,providers:Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),shared_cache:!!env.DB,requires_access_code:false});
-  if(url.pathname==='/labels'){
-   let names;try{names=JSON.parse(url.searchParams.get('names')||'[]')}catch{return reply({error:'InvalidNames'},400)}
-   if(!Array.isArray(names)||!names.length||names.length>10||names.some(s=>typeof s!=='string'||s.length<2||s.length>400))return reply({error:'InvalidNames'},400);
-   try{return reply(await enrich('labels',[...new Set(names)].sort(),env,ctx))}catch{return reply({error:'SourceUnavailable'},503)}
-  }
+  if(url.pathname==='/health')return reply({service:'API Sourcing',version:'4',discovery:['PharmaCompass','PharmaSources','CPHI','websites from web search'],page_reader:!!env.JINA_API_KEY,ingredient_translation:false,providers:Object.keys(PROVIDERS).filter(p=>env[PROVIDERS[p]]),shared_cache:!!env.DB,requires_access_code:false});
   if(url.pathname==='/discover'){
    const q=(url.searchParams.get('q')||'').trim();if(!/^[A-Za-z0-9][A-Za-z0-9 ,().+\/-]{1,199}$/.test(q))return reply({error:'InvalidQuery'},400);
    try{return reply(await enrich('directory',q.toLowerCase(),env,ctx))}catch{return reply({error:'SourceUnavailable'},503)}

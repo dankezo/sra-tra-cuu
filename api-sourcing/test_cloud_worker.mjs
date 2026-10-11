@@ -61,3 +61,7 @@ test('additional rounds use separate cache keys and Brave result offsets',async(
  for(const page of ['-1','5','1.1','foo'])assert.equal((await worker.fetch(new Request('https://example.com/search?q=test&page='+page),env,ctx)).status,400);
  } finally {globalThis.fetch=previous;db.sqlite.close();}
 });
+
+test('ingredient translation endpoint is removed',async()=>{
+ const response=await worker.fetch(new Request('https://example.com/labels?names=%5B%22Test%22%5D'),{},{});assert.equal(response.status,404);
+});

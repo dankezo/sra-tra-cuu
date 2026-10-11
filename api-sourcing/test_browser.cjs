@@ -75,7 +75,7 @@ const assert=require('node:assert/strict');
  assert.match(new URL(await page.locator('#google-search').getAttribute('href')).searchParams.get('q'),/amlodipine/);
  await page.locator('[data-open]').first().click();assert.ok(await page.locator('#source-panel').isVisible());
  assert.match(await page.locator('#source-content').innerText(),/Ngày file nguồn/);
- await page.locator('#source-content [data-help=DMF_US]').first().hover();assert.equal(await page.locator('#term-help').evaluate(n=>n.closest('dialog')?.id),'source-panel');await page.locator('#panel-title').click();
+ await page.locator('#source-content [data-help]').first().hover();assert.equal(await page.locator('#term-help').evaluate(n=>n.closest('dialog')?.id),'source-panel');await page.locator('#panel-title').click();
  await page.evaluate(()=>{window.print=()=>{window.printCalled=true}});
  await page.locator('[data-print]').first().click();
  assert.ok(await page.evaluate(()=>window.printCalled));

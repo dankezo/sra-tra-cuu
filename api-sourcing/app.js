@@ -225,6 +225,7 @@ if (typeof document !== 'undefined') (async () => {
     selected = i;
     const r = results[i];
     $('source-content').innerHTML = `<p><strong>${esc(r.company.canonical_name)}</strong></p><p>${companyLink(r.company)} <a href="${esc(googleUrl(r.query,r.company.canonical_name))}" target="_blank" rel="noopener noreferrer">Tìm hoạt chất + công ty trên Google ↗</a></p>${safeUrl(r.company.website) ? `<p class="muted">${esc(new URL(r.company.website).hostname)} · Rà soát ${date(r.company.website_checked_at)}${safeUrl(r.company.website_source) ? ` · <a href="${esc(safeUrl(r.company.website_source))}" target="_blank" rel="noopener noreferrer">Nguồn đối chiếu ↗</a>` : ''}</p>` : '<p class="muted">Chưa có website đã rà soát cho tên công ty này. Link trên mở trang NCC tại directory hoặc tìm Google; chưa phải website công ty đã xác minh.</p>'}<h3 class="source-heading">Hồ sơ & chứng chỉ</h3><p class="muted">Tên chủ hồ sơ được giữ nguyên. Không suy luận địa chỉ nhà máy. Mỗi hồ sơ giữ nguồn và mức xác minh riêng; tuyên bố của NCC không phải xác nhận của cơ quan cấp.</p>` + [...r.certificates].sort((a,b) => (state(a) === 'good' ? 0:1)-(state(b) === 'good' ? 0:1) || a.type.localeCompare(b.type)).map(sourceRecord).join('');
+    $('source-panel').dataset.side = i >= profileCount ? 'left' : 'right';
     $('source-panel').hidden = false; render(); $('source-panel').showModal(); $('panel-close').focus();
     const references = [...new Map(r.certificates.flatMap(c => vnRefs(substances.get(c.substance_id).inn)).map(ref => [ref.sdk,ref])).values()];
     $('source-content').insertAdjacentHTML('beforeend', `<article class="source-record"><strong>Đối chiếu DAV theo hoạt chất</strong><p class="muted">${references.length ? references.map(ref=>esc(ref.sdk)+' · hạn '+date(ref.expiry)).join('<br>') : 'Chưa tìm thấy SĐK thuốc còn hạn khớp cách chuẩn hóa trong bản DAV đã nạp.'}</p><p class="muted">Bản DAV: ${esc(data.vn?.updated || 'Chưa nạp')}. Không xác nhận nguồn API/nhà máy đã được DAV duyệt. Chưa có dữ liệu SĐK nguyên liệu riêng.</p><p><a href="https://eudragmdp.ema.europa.eu/" target="_blank" rel="noopener noreferrer">Tra GMP EU ↗</a> · <a href="https://www.cphi.com/" target="_blank" rel="noopener noreferrer">Tra CPHI ↗</a> · <a href="https://www.pharmasources.com/" target="_blank" rel="noopener noreferrer">PharmaSources ↗</a></p><p class="muted">GMP / CPP-COPP / tham dự CPHI: chưa có dữ liệu đã kiểm chứng cho NCC này.</p></article>`);
@@ -244,9 +245,16 @@ if (typeof document !== 'undefined') (async () => {
     const card=e.target.closest('[data-card]');if(card)open(+card.dataset.card);
   });
   $('results-view').addEventListener('keydown',e=>{if(e.target.matches('[data-card]')&&['Enter',' '].includes(e.key)){e.preventDefault();open(+e.target.dataset.card);}});
-  $('panel-close').addEventListener('click',()=> $('source-panel').close());
+  async function closePanel() {
+    const panel=$('source-panel');if(!panel.open||panel.dataset.closing)return;
+    panel.dataset.closing='true';hideHelp();
+    const motion=panel.animate([{transform:getComputedStyle(panel).transform},{transform:`translateX(${panel.dataset.side==='left'?'-100%':'100%'})`}],{duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:180,easing:'ease-in',fill:'forwards'});
+    await motion.finished;panel.close();motion.cancel();delete panel.dataset.closing;
+  }
+  $('panel-close').addEventListener('click',closePanel);
+  $('source-panel').addEventListener('cancel',e=>{e.preventDefault();void closePanel();});
   $('source-panel').addEventListener('close',()=>{$('source-panel').hidden=true;const index=selected;selected=null;search();if(index!==null)$('results-view').querySelector('[data-card="'+index+'"]')?.focus();});
-  $('source-panel').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close();});
+  $('source-panel').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)void closePanel();});
   $('more').addEventListener('click', () => { limit += 40; render(); });
   let webGeneration=0,webQuery='',webRows=[],webAbort;
   const cloudEndpoint=$('api-endpoint')?.content || '';

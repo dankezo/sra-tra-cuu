@@ -258,6 +258,14 @@ def export(con):
     # Columnar rows avoid repeating every key; the browser and refresh job use the same snapshot.
     packed = {k: {'fields': list(v[0]), 'rows': [[r.get(c) for c in v[0]] for r in v]} if isinstance(v, list) and v else v for k, v in data.items()}
     packed['format'] = 2
+    snapshot_path = ROOT.joinpath('snapshot.json.gz')
+    if snapshot_path.exists():
+        try:
+            previous = json.loads(gzip.decompress(snapshot_path.read_bytes()))
+            if isinstance(previous, dict) and {k: v for k, v in previous.items() if k != 'built_at'} == {k: v for k, v in packed.items() if k != 'built_at'}:
+                packed['built_at'] = previous['built_at']
+        except (OSError, ValueError, KeyError, TypeError, EOFError):
+            pass  # Rebuild corrupt/older snapshots from the validated database.
     compressed = gzip.compress(json.dumps(packed, ensure_ascii=False, separators=(',', ':')).encode(), mtime=0)
     ROOT.joinpath('snapshot.json.gz').write_bytes(compressed)
     data_url = './snapshot.json.gz?v=' + hashlib.sha256(compressed).hexdigest()[:16]

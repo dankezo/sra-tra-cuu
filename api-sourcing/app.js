@@ -16,8 +16,10 @@ const ApiSourcing = (() => {
     const remainder=text.slice(base.length).trim(),forms={besylate:'besilat',besilate:'besilat',besilat:'besilat',benzoate:'benzoat',benzoat:'benzoat',hydrochloride:'hydroclorid',hydrochlorid:'hydroclorid',hcl:'hydroclorid',maleate:'maleat',mesylate:'mesilat',mesilate:'mesilat',sulfate:'sulfat',sulphate:'sulfat',sodium:'natri',potassium:'kali',calcium:'calci',magnesium:'magnesi',succinate:'succinat',fumarate:'fumarat',tartrate:'tartrat',phosphate:'phosphat',monohydrate:'monohydrat',dihydrate:'dihydrat',trihydrate:'trihydrat',anhydrous:'khan'};
     const annotation=remainder.search(/\b(process|site)\b/),formText=annotation<0 ? remainder : remainder.slice(0,annotation).trim();
     const standards=formText.match(/\b(usp|ep|bp|ip)\b/g) || [];
-    let translated=formText.split(' ').filter(t=>t && !standards.includes(t)).map(t=>forms[t]||t);
-    return names[base]+(translated.length ? ' · dạng '+translated.join(' ') : ' · dạng theo nguồn')+(standards.length ? ' · chuẩn '+standards.map(s=>s.toUpperCase()).join('/') : '')+(annotation<0 ? '' : ' · ghi chú nguồn: '+remainder.slice(annotation));
+    const tokens=formText.split(' ').filter(t=>t && !standards.includes(t));
+    if(tokens.some(t=>!forms[t]))return 'Chưa có tên Việt';
+    const translated=tokens.map(t=>forms[t]);
+    return names[base]+(translated.length ? ' · dạng '+translated.join(' ') : '')+(standards.length ? ' · chuẩn '+standards.map(s=>s.toUpperCase()).join('/') : '')+(annotation<0 ? '' : ' · ghi chú nguồn: '+remainder.slice(annotation));
   };
   const googleUrl = (query,company='') => 'https://www.google.com/search?'+new URLSearchParams({q:[query,company,'API supplier'].filter(Boolean).join(' ')});
   const matchesCertificates = (certs,types,all=false) => !types.length || (all ? types.every(t=>certs.some(c=>c.type===t && state(c)==='good' && (t!=='CEP' || ['Chemical','Chemical and TSE'].includes(c.cep_type)))) : types.some(t=>certs.some(c=>c.type===t && state(c)==='good' && (t!=='CEP' || ['Chemical','Chemical and TSE'].includes(c.cep_type)))));
@@ -106,7 +108,7 @@ if (typeof document !== 'undefined') (async () => {
   bagCount();
   const saveBag = () => { try { localStorage.setItem('apisrc-bag-v1', JSON.stringify(bag)); bagCount(); return true; } catch { notice('Không lưu được Bag. Hãy sao lưu trước khi đóng trang.'); return false; } };
   const countryName = code => { try { return new Intl.DisplayNames(['vi'], {type:'region'}).of(code); } catch { return code; } };
-  const countryText = company => company.country ? `${countryName(company.country)} (${company.country})` : 'Quốc gia chưa rõ từ nguồn';
+  const countryText = company => company.country ? `${countryName(company.country)} (${company.country})${company.country_origin==='directory'?' · NCC công bố':''}` : 'Quốc gia chưa rõ từ nguồn';
   const cardState = r => r.certificates.some(c => state(c) === 'bad') ? 'bad' : r.certificates.some(c => state(c) === 'good') ? 'good' : r.certificates.some(c=>state(c)==='claim') ? 'claim' : 'unknown';
   const vnRefs = text => !data?.vn ? [] : (data.vn.index[SraVn.key(text)] || []).filter(r => r.expiry >= new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}));
   function render() {
@@ -175,6 +177,7 @@ if (typeof document !== 'undefined') (async () => {
           if(!company){company={id:'web:'+norm(item.company),canonical_name:item.company,country:item.country,website:safeUrl(item.website)||null,website_source:item.source_url,website_origin:'directory'};companies.set(company.id,company);}
           else if(!safeUrl(company.website)&&safeUrl(item.website)){company.website=safeUrl(item.website);company.website_source=item.source_url;company.website_origin='directory';}
           company.profile_url ||= safeUrl(item.profile_url);
+          if(!company.country && item.country){company.country=item.country;company.country_origin='directory';}
           let subject=substance;if(!subject){subject={id:'web:'+norm(ingredient),inn:ingredient,synonyms:'[]'};substances.set(subject.id,subject);if(!data.substances.some(s=>s.id===subject.id))data.substances.push(subject);}
           const id='directory:'+item.profile_url+':'+norm(item.company)+':'+norm(ingredient);if(indexed.some(e=>e.cert.id===id))continue;
           const cert={...item,id,type:'LISTING',identifier:'Nguồn NCC',status:'unknown',raw_status:'Directory liệt kê, chưa xác minh',holder:item.company,company_id:company.id,substance_id:subject.id};

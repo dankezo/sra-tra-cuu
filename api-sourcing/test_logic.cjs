@@ -16,6 +16,8 @@ assert.equal(viName('Amlodipine benzoate'),'Amlodipin · dạng benzoat');
 assert.equal(viName('Amlodipine besylate USP'),'Amlodipin · dạng besilat · chuẩn USP');
 assert.equal(viName('Amlodipine besilate, Process-I'),'Amlodipin · dạng besilat · ghi chú nguồn: process i');
 assert.equal(viName('Unknown molecule'),'Chưa có tên Việt');
+assert.equal(viName('Amlodipine Besylate API and intermediates'),'Chưa có tên Việt');
+assert.equal(viName('Amlodipine'),'Amlodipin');
 const cep={type:'CEP',verification:'official_verified',status:'valid',cep_type:'Chemical',identifier:'R0-CEP-1',source_url:'https://edqm.example/cep',raw_status:'Valid'};
 const dmf={...cep,type:'DMF_US',identifier:'123',status:'inactive',raw_status:'Inactive'};
 assert.equal(matchesCertificates([cep,dmf],['CEP','DMF_US']),true);

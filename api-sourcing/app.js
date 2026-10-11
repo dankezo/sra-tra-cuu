@@ -81,7 +81,7 @@ if (typeof document !== 'undefined') (async () => {
   const hideHelp = () => { $('term-help').hidden=true; };
   function showHelp(button) {
     if(!document.body.contains(button))return hideHelp();
-    const tooltip=$('term-help'); tooltip.textContent=button.dataset.helpText || explanations[button.dataset.help]; tooltip.hidden=false;
+    const tooltip=$('term-help');(button.closest('dialog')||document.body).appendChild(tooltip);tooltip.textContent=button.dataset.helpText || explanations[button.dataset.help]; tooltip.hidden=false;
     const rect=button.getBoundingClientRect(); tooltip.style.width=Math.min(320,innerWidth-24)+'px';
     tooltip.style.left=Math.max(12,Math.min(rect.left,innerWidth-tooltip.offsetWidth-12))+'px';
     tooltip.style.top=Math.max(12,Math.min(rect.bottom+8,innerHeight-tooltip.offsetHeight-12))+'px';

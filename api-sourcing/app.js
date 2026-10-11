@@ -70,6 +70,8 @@ if (typeof document !== 'undefined') (async () => {
   updateSourceSearches('');
   const labels = {CEP:'CEP · EDQM', DMF_US:'DMF US · II', WHO_PQ:'WHO PQ', LISTING:'NCC tuyên bố'};
   const explanations = {
+    PROFILES:'Hồ sơ nguyên liệu công khai từ EDQM, FDA và WHO. Bấm thẻ để xem nguồn và ngày danh sách.',
+    ONLINE:'Nhà cung cấp và trang web tìm được trên mạng. Thẻ nhà cung cấp ở trên, link ở dưới. Chứng chỉ do công ty giới thiệu cần kiểm tra ở nguồn cấp.',
     CEP:'CEP do EDQM cấp, chứng minh chất lượng nguyên liệu đáp ứng Dược điển châu Âu. CEP không thay thế chứng nhận GMP.',
     DMF_US:'DMF US Type II là hồ sơ kỹ thuật nguyên liệu nộp FDA (Mỹ). Active nghĩa là hồ sơ đang hoạt động, không có nghĩa FDA đã phê duyệt.',
     WHO_PQ:'API được WHO tiền thẩm định về chất lượng và cơ sở sản xuất. Chỉ áp dụng cho đúng nguyên liệu và cơ sở ghi trong hồ sơ.',

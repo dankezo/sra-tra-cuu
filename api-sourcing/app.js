@@ -70,12 +70,13 @@ if (typeof document !== 'undefined') (async () => {
   updateSourceSearches('');
   const labels = {CEP:'CEP · EDQM', DMF_US:'DMF US · II', WHO_PQ:'WHO PQ', LISTING:'NCC tuyên bố'};
   const explanations = {
-    CEP:'CEP là chứng nhận do EDQM (cơ quan chất lượng thuốc châu Âu) cấp về việc kiểm soát chất lượng nguyên liệu theo Dược điển châu Âu. CEP không thay thế chứng nhận GMP; xem loại CEP và trạng thái từng hồ sơ.',
-    DMF_US:'DMF US là hồ sơ kỹ thuật nộp FDA của Mỹ. Type II gồm dược chất, chất trung gian và vật liệu dùng trong sản xuất thuốc. Active nghĩa là hồ sơ đang hoạt động, không có nghĩa FDA đã phê duyệt.',
-    WHO_PQ:'WHO PQ API là nguyên liệu được WHO tiền thẩm định: đánh giá chất lượng hồ sơ và việc tuân thủ GMP của cơ sở liên quan. Chỉ áp dụng cho nguyên liệu và cơ sở trong hồ sơ đó.',
-    LISTING:'Đây là thông tin do nhà cung cấp tự công bố trên website. Đoạn trích giúp kiểm tra họ nói gì; chưa phải xác nhận của cơ quan quản lý.',
-    GMP_CPP:'GMP đánh giá cơ sở và phạm vi sản xuất. CPP/COPP là chứng nhận sản phẩm dược theo mẫu WHO, do cơ quan có thẩm quyền cấp; WHO PQ API là chương trình khác.',
-    SAVE:'Bấm + để lưu NCC cùng hồ sơ vào Bag. Dấu ✓ nghĩa là đã lưu; bấm lại để bỏ lưu. Bag có ghi chú, xuất Excel và soạn email.',
+    CEP:'CEP do EDQM cấp, chứng minh chất lượng nguyên liệu đáp ứng Dược điển châu Âu. CEP không thay thế chứng nhận GMP.',
+    DMF_US:'DMF US Type II là hồ sơ kỹ thuật nguyên liệu nộp FDA (Mỹ). Active nghĩa là hồ sơ đang hoạt động, không có nghĩa FDA đã phê duyệt.',
+    WHO_PQ:'API được WHO tiền thẩm định về chất lượng và cơ sở sản xuất. Chỉ áp dụng cho đúng nguyên liệu và cơ sở ghi trong hồ sơ.',
+    LISTING:'Nhà cung cấp tự công bố sản phẩm trên web. Bấm thẻ để xem đoạn trích và nguồn; cơ quan quản lý chưa xác nhận thông tin này.',
+    GMP_CPP:'GMP xác nhận điều kiện sản xuất của cơ sở. CPP/COPP là chứng nhận sản phẩm dược do cơ quan quản lý cấp theo mẫu WHO. Chưa nạp nguồn cho hai mục này.',
+    SAVE:'Bấm + để lưu vào Bag. Bấm ✓ để bỏ lưu. Trong Bag có thể ghi chú và tải Excel.',
+    SOURCE_DATE:'Ngày ghi trên danh sách do cơ quan công bố, không phải ngày sửa từng hồ sơ. FDA dùng mốc cuối quý. Ngày tải nguồn là ngày hệ thống lấy danh sách về.',
     WEBSITE:'Website công ty hoặc tập đoàn được ghép theo tên từ danh sách đã rà soát. Link này giúp liên hệ và xem sản phẩm; không xác nhận nhà máy, chứng chỉ hay còn hàng.'
   };
   const helpChip = (type, text, status='') => `<button type="button" class="chip term-chip ${status}" data-help="${type}" aria-describedby="term-help">${esc(text)} <span aria-hidden="true">ⓘ</span></button>`;
@@ -99,7 +100,7 @@ if (typeof document !== 'undefined') (async () => {
   const states = {valid:'Còn hiệu lực', active:'Active', expired:'Hết hạn', suspended:'Đình chỉ', withdrawn:'Đã rút', inactive:'Inactive', unknown:'Chưa rõ'};
   const date = s => s ? new Date(s.length === 10 ? s + 'T00:00:00' : s).toLocaleDateString('vi-VN') : 'Không công bố';
   const notice = text => { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(notice.timer); notice.timer = setTimeout(() => $('toast').hidden = true, 4000); };
-  let data, companies, substances, indexed, results = [], selected = null, limit = 40, view = 'online';
+  let data, companies, substances, indexed, results = [], selected = null, limit = 40, profileCount = 0;
   let resolveData, searchGeneration=0, searchBusy=false;
   const dataReady=new Promise(resolve=>{resolveData=resolve;});
   let bag = [];
@@ -113,16 +114,17 @@ if (typeof document !== 'undefined') (async () => {
   const vnRefs = text => !data?.vn ? [] : (data.vn.index[SraVn.key(text)] || []).filter(r => r.expiry >= new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'}));
   function render() {
     hideHelp();
-    $('results').innerHTML = results.length ? results.slice(0, limit).map((r, i) => {
+    const card = (r, i) => {
       const status = cardState(r);
       const types = [...new Set(r.certificates.map(c => c.type))];
-      return `<article data-card="${i}" tabindex="0" aria-haspopup="dialog" aria-label="Xem nguồn ${esc(r.company.canonical_name)}" class="supplier-card ${selected === i ? 'selected' : ''}"><div class="card-top"><button class="supplier-name" data-open="${i}">${esc(r.company.canonical_name)}</button><button class="save-button" data-save="${i}" data-help="SAVE" aria-pressed="${bag.some(b=>b.key===r.key)}" aria-label="${bag.some(b=>b.key===r.key) ? 'Bỏ lưu' : 'Lưu'} nhà cung cấp vào Bag" aria-describedby="term-help">${bag.some(b => b.key === r.key) ? '✓' : '+'}</button></div><p>${companyLink(r.company)}</p><p class="card-meta">${esc(countryText(r.company))} · ${r.certificates.some(c=>c.supplier_role==='seller') ? 'Bên bán / phân phối (theo nguồn)' : 'Nhà máy chưa xác định'}</p><p class="card-substances">${[...new Set(r.certificates.map(c => substances.get(c.substance_id).inn))].slice(0,3).map(name=>`<span class="ingredient-line">${esc(name)} <span class="vi-name" title="Tên quy đổi theo bảng có sẵn; giữ nguyên tên và dạng trong nguồn.">${viName(name)==='Chưa có tên Việt' ? '' : esc(viName(name))}</span></span>`).join('')}</p><div class="chips">${types.map(t => { const certs = r.certificates.filter(c => c.type === t); const s = certs.some(c => state(c) === 'bad') ? 'bad' : certs.some(c => state(c) === 'good') ? 'good' : certs.some(c=>state(c)==='claim') ? 'claim' : 'unknown'; return helpChip(t, (labels[t] || t) + ' · ' + (s === 'good' ? 'Nguồn chính thức' : s === 'bad' ? 'Có hồ sơ không còn hiệu lực' : s === 'claim' ? 'Chưa xác minh' : 'Chưa rõ'), s); }).join('')}${helpChip('GMP_CPP','GMP · CPP/COPP: chưa có dữ liệu')}</div><p class="card-meta status-dot ${status}">● ${status === 'bad' ? 'Có hồ sơ không còn hiệu lực — xem nguồn' : status === 'good' ? 'Bản nguồn: còn hiệu lực / Active' : status==='claim' ? 'Chỉ có tuyên bố của NCC, chưa xác minh' : 'Chưa rõ trạng thái'} · ${r.certificates.length} bản ghi</p></article>`;
-    }).join('') : '<div class="empty">Chưa có kết quả khớp trong các nguồn đã nạp. Có thể tìm web bổ trợ hoặc mở cổng nguồn ở bên dưới.</div>';
-    $('more').hidden = results.length <= limit;
+      return `<article data-card="${i}" tabindex="0" aria-haspopup="dialog" aria-label="Xem nguồn ${esc(r.company.canonical_name)}" class="supplier-card ${selected === i ? 'selected' : ''}"><div class="card-top"><button class="supplier-name" data-open="${i}">${esc(r.company.canonical_name)}</button><button class="save-button" data-save="${i}" data-help="SAVE" aria-pressed="${bag.some(b=>b.key===r.key)}" aria-label="${bag.some(b=>b.key===r.key) ? 'Bỏ lưu' : 'Lưu'} nhà cung cấp vào Bag" aria-describedby="term-help">${bag.some(b => b.key === r.key) ? '✓' : '+'}</button></div><p>${companyLink(r.company)}</p><p class="card-meta">${esc(countryText(r.company))} · ${r.certificates.some(c=>c.supplier_role==='seller') ? 'Bên bán / phân phối (theo nguồn)' : 'Nhà máy chưa xác định'}</p><p class="card-substances">${[...new Set(r.certificates.map(c => substances.get(c.substance_id).inn))].slice(0,3).map(name=>`<span class="ingredient-line">${esc(name)}</span>`).join('')}</p><div class="chips">${types.map(t => { const certs = r.certificates.filter(c => c.type === t); const s = certs.some(c => state(c) === 'bad') ? 'bad' : certs.some(c => state(c) === 'good') ? 'good' : certs.some(c=>state(c)==='claim') ? 'claim' : 'unknown'; return helpChip(t, (labels[t] || t) + ' · ' + (s === 'good' ? 'Nguồn chính thức' : s === 'bad' ? 'Có hồ sơ không còn hiệu lực' : s === 'claim' ? 'Chưa xác minh' : 'Chưa rõ'), s); }).join('')}${helpChip('GMP_CPP','GMP · CPP/COPP: chưa có dữ liệu')}</div><p class="card-meta status-dot ${status}">● ${status === 'bad' ? 'Có hồ sơ không còn hiệu lực — xem nguồn' : status === 'good' ? 'Bản nguồn: còn hiệu lực / Active' : status==='claim' ? 'Chỉ có tuyên bố của NCC, chưa xác minh' : 'Chưa rõ trạng thái'} · ${r.certificates.length} bản ghi</p></article>`;
+    };
+    $('results').innerHTML = profileCount ? results.slice(0, Math.min(profileCount,limit)).map(card).join('') : '<div class="empty">Chưa có hồ sơ khớp.</div>';
+    $('online-suppliers').innerHTML = results.slice(profileCount,profileCount+limit).map((r,i)=>card(r,profileCount+i)).join('');
+    $('more').hidden = Math.max(profileCount,results.length-profileCount) <= limit;
   }
   function search() {
     if (!data) return;
-    const started = performance.now();
     const query = $('query').value.trim();
     if (!query) return;
     const normalized = norm(query);
@@ -147,27 +149,22 @@ if (typeof document !== 'undefined') (async () => {
     $('certificate-summary').textContent=types.length ? types.map(t=>labels[t] || (t==='COPP' ? 'CPP/COPP' : t)).join(' + ') : 'Chọn nhiều chứng chỉ';
     const filtered=group=>[...group.values()].filter(r=>matchesCertificates(r.certificates,types,$('certificate-mode').value==='all')).sort((a,b)=>(cardState(a)==='good'?0:1)-(cardState(b)==='good'?0:1)||a.company.canonical_name.localeCompare(b.company.canonical_name));
     const profiles=filtered(groups), online=filtered(onlineGroups);
-    results=view==='profiles'?profiles:online;
-    $('profiles-tab').textContent=`Hồ sơ (${profiles.length})`;
-    $('online-tab').textContent=`Online (${online.length} NCC · ${webRows.length} link)`;
+    profileCount=profiles.length;results=[...profiles,...online];
     selected=null;limit=40;if($('source-panel').open)$('source-panel').close();$('source-panel').hidden=true;render();
-    $('result-status').textContent=view==='profiles' ? `${profiles.length.toLocaleString('vi-VN')} NCC / chủ hồ sơ · ${profiles.reduce((n,r)=>n+r.certificates.length,0).toLocaleString('vi-VN')} bản ghi nguồn công khai. Xem ngày nguồn trong từng thẻ.` : `${online.length} NCC có đoạn bằng chứng · ${webRows.length} link từ tìm web. Tuyên bố thương mại chưa xác minh chứng chỉ.`;
     updateSourceSearches(query);
-    $('web-button').disabled = webBusy;
     $('google-search').href=googleUrl(query);
-    if(webQuery!==query){webQuery=query;webPage=-1;webRows=[];webGeneration++;webAbort?.abort();$('web-content').innerHTML='';$('web-results').hidden=view!=='online';}
+    if(webQuery!==query){webQuery=query;webRows=[];webGeneration++;webAbort?.abort();$('web-content').innerHTML='';}
   }
   async function submitSearch() {
     const query=$('query').value.trim();if(query.length<2)return;
     const generation=++searchGeneration;searchBusy=true;
     $('search-progress').hidden=false;$('progress-title').textContent='Đang tìm nhà cung cấp';
-    $('harvest-status').textContent='';$('discovery-status').textContent='';
     $('progress-detail').textContent='Đối chiếu hồ sơ và tìm web cùng lúc · chờ tối đa khoảng 7 giây.';
-    $('results').setAttribute('aria-busy','true');$('results').hidden=true;
+    $('results').setAttribute('aria-busy','true');$('results').hidden=true;$('online-suppliers').hidden=true;
     const local=dataReady.then(ready=>{if(ready && generation===searchGeneration && $('query').value.trim()===query)search();});
-    const web=searchWeb(false),directory=dataReady.then(ready=>ready&&generation===searchGeneration?discoverSuppliers(query,generation):null);let timer;
+    const web=searchWeb(),directory=dataReady.then(ready=>ready&&generation===searchGeneration?discoverSuppliers(query,generation):null);let timer;
     try {await Promise.race([Promise.allSettled([local,web,directory]),new Promise(resolve=>{timer=setTimeout(resolve,6500);})]);}
-    finally {clearTimeout(timer);if(generation===searchGeneration){searchBusy=false;$('search-progress').hidden=true;$('results').hidden=false;$('results').setAttribute('aria-busy','false');if(!data)$('result-status').textContent='Dữ liệu nguồn chưa tải xong; kết quả web có thể xem trong view Online. Hồ sơ sẽ hiện khi tải xong.';}}
+    finally {clearTimeout(timer);if(generation===searchGeneration){searchBusy=false;$('search-progress').hidden=true;$('results').hidden=false;$('online-suppliers').hidden=false;$('results').setAttribute('aria-busy','false');if(!data)$('result-status').textContent='Dữ liệu nguồn chưa sẵn sàng. Bạn vẫn có thể xem kết quả Online.';}}
   }
   function addSupplierListings(listings,query) {
         for(const item of listings){
@@ -186,20 +183,19 @@ if (typeof document !== 'undefined') (async () => {
   }
   async function discoverSuppliers(query,generation) {
     const substance=data.substances.find(s=>s.cas===query||norm(s.inn)===norm(query)),ingredient=substance?.inn||query;
-    $('discovery-status').textContent='Đang đọc danh sách NCC công khai trên PharmaCompass…';
     try {
       for(let attempt=0;attempt<4;attempt++){
         if(generation!==searchGeneration)return;
         const response=await fetch(cloudEndpoint+'/discover?'+new URLSearchParams({q:ingredient}),{signal:AbortSignal.timeout(6000)});
         if(!response.ok)throw new Error('DirectoryUnavailable');const payload=await response.json();
         if(generation!==searchGeneration || $('query').value.trim()!==query)return;
-        if(payload.pending){$('discovery-status').textContent='PharmaCompass đang đọc ở nền · có kết quả sẽ tự bổ sung.';if(attempt<3){await new Promise(resolve=>setTimeout(resolve,2000));continue;}return;}
+        if(payload.pending){if(attempt<3){await new Promise(resolve=>setTimeout(resolve,2000));continue;}return;}
         if(payload.error)throw new Error('DirectoryUnavailable');
         const listings=payload.listings||[];
         addSupplierListings(listings,query);
-        if(!$('source-panel').open)search();$('discovery-status').textContent=`PharmaCompass: ${listings.length} NCC từ trang công khai${payload.cached?' · dữ liệu đã lưu':' · vừa đọc nguồn'} · không xác minh chứng chỉ.`;return;
+        if(!$('source-panel').open)search();return;
       }
-    } catch {if(generation===searchGeneration)$('discovery-status').textContent='Chưa đọc được PharmaCompass lượt này; vẫn giữ hồ sơ và các nguồn web.';}
+    } catch {}
   }
   const harvested=new Set();
   async function harvestWebPages(query,generation,rows) {
@@ -208,21 +204,20 @@ if (typeof document !== 'undefined') (async () => {
     const candidates=[...new Set(rows.filter(r=>ApiSourcing.termsMatch([r.title,r.snippet,r.url].join(' '),[ingredient,query])).map(r=>safeUrl(r.url)).filter(url=>url&&!/(?:pharmacompass\.com|fda\.gov|who\.int|edqm\.eu|pubchem)/i.test(new URL(url).hostname)))].sort((a,b)=>Number(/pharmasources\.com|cphi-online\.com/.test(b))-Number(/pharmasources\.com|cphi-online\.com/.test(a)));
     const byHost=new Map();for(const url of candidates){const host=new URL(url).hostname.replace(/^www\./,'');if(!byHost.has(host))byHost.set(host,url);}const urls=[...byHost.values()].slice(0,3);
     if(!urls.length)return;const key=JSON.stringify([query,urls]);if(harvested.has(key))return;harvested.add(key);
-    $('harvest-status').textContent=`Đang đọc ${urls.length} trang tìm được trên mạng · sẽ tự bổ sung NCC có bằng chứng…`;
     try {
       for(let attempt=0;attempt<6;attempt++){
         if(generation!==searchGeneration)return;
         const response=await fetch(cloudEndpoint+'/harvest?'+new URLSearchParams({q:ingredient,urls:JSON.stringify(urls)}),{signal:AbortSignal.timeout(10000)});if(!response.ok)throw new Error('Unavailable');const payload=await response.json();
         if(generation!==searchGeneration||$('query').value.trim()!==query)return;
-        if(payload.pending){if(attempt<5){await new Promise(resolve=>setTimeout(resolve,2000));continue;}harvested.delete(key);$('harvest-status').textContent='Các trang chậm đang lưu ở nền; tìm lại sẽ dùng dữ liệu đã lưu.';return;}
+        if(payload.pending){if(attempt<5){await new Promise(resolve=>setTimeout(resolve,2000));continue;}harvested.delete(key);return;}
         if(payload.error)throw new Error('Unavailable');addSupplierListings(payload.listings||[],query);if(!$('source-panel').open)search();
-        $('harvest-status').innerHTML=(payload.sources||[]).map(source=>`<a href="${esc(safeUrl(source.url))}" target="_blank" rel="noopener noreferrer">${esc(new URL(source.url).hostname)}</a>: ${source.status==='read' ? 'đã đọc · '+source.count+' NCC có bằng chứng' : 'chưa đọc được'}`).join(' · ');return;
+        return;
       }
-    } catch {harvested.delete(key);if(generation===searchGeneration)$('harvest-status').textContent='Chưa đọc được một số trang lượt này; các link web và NCC đã tìm được vẫn được giữ.';}
+    } catch {harvested.delete(key);}
   }
   function sourceRecord(c) {
     const url = safeUrl(c.source_url), subject = substances.get(c.substance_id);
-    return `<article class="source-record">${helpChip(c.type, labels[c.type] || c.type)} <strong>${esc(c.identifier)}</strong> <span class="chip ${state(c)}">${esc(states[c.status] || c.status)}</span><dl><dt>Hoạt chất / subject</dt><dd>${esc(subject?.inn)}<br><span class="vi-name" title="Tên quy đổi theo bảng có sẵn; giữ nguyên tên và dạng trong nguồn.">${viName(subject?.inn)==='Chưa có tên Việt' ? '' : esc(viName(subject?.inn))}</span></dd><dt>CAS / UNII</dt><dd>${esc([subject?.cas,subject?.unii].filter(Boolean).join(' / ') || 'Chưa chuẩn hóa')}</dd><dt>Chủ hồ sơ gốc</dt><dd>${esc(c.holder)}</dd><dt>Trạng thái gốc</dt><dd>${esc(c.raw_status)}</dd><dt>Loại CEP</dt><dd>${esc(c.cep_type || '—')}</dd><dt>Ngày cấp / nộp</dt><dd>${date(c.issued_at)}</dd><dt>Hạn / kết thúc</dt><dd>${date(c.expires_at)}</dd><dt>Ngày file nguồn</dt><dd>${date(c.source_file_date)}${c.date_basis === 'quarter_end' ? ' (cuối quý)' : ''}</dd><dt>Ngày lấy dữ liệu</dt><dd>${date(c.fetched_at)}</dd></dl>${safeUrl(subject?.normalization_source) ? `<p><a href="${esc(safeUrl(subject.normalization_source))}" target="_blank" rel="noopener noreferrer">Nguồn chuẩn hóa hoạt chất ↗</a> · ${date(subject.normalization_fetched_at)}</p>` : ''}${c.type === 'LISTING' ? `<blockquote>${esc(c.raw_snippet || 'Chưa có đoạn bằng chứng')}</blockquote>` : ''}${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Mở bản nguồn ${esc(c.source)} ↗</a>` : ''}${c.type === 'CEP' ? ' · <button type="button" data-print="'+c.id+'">In phiếu tra cứu CEP / PDF</button>' : ''}</article>`;
+    return `<article class="source-record">${helpChip(c.type, labels[c.type] || c.type)} <strong>${esc(c.identifier)}</strong> <span class="chip ${state(c)}">${esc(states[c.status] || c.status)}</span><dl><dt>Hoạt chất / subject</dt><dd>${esc(subject?.inn)}</dd><dt>CAS / UNII</dt><dd>${esc([subject?.cas,subject?.unii].filter(Boolean).join(' / ') || 'Chưa chuẩn hóa')}</dd><dt>Chủ hồ sơ gốc</dt><dd>${esc(c.holder)}</dd><dt>Trạng thái gốc</dt><dd>${esc(c.raw_status)}</dd><dt>Loại CEP</dt><dd>${esc(c.cep_type || '—')}</dd><dt>Ngày cấp / nộp</dt><dd>${date(c.issued_at)}</dd><dt>Hạn / kết thúc</dt><dd>${date(c.expires_at)}</dd><dt><button type="button" class="date-help" data-help="SOURCE_DATE" aria-describedby="term-help">Ngày danh sách ⓘ</button></dt><dd>${date(c.source_file_date)}${c.date_basis === 'quarter_end' ? ' (cuối quý)' : ''}</dd><dt>Ngày tải nguồn</dt><dd>${date(c.fetched_at)}</dd></dl>${safeUrl(subject?.normalization_source) ? `<p><a href="${esc(safeUrl(subject.normalization_source))}" target="_blank" rel="noopener noreferrer">Nguồn chuẩn hóa hoạt chất ↗</a> · ${date(subject.normalization_fetched_at)}</p>` : ''}${c.type === 'LISTING' ? `<blockquote>${esc(c.raw_snippet || 'Chưa có đoạn bằng chứng')}</blockquote>` : ''}${url ? `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Mở bản nguồn ${esc(c.source)} ↗</a>` : ''}${c.type === 'CEP' ? ' · <button type="button" data-print="'+c.id+'">In phiếu tra cứu CEP / PDF</button>' : ''}</article>`;
   }
   function open(i) {
     selected = i;
@@ -234,9 +229,8 @@ if (typeof document !== 'undefined') (async () => {
   }
   $('search-form').addEventListener('submit', e => { e.preventDefault(); void submitSearch(); });
   $('filters').addEventListener('change', ()=>search());
-  document.querySelectorAll('[data-query]').forEach(b => b.addEventListener('click', () => { $('query').value = b.dataset.query; void submitSearch(); }));
   $('query').addEventListener('input',()=>updateSourceSearches($('query').value.trim()));
-  $('results').addEventListener('click', e => {
+  $('results-view').addEventListener('click', e => {
     const save=e.target.closest('[data-save]');
     if(save){const r=results[+save.dataset.save], existing=bag.findIndex(b=>b.key===r.key);
       if(existing>=0)bag.splice(existing,1);
@@ -247,41 +241,34 @@ if (typeof document !== 'undefined') (async () => {
     if(e.target.closest('button,a,input,select,summary'))return;
     const card=e.target.closest('[data-card]');if(card)open(+card.dataset.card);
   });
-  $('results').addEventListener('keydown',e=>{if(e.target.matches('[data-card]')&&['Enter',' '].includes(e.key)){e.preventDefault();open(+e.target.dataset.card);}});
+  $('results-view').addEventListener('keydown',e=>{if(e.target.matches('[data-card]')&&['Enter',' '].includes(e.key)){e.preventDefault();open(+e.target.dataset.card);}});
   $('panel-close').addEventListener('click',()=> $('source-panel').close());
-  $('source-panel').addEventListener('close',()=>{$('source-panel').hidden=true;const index=selected;selected=null;render();if(index!==null)$('results').querySelector('[data-card="'+index+'"]')?.focus();});
-  function changeView(next){view=next;document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.view===view)));$('results-view').setAttribute('aria-labelledby',view+'-tab');$('web-results').hidden=view!=='online';$('online-progress').hidden=view!=='online';$('official-sources').hidden=view!=='profiles';search();}
-  document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>changeView(b.dataset.view)));
+  $('source-panel').addEventListener('close',()=>{$('source-panel').hidden=true;const index=selected;selected=null;search();if(index!==null)$('results-view').querySelector('[data-card="'+index+'"]')?.focus();});
+  $('source-panel').addEventListener('click',e=>{if(e.target!==e.currentTarget)return;const r=e.currentTarget.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)e.currentTarget.close();});
   $('more').addEventListener('click', () => { limit += 40; render(); });
-  let webGeneration=0,webQuery='',webPage=-1,webRows=[],webAbort,webBusy=false;
+  let webGeneration=0,webQuery='',webRows=[],webAbort;
   const cloudEndpoint=$('api-endpoint')?.content || '';
   const useCloud=!!cloudEndpoint && !['127.0.0.1','localhost'].includes(location.hostname);
   // Remove legacy access fragments from old bookmarks; search no longer uses a code.
   if(new URLSearchParams(location.hash.slice(1)).has('access'))history.replaceState(null,'',location.pathname+location.search);
-  async function searchWeb(more=true) {
+  async function searchWeb() {
     const query=$('query').value.trim();if(query.length<2)return;
-    if(webQuery!==query){webQuery=query;webPage=-1;webRows=[];$('web-content').innerHTML='';}
-    const page=more ? webPage+1 : 0;
-    if(page>4){notice('Đã tìm 5 lượt cho hoạt chất này. Có thể tìm tiếp trên Google.');return;}
+    if(webQuery!==query){webQuery=query;webRows=[];$('web-content').innerHTML='';}
+    const page=0;
     webAbort?.abort();webAbort=new AbortController();
     const generation=++webGeneration;
-    $('web-results').hidden=view!=='online'; $('web-status').textContent='Đang tìm web · chờ tối đa khoảng 6 giây…';
-    webBusy=true;$('web-button').disabled=true;$('online-tab').dataset.loading='true';
+    $('web-status').textContent='Đang tìm web…';
     try {
       const response=await fetch((useCloud ? cloudEndpoint+'/search' : './search')+'?'+new URLSearchParams({q:query,page}),{signal:AbortSignal.any([webAbort.signal,AbortSignal.timeout(6200)])});
       if(generation!==webGeneration)return;
       if (!response.ok) throw new Error(useCloud ? 'Dịch vụ tìm web đang bận. Thử lại sau.' : 'Chưa có backend tìm web. Chạy server.py để bật các API.');
       const payload=await response.json(); if(generation!==webGeneration)return;
-      const before=webRows.length;webRows=mergeWeb(webRows,payload.results || []);
+      webRows=mergeWeb(webRows,payload.results || []);
       void harvestWebPages(query,searchGeneration,payload.results||[]);
-      if(payload.results?.length || !payload.pending && !payload.providers?.some(p=>p.error))webPage=page;
-      $('web-status').textContent=`Thêm ${webRows.length-before} URL mới · đang giữ ${webRows.length} nguồn · lượt ${page+1} · ${payload.elapsed_ms} ms${payload.providers?.some(p=>p.cached) ? ' · từ cache' : ''}${payload.pending ? ' · nguồn chậm đang lưu nền; bấm tìm thêm để thử lại lượt này' : ''}${!payload.configured?.length ? ' · chưa cấu hình provider' : ''}${payload.providers?.some(p=>p.error) ? ' · một số nguồn chưa trả kết quả; có thể thử lại' : ''}`;
-      $('online-tab').textContent=`Online · ${webRows.length} link`;
+      $('web-status').textContent=webRows.length ? '' : payload.pending ? 'Nguồn web đang xử lý.' : 'Chưa tìm thấy link phù hợp.';
       $('web-content').innerHTML=webRows.map(r=>`<article class="supplier-card"><a href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener noreferrer">${esc(r.title || r.url)}</a><p class="web-snippet">${esc(String(r.snippet||'').replace(/<[^>]*>/g,'').slice(0,600))}</p><p class="source-explanation">${esc(sourceExplanation(r.url))}</p><span class="chip">Nguồn web · chưa xác minh</span> <span class="muted">${esc(r.provider)} · ${date(r.fetched_at)}</span></article>`).join('');
     } catch(error) { if(generation===webGeneration)$('web-status').textContent=error.name==='TimeoutError' ? 'Nguồn web chậm. Hồ sơ vẫn sẵn sàng; tác vụ nền có thể lưu cho lần tìm sau.' : error.message; }
-    finally { if(generation===webGeneration){webBusy=false;$('web-button').disabled=false;$('online-tab').dataset.loading='false';} }
   }
-  $('web-button').addEventListener('click',()=>void searchWeb());
   try {
     const dataUrl=new URL($('api-data').content,location.href).href;
     let cache,response;
@@ -300,14 +287,14 @@ if (typeof document !== 'undefined') (async () => {
     $('country').innerHTML += counts.map(c => `<option value="${esc(c)}">${esc(countryName(c))} (${esc(c)})</option>`).join('');
     $('suggestions').innerHTML = data.substances.filter(s => s.inn.length < 75).slice(0,2500).map(s => `<option value="${esc(s.inn)}"></option>`).join('');
     const publicSources=JSON.parse($('public-sources').textContent),officialLinks={EDQM:'https://extranet.edqm.eu/publications/recherches_CEP.shtml',FDA:'https://www.fda.gov/drugs/drug-master-files-dmfs/list-drug-master-files-dmfs',WHO:'https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients'};
-    $('official-sources').innerHTML='<details><summary>5 cổng hồ sơ công khai · nguồn & ngày cập nhật</summary><p class="muted">Hồ sơ công khai từ cơ quan quản lý · giữ ngày file và ngày tải riêng. Danh sách chủ hồ sơ không phải toàn văn DMF hay xác nhận còn hàng.</p><div class="source-registers">'+Object.entries(officialLinks).map(([source,url])=>{const run=data.runs.find(r=>r.source===source&&r.status==='ok');return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer"><strong>${esc(source)}</strong><span>${data.certificates.filter(c=>c.source===source).length.toLocaleString('vi-VN')} bản ghi đã nạp</span><small>Ngày file: ${date(run?.source_file_date)} · tải ${date(run?.finished_at)}</small></a>`;}).join('')+`<a href="${esc(publicSources.MHRA.source_url)}" target="_blank" rel="noopener noreferrer"><strong>MHRA API Register ↗</strong><span>${publicSources.MHRA.count} đăng ký cơ sở tại UK · tra trực tuyến</span><small>Đối chiếu ${date(publicSources.MHRA.fetched_at)} · không có hoạt chất trong Excel; chưa ghép vào kết quả</small></a><a href="https://eudragmdp.ema.europa.eu/" target="_blank" rel="noopener noreferrer"><strong>EudraGMDP ↗</strong><span>GMP / đăng ký API / không tuân thủ</span><small>Tra trực tuyến; chưa có bản xuất đầy đủ để ghép vào kết quả.</small></a></div></details>`;
+    $('official-sources').innerHTML='<details><summary>5 cổng hồ sơ công khai · nguồn & ngày cập nhật</summary><p class="muted">Hồ sơ công khai từ cơ quan quản lý · giữ ngày file và ngày tải riêng. Danh sách chủ hồ sơ không phải toàn văn DMF hay xác nhận còn hàng.</p><div class="source-registers">'+Object.entries(officialLinks).map(([source,url])=>{const run=data.runs.find(r=>r.source===source&&r.status==='ok');return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer"><strong>${esc(source)}</strong><span>${data.certificates.filter(c=>c.source===source).length.toLocaleString('vi-VN')} bản ghi đã nạp</span><small>Ngày danh sách: ${date(run?.source_file_date)} · tải ${date(run?.finished_at)}</small></a>`;}).join('')+`<a href="${esc(publicSources.MHRA.source_url)}" target="_blank" rel="noopener noreferrer"><strong>MHRA API Register ↗</strong><span>${publicSources.MHRA.count} đăng ký cơ sở tại UK · tra trực tuyến</span><small>Đối chiếu ${date(publicSources.MHRA.fetched_at)} · không có hoạt chất trong Excel; chưa ghép vào kết quả</small></a><a href="https://eudragmdp.ema.europa.eu/" target="_blank" rel="noopener noreferrer"><strong>EudraGMDP ↗</strong><span>GMP / đăng ký API / không tuân thủ</span><small>Tra trực tuyến; chưa có bản xuất đầy đủ để ghép vào kết quả.</small></a></div></details>`;
     $('source-health').innerHTML = '<div class="health-grid">' + ['EDQM','FDA','WHO'].map(source => {
       const run = data.runs.find(r => r.source === source && r.status === 'ok'), failure = data.runs.find(r => r.source === source);
-      return `<div class="health-card">${helpChip({EDQM:'CEP',FDA:'DMF_US',WHO:'WHO_PQ'}[source],source)}<p>${data.certificates.filter(c => c.source === source).length.toLocaleString('vi-VN')} bản ghi</p><p>Ngày file: ${date(run?.source_file_date)}</p><p>Ngày tải: ${date(run?.finished_at)}</p><p>${failure?.status === 'error' ? 'Lần cập nhật mới nhất lỗi; đang giữ bản trước.' : 'Đã nhập bản dữ liệu nguồn'}</p></div>`;
+      return `<div class="health-card">${helpChip({EDQM:'CEP',FDA:'DMF_US',WHO:'WHO_PQ'}[source],source)}<p>${data.certificates.filter(c => c.source === source).length.toLocaleString('vi-VN')} bản ghi</p><p>Ngày danh sách: ${date(run?.source_file_date)}</p><p>Ngày tải: ${date(run?.finished_at)}</p><p>${failure?.status === 'error' ? 'Lần cập nhật mới nhất lỗi; đang giữ bản trước.' : 'Đã nhập bản dữ liệu nguồn'}</p></div>`;
     }).join('') + '</div>';
     $('search-button').disabled = false;
-    $('result-status').textContent = `${data.certificates.length.toLocaleString('vi-VN')} hồ sơ sẵn sàng · nhập hoạt chất để tìm`;
-    $('results').innerHTML = '<div class="empty">Tìm nhà cung cấp từ EDQM CEP, FDA DMF Type II và WHO PQ. Chọn hoạt chất mẫu để bắt đầu.</div>';
+    $('result-status').textContent = '';
+    $('results').innerHTML = '<div class="empty">Nhập hoạt chất để tìm nhà cung cấp.</div>';
     window.APISRC_READY = true;
     // Optional module extension points below are filled by later stages.
     window.APISRC_UI = {data, companies, substances, bag, saveBag, bagCount, notice, esc, date, sourceRecord, search, render, vnRefs, $};

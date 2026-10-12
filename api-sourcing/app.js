@@ -122,7 +122,7 @@ if (typeof document !== 'undefined') (async () => {
   const date = s => s ? new Date(s.length === 10 ? s + 'T00:00:00' : s).toLocaleDateString('vi-VN') : 'Không công bố';
   const notice = text => { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(notice.timer); notice.timer = setTimeout(() => $('toast').hidden = true, 4000); };
   let data, companies, substances, indexed, results = [], selected = null, limit = 40, profileCount = 0, profileCandidates = [];
-  let resolveData, searchGeneration=0, searchBusy=false;
+  let resolveData, searchGeneration=0;
   const dataReady=new Promise(resolve=>{resolveData=resolve;});
   let bag = [];
   try { const stored = JSON.parse(localStorage.getItem('apisrc-bag-v1') || '[]'); if (Array.isArray(stored)) bag = stored; } catch {}
@@ -181,16 +181,24 @@ if (typeof document !== 'undefined') (async () => {
     $('google-search').href=googleUrl(query);
     if(webQuery!==query){webQuery=query;webRows=[];webGeneration++;webAbort?.abort();$('web-content').innerHTML='';}
   }
+  function setProgress(percent,detail,title) {
+    $('progress-percent').textContent=percent+'%';$('progress-bar').value=percent;
+    $('progress-detail').textContent=detail;if(title)$('progress-title').textContent=title;
+  }
   async function submitSearch() {
     const query=$('query').value.trim();if(query.length<2)return;
-    const generation=++searchGeneration;searchBusy=true;
-    $('search-progress').hidden=false;$('progress-title').textContent='Đang tìm nhà cung cấp';
-    $('progress-detail').textContent='Đối chiếu hồ sơ và tìm web cùng lúc · chờ tối đa khoảng 7 giây.';
+    const generation=++searchGeneration;
+    $('search-progress').hidden=false;
+    const steps=['đối chiếu hồ sơ','tìm trên web','tra danh bạ NCC','đọc trang NCC'],done=new Set();
+    const update=()=>{if(generation===searchGeneration)setProgress(Math.round(done.size/steps.length*100),done.size===steps.length?'Đã tổng hợp kết quả':`${done.size}/${steps.length} bước đã xử lý · Đang ${steps.filter((_,i)=>!done.has(i)).join(' · ')}`);};
+    setProgress(0,'Đang đối chiếu hồ sơ và tìm trên web','Đang tìm nhà cung cấp');
     $('results').setAttribute('aria-busy','true');$('results').hidden=true;$('online-suppliers').hidden=true;
     const local=dataReady.then(ready=>{if(ready && generation===searchGeneration && $('query').value.trim()===query)search();});
-    const web=searchWeb(),directory=dataReady.then(ready=>ready&&generation===searchGeneration?discoverSuppliers(query,generation):null);let timer;
-    try {await Promise.race([Promise.allSettled([local,web,directory]),new Promise(resolve=>{timer=setTimeout(resolve,6500);})]);}
-    finally {clearTimeout(timer);if(generation===searchGeneration){searchBusy=false;$('search-progress').hidden=true;$('results').hidden=false;$('online-suppliers').hidden=false;$('results').setAttribute('aria-busy','false');if(!data)$('result-status').textContent='Dữ liệu nguồn chưa sẵn sàng. Bạn vẫn có thể xem kết quả Online.';}}
+    const web=searchWeb(),directory=dataReady.then(ready=>ready&&generation===searchGeneration?discoverSuppliers(query,generation):null);
+    const harvest=web.then(rows=>rows?harvestWebPages(query,generation,rows):null);let timer,finished=false;
+    const complete=Promise.allSettled([local,web,directory,harvest].map((task,i)=>task.finally(()=>{done.add(i);update();}))).then(()=>{finished=true;if(generation===searchGeneration)$('search-progress').hidden=true;});
+    try {await Promise.race([complete,new Promise(resolve=>{timer=setTimeout(resolve,6500);})]);}
+    finally {clearTimeout(timer);if(generation===searchGeneration){if(!finished)$('progress-title').textContent='Đang bổ sung kết quả';$('results').hidden=false;$('online-suppliers').hidden=false;$('results').setAttribute('aria-busy','false');if(!data)$('result-status').textContent='Dữ liệu nguồn chưa sẵn sàng. Bạn vẫn có thể xem kết quả Online.';}}
   }
   function addSupplierListings(listings,query) {
         for(const item of listings){
@@ -313,9 +321,9 @@ if (typeof document !== 'undefined') (async () => {
       if (!response.ok) throw new Error(useCloud ? 'Dịch vụ tìm web đang bận. Thử lại sau.' : 'Chưa có backend tìm web. Chạy server.py để bật các API.');
       const payload=await response.json(); if(generation!==webGeneration)return;
       webRows=mergeWeb(webRows,payload.results || []);
-      void harvestWebPages(query,searchGeneration,payload.results||[]);
       $('web-status').textContent=webRows.length ? '' : payload.pending ? 'Nguồn web đang xử lý.' : 'Chưa tìm thấy link phù hợp.';
       $('web-content').innerHTML=webRows.map(r=>`<article class="supplier-card"><a href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener noreferrer">${esc(r.title || r.url)}</a><p class="web-snippet">${esc(String(r.snippet||'').replace(/<[^>]*>/g,'').slice(0,600))}</p><p class="source-explanation">${esc(sourceExplanation(r.url))}</p><span class="chip">Nguồn web · chưa xác minh</span> <span class="muted">${esc(r.provider)} · ${date(r.fetched_at)}</span></article>`).join('');
+      return payload.results||[];
     } catch(error) { if(generation===webGeneration)$('web-status').textContent=error.name==='TimeoutError' ? 'Nguồn web chậm. Hồ sơ vẫn sẵn sàng; tác vụ nền có thể lưu cho lần tìm sau.' : error.message; }
   }
   try {
@@ -323,9 +331,11 @@ if (typeof document !== 'undefined') (async () => {
     let cache,response;
     try {cache=await caches.open('apisrc-snapshot-v2');response=await cache.match(dataUrl);} catch {}
     const cached=!!response;
+    if(!searchGeneration)setProgress(10,cached?'Đang đọc hồ sơ đã lưu':'Đang tải hồ sơ nguồn');
     if(!response){response=await fetch(dataUrl,{signal:AbortSignal.timeout(20000)});if(!response.ok)throw new Error('Không tải được dữ liệu nguồn. Tải lại trang để thử lại.');}
     const saved=response.clone();
     data=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).json();
+    if(!searchGeneration)setProgress(65,'Đang sắp xếp hồ sơ và nhà cung cấp');
     if(data.format!==2)throw new Error('Phiên bản dữ liệu chưa phù hợp. Tải lại trang để cập nhật.');
     for(const [key,value] of Object.entries(data))if(value?.fields && value?.rows)data[key]=value.rows.map(row=>Object.fromEntries(value.fields.map((field,i)=>[field,row[i]])));
     if(cache && !cached)void cache.put(dataUrl,saved).then(async()=>{for(const key of await cache.keys())if(key.url!==dataUrl)await cache.delete(key);}).catch(()=>{});
@@ -360,8 +370,8 @@ if (typeof document !== 'undefined') (async () => {
     // Optional module extension points below are filled by later stages.
     window.APISRC_UI = {data, companies, substances, bag, saveBag, bagCount, notice, esc, date, sourceRecord, search, render, vnRefs, $};
     document.dispatchEvent(new Event('apisrc-ready'));
-    resolveData(true);if(!searchBusy)$('search-progress').hidden=true;
-  } catch (error) { resolveData(false);if(!searchBusy)$('search-progress').hidden=true;$('result-status').textContent = 'Không đọc được chỉ mục: ' + error.message; }
+    resolveData(true);if(!searchGeneration){setProgress(100,'Hồ sơ sẵn sàng');$('search-progress').hidden=true;}
+  } catch (error) { resolveData(false);if(!searchGeneration)$('search-progress').hidden=true;$('result-status').textContent = 'Không đọc được chỉ mục: ' + error.message; }
 })();
 
 if (typeof document !== 'undefined') document.addEventListener('apisrc-ready', () => {

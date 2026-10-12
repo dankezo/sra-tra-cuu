@@ -66,7 +66,7 @@ if (typeof document !== 'undefined') (async () => {
   const portals=[
     ['CPHI','Danh mục doanh nghiệp và sản phẩm dược; thông tin do NCC công bố.','cphi-online.com',q=>'https://www.cphi-online.com/live/search/searchresults46v4.jsp?'+new URLSearchParams({name:q})],
     ['PharmaCompass','Danh mục API và nhà cung cấp; đọc hồ sơ nguồn để kiểm chứng.','pharmacompass.com',q=>'https://www.pharmacompass.com/listed-active-pharmaceutical-ingredients/'+q.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')],
-    ['PharmaSources','Sàn sản phẩm dược và nguyên liệu; có thể yêu cầu xác minh truy cập.','pharmasources.com'],
+    ['PharmaSources','Sàn sản phẩm dược và nguyên liệu; có thể yêu cầu xác minh truy cập.','pharmasources.com',q=>'https://www.pharmasources.com/products/'+(q?'searchKey-'+encodeURIComponent(q)+'/':'')],
     ['Pharmaoffer','Sàn tìm nhà sản xuất API và liên hệ thương mại.','pharmaoffer.com',q=>norm(q)==='amlodipine'?'https://pharmaoffer.com/api-excipient-supplier/calcium-channel-blockers/amlodipine':''],
     ['EDQM','Cơ quan cấp CEP; hồ sơ công khai về nguyên liệu theo Dược điển châu Âu.','extranet.edqm.eu',q=>'https://extranet.edqm.eu/4DLink1/4DCGI/Query_CEP?'+new URLSearchParams({vSelectName:'1',Case_TSE:'none',vContains:'1',vContainsDate:'1',vtsubName:q,vtsubDateBegin:'',vtsubDateBtwBegin:'',vtsubDateBtwEnd:'',SWTP:'1',OK:'Search'})],
     ['FDA DMF','Danh sách chủ hồ sơ DMF; Active không phải FDA phê duyệt sản phẩm.','fda.gov'],
@@ -79,7 +79,7 @@ if (typeof document !== 'undefined') (async () => {
   function updateSourceSearches(q){
     $('google-search').href=googleUrl(q);
     $('source-searches').innerHTML=portals.filter(p=>!['EDQM','FDA DMF','WHO PQ'].includes(p[0])).map(([name,tip,host,native])=>{
-      const direct=native&&(q||['EudraGMDP','NMPA'].includes(name)) ? native(q) : '';
+      const direct=native&&(q||['EudraGMDP','NMPA','PharmaSources'].includes(name)) ? native(q) : '';
       if(name==='Pharmaoffer'&&!direct)return `<form action="https://pharmaoffer.com/api-excipient-supplier/search" method="post" target="_blank" rel="noopener noreferrer"><input type="hidden" name="search" value="${esc(q)}"><button type="submit" title="${esc(tip)} Tìm trực tiếp tại Pharmaoffer.">Pharmaoffer ↗</button></form>`;
       return `<a href="${esc(direct || 'https://www.google.com/search?'+new URLSearchParams({q:'site:'+host+' '+q}))}" title="${esc(tip)} ${direct?'Tra tại website.':'Tìm trong website qua Google, đã điền từ khóa.'}" target="_blank" rel="noopener noreferrer">${esc(name)} ↗</a>`;
     }).join('');

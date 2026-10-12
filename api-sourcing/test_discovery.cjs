@@ -16,6 +16,6 @@ const assert=require('node:assert/strict');
  const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('apisrc-bag-v1'))[0]);assert.equal(saved.snapshot.certificates[0].type,'LISTING');assert.equal(saved.snapshot.vietnamese_names,undefined);
  await page.locator('[data-save]').click();assert.equal(await page.locator('#bag-count').innerText(),'0');assert.equal(await page.locator('[data-save]').getAttribute('aria-pressed'),'false');
  await page.locator('[data-card]').focus();await page.keyboard.press('Enter');assert.ok(await page.locator('#source-panel').isVisible());await page.keyboard.press('Escape');await page.locator('#source-panel').waitFor({state:'hidden'});
- for(const id of ['vn-filter','web-suppliers'])assert.equal(await page.locator('#'+id).count(),0);assert.equal(await page.locator('.guide-shortcut').count(),0);assert.equal(await page.locator('#source-searches a,#source-searches form').count(),10);
+ for(const id of ['vn-filter','web-suppliers'])assert.equal(await page.locator('#'+id).count(),0);assert.equal(await page.locator('.guide-shortcut').count(),0);assert.equal(await page.locator('#source-searches a,#source-searches form').count(),7);
  assert.equal(await page.locator('#bag-export').count(),0);assert.deepEqual(errors,[]);console.log('PASS: web page → evidenced supplier card → source quote → Bag toggle; whole-card and keyboard popup; no AI name calls');
 }finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});

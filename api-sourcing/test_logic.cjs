@@ -42,6 +42,21 @@ const aurore={company:{canonical_name:'AURORE LIFE SCIENCES PRIVATE LTD',country
 assert.equal(companyNameKey('Aurore Life Sciences Pvt. Ltd.'),'aurore life sciences');
 assert.deepEqual(matchingProfiles({canonical_name:'Aurore Life Sciences',country:'IN'},[aurore]),[aurore]);
 assert.deepEqual(matchingProfiles({canonical_name:'Aurore Life Sciences',country:'US'},[aurore]),[]);
-assert.deepEqual(matchingProfiles({canonical_name:'Aurore Life Sciences'},[aurore,{company:{canonical_name:'Aurore Life Sciences Ltd'}}]),[]);
+const sameName={company:{canonical_name:'Aurore Life Sciences Ltd',country:'IN'}};assert.deepEqual(matchingProfiles({canonical_name:'Aurore Life Sciences'},[aurore,sameName]),[aurore,sameName]);
+assert.deepEqual(matchingProfiles({canonical_name:'Aurore Life Sciences'},[aurore,{company:{canonical_name:'Aurore Life Sciences LLC',country:'US'}}]),[]);
 assert.deepEqual(matchingProfiles({canonical_name:'Aurore Pharma Sciences'},[aurore]),[]);
-console.log('PASS: conservative company-name match; conflicting country and ambiguous holders rejected');
+console.log('PASS: name-only cross-reference keeps source records separate; conflicting countries rejected');
+
+for(const [online,official,country] of [
+ ['Apitoria Pharma Pvt Ltd','APITORIA PHARMA PRIVATE LIMITED Hyderabad IN','IN'],
+ ['Olon SPA','OLON S.P.A. Rodano IT','IT'],
+ ['Granules India Ltd','GRANULES INDIA LIMITED Hyderabad IN','IN'],
+ ['Aurobindo Pharma Limited','AUROBINDO PHARMA LTD Hyderabad IN','IN'],
+ ['Example Pharma GmbH','EXAMPLE PHARMA GMBH Berlin DE','DE'],
+ ['Example Pharma BV','Example Pharma B.V.','NL']
+])assert.equal(matchingProfiles({canonical_name:online,country},[{company:{canonical_name:official,country}}]).length,1,online);
+assert.equal(companyNameKey('M/s. Apitoria Pharma Private Limited'),'apitoria pharma');
+assert.equal(companyNameKey('APITORIA PHARMA PRIVATE LIMITED Hyderabad IN','IN'),'apitoria pharma');
+assert.deepEqual(matchingProfiles({canonical_name:'Granules Pharmaceuticals Inc'},[{company:{canonical_name:'Granules India Limited'}}]),[]);
+assert.deepEqual(matchingProfiles({canonical_name:'AA Ltd'},[{company:{canonical_name:'AA Inc'}}]),[]);
+console.log('PASS: multiple companies, EU legal endings, source locations and parent/subsidiary separation');

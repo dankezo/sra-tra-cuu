@@ -1,5 +1,11 @@
 const ApiSourcing = (() => {
   const norm = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+  const companyNameKey = name => norm(name).replace(/(?:\s+(?:private|pvt|limited|ltd|inc|incorporated|llc|llp|corporation|corp|co|company))+$/, '').trim();
+  const matchingProfiles = (company,profiles) => {
+    const key=companyNameKey(company.canonical_name);if(key.length<5)return [];
+    const matches=profiles.filter(r=>companyNameKey(r.company.canonical_name)===key && (!company.country || !r.company.country || company.country===r.company.country));
+    return matches.length===1 ? matches : [];
+  };
   const safeUrl = s => { try { const u = new URL(s); return u.protocol === 'https:' && !u.username && !u.password ? u.href : ''; } catch { return ''; } };
   const state = (c, date = new Date().toISOString().slice(0, 10)) => {
     if (['expired', 'suspended', 'withdrawn', 'inactive'].includes(c.status) || c.expires_at && c.expires_at < date) return 'bad';
@@ -43,29 +49,33 @@ const ApiSourcing = (() => {
       return [i+1,r.company.canonical_name,country,safeUrl(r.company.website) ? {text:r.company.website,link:r.company.website} : 'Chưa xác minh',names.join('\n'),names.map(name=>viName(name)==='Chưa có tên Việt' ? '—' : viName(name)).join('\n'),...['CEP','DMF_US','WHO_PQ','GMP','COPP'].map(t=>certCell(item,t)),refs.length ? {text:'Có · thuốc theo hoạt chất: '+refs.map(ref=>ref.sdk).join(', ')+'; chưa xác nhận nguồn API',link:safeUrl(vn?.source)} : 'Không'];
     })},{name:'Email mau',headers:['STT','Tên công ty','Hoạt chất gốc / dạng','Tiêu đề','Nội dung email có thể sửa','Ghi chú'],rows:bag.map((item,i)=>{const r=item.snapshot,draft=item.email || emailDraft(r);return [i+1,r.company.canonical_name,ingredientNames(r).join('\n'),draft.subject,draft.body,'Chưa gửi. Thư mẫu dựa trên các dạng hoạt chất trong snapshot.'];}).concat([['','','','','','Không = chưa có bằng chứng trong snapshot, không kết luận chứng chỉ không tồn tại. Có = có bản nguồn; đọc trạng thái/hạn, không tự kết luận đủ điều kiện nhập khẩu.'],['','','','','','DAV chỉ đối chiếu thuốc theo hoạt chất trong bản dữ liệu '+(vn?.updated || 'chưa nạp')+', không xác nhận API/nhà máy. GMP và CPP/COPP tự nhập phải có link bằng chứng; chưa xác minh.']])}];
   };
-  return { norm, safeUrl, state, termsMatch, viName, googleUrl, matchesCertificates, mergeWeb, ingredientNames, emailDraft, bagSheets };
+  return { norm, companyNameKey, matchingProfiles, safeUrl, state, termsMatch, viName, googleUrl, matchesCertificates, mergeWeb, ingredientNames, emailDraft, bagSheets };
 })();
 if (typeof module !== 'undefined') module.exports = ApiSourcing;
 if (typeof document !== 'undefined') (async () => {
   const $ = id => document.getElementById(id);
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const { norm, safeUrl, state, viName, googleUrl, matchesCertificates, mergeWeb } = ApiSourcing;
+  const { norm, companyNameKey, matchingProfiles, safeUrl, state, viName, googleUrl, matchesCertificates, mergeWeb } = ApiSourcing;
   const portals=[
     ['CPHI','Danh mục doanh nghiệp và sản phẩm dược; thông tin do NCC công bố.','cphi-online.com',q=>'https://www.cphi-online.com/live/search/searchresults46v4.jsp?'+new URLSearchParams({name:q})],
     ['PharmaCompass','Danh mục API và nhà cung cấp; đọc hồ sơ nguồn để kiểm chứng.','pharmacompass.com',q=>'https://www.pharmacompass.com/listed-active-pharmaceutical-ingredients/'+q.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')],
     ['PharmaSources','Sàn sản phẩm dược và nguyên liệu; có thể yêu cầu xác minh truy cập.','pharmasources.com'],
-    ['Pharmaoffer','Sàn tìm nhà sản xuất API và liên hệ thương mại.','pharmaoffer.com'],
+    ['Pharmaoffer','Sàn tìm nhà sản xuất API và liên hệ thương mại.','pharmaoffer.com',q=>norm(q)==='amlodipine'?'https://pharmaoffer.com/api-excipient-supplier/calcium-channel-blockers/amlodipine':''],
     ['EDQM','Cơ quan cấp CEP; hồ sơ công khai về nguyên liệu theo Dược điển châu Âu.','extranet.edqm.eu'],
     ['FDA DMF','Danh sách chủ hồ sơ DMF; Active không phải FDA phê duyệt sản phẩm.','fda.gov'],
     ['WHO PQ','Danh sách API được WHO tiền thẩm định.','extranet.who.int'],
     ['EudraGMDP','Cổng EU về GMP, đăng ký API và thông báo không tuân thủ.','eudragmdp.ema.europa.eu'],
-    ['MHRA','Cổng công khai UK về đăng ký cơ sở API, GMP và kiểm tra.','cms.mhra.gov.uk'],
+    ['MHRA','Đăng ký cơ sở sản xuất, nhập khẩu và phân phối API tại UK.','cms.mhra.gov.uk',q=>'https://cms.mhra.gov.uk/mhra/api-reg?'+new URLSearchParams({'f[0]':'reference_api_active_substance_term:'+q.toUpperCase()})],
     ['CDE / NMPA','Cổng quản lý dược Trung Quốc; đối chiếu đăng ký và trạng thái nguồn.','cde.org.cn']
   ];
   function sourceExplanation(url){const host=new URL(url).hostname;return portals.find(p=>host===p[2]||host.endsWith('.'+p[2]))?.[1]||'Trang tìm được trên mạng. Kiểm tra nội dung gốc, danh tính công ty và ngày cập nhật trước khi dùng.';}
   function updateSourceSearches(q){
     $('google-search').href=googleUrl(q);
-    $('source-searches').innerHTML=portals.map(([name,tip,host,native])=>`<a href="${esc(native&&q ? native(q) : 'https://www.google.com/search?'+new URLSearchParams({q:'site:'+host+' '+q}))}" title="${esc(tip)} ${native?'Tra tại website.':'Tìm trong website qua Google, đã điền từ khóa.'}" target="_blank" rel="noopener noreferrer">${esc(name)} ↗</a>`).join('');
+    $('source-searches').innerHTML=portals.map(([name,tip,host,native])=>{
+      const direct=native&&q ? native(q) : '';
+      if(name==='Pharmaoffer'&&!direct)return `<form action="https://pharmaoffer.com/api-excipient-supplier/search" method="post" target="_blank" rel="noopener noreferrer"><input type="hidden" name="search" value="${esc(q)}"><button type="submit" title="${esc(tip)} Tìm trực tiếp tại Pharmaoffer.">Pharmaoffer ↗</button></form>`;
+      return `<a href="${esc(direct || 'https://www.google.com/search?'+new URLSearchParams({q:'site:'+host+' '+q}))}" title="${esc(tip)} ${direct?'Tra tại website.':'Tìm trong website qua Google, đã điền từ khóa.'}" target="_blank" rel="noopener noreferrer">${esc(name)} ↗</a>`;
+    }).join('');
   }
   updateSourceSearches('');
   const labels = {CEP:'CEP · EDQM', DMF_US:'DMF US · II', WHO_PQ:'WHO PQ', LISTING:'NCC tuyên bố'};
@@ -79,6 +89,7 @@ if (typeof document !== 'undefined') (async () => {
     GMP_CPP:'GMP xác nhận điều kiện sản xuất của cơ sở. CPP/COPP là chứng nhận sản phẩm dược do cơ quan quản lý cấp theo mẫu WHO. Chưa nạp nguồn cho hai mục này.',
     SAVE:'Bấm + để lưu vào Bag. Bấm ✓ để bỏ lưu. Trong Bag có thể ghi chú và tải Excel.',
     SOURCE_DATE:'Ngày ghi trên danh sách do cơ quan công bố, không phải ngày sửa từng hồ sơ. FDA dùng mốc cuối quý. Ngày tải nguồn là ngày hệ thống lấy danh sách về.',
+    PROFILE_MATCH:'Tên công ty trùng tên chủ hồ sơ sau khi bỏ hậu tố như Private/Ltd. Bấm thẻ để xem hoạt chất và hồ sơ gốc. Chưa xác nhận cùng nhà máy hoặc chứng chỉ cho sản phẩm đang chào.',
     WEBSITE:'Website công ty hoặc tập đoàn được ghép theo tên từ danh sách đã rà soát. Link này giúp liên hệ và xem sản phẩm; không xác nhận nhà máy, chứng chỉ hay còn hàng.'
   };
   const helpChip = (type, text, status='') => `<button type="button" class="chip term-chip ${status}" data-help="${type}" aria-describedby="term-help">${esc(text)} <span aria-hidden="true">ⓘ</span></button>`;
@@ -102,7 +113,7 @@ if (typeof document !== 'undefined') (async () => {
   const states = {valid:'Còn hiệu lực', active:'Active', expired:'Hết hạn', suspended:'Đình chỉ', withdrawn:'Đã rút', inactive:'Inactive', unknown:'Chưa rõ'};
   const date = s => s ? new Date(s.length === 10 ? s + 'T00:00:00' : s).toLocaleDateString('vi-VN') : 'Không công bố';
   const notice = text => { $('toast').textContent = text; $('toast').hidden = false; clearTimeout(notice.timer); notice.timer = setTimeout(() => $('toast').hidden = true, 4000); };
-  let data, companies, substances, indexed, results = [], selected = null, limit = 40, profileCount = 0;
+  let data, companies, substances, indexed, results = [], selected = null, limit = 40, profileCount = 0, profileCandidates = [];
   let resolveData, searchGeneration=0, searchBusy=false;
   const dataReady=new Promise(resolve=>{resolveData=resolve;});
   let bag = [];
@@ -117,9 +128,9 @@ if (typeof document !== 'undefined') (async () => {
   function render() {
     hideHelp();
     const card = (r, i) => {
-      const status = cardState(r);
+      const status = cardState(r), matched=i>=profileCount && matchingProfiles(r.company,profileCandidates).length;
       const types = [...new Set(r.certificates.map(c => c.type))];
-      return `<article data-card="${i}" tabindex="0" aria-haspopup="dialog" aria-label="Xem nguồn ${esc(r.company.canonical_name)}" class="supplier-card ${selected === i ? 'selected' : ''}"><div class="card-top"><button class="supplier-name" data-open="${i}">${esc(r.company.canonical_name)}</button><button class="save-button" data-save="${i}" data-help="SAVE" aria-pressed="${bag.some(b=>b.key===r.key)}" aria-label="${bag.some(b=>b.key===r.key) ? 'Bỏ lưu' : 'Lưu'} nhà cung cấp vào Bag" aria-describedby="term-help">${bag.some(b => b.key === r.key) ? '✓' : '+'}</button></div><p>${companyLink(r.company)}</p><p class="card-meta">${esc(countryText(r.company))} · ${r.certificates.some(c=>c.supplier_role==='seller') ? 'Bên bán / phân phối (theo nguồn)' : 'Nhà máy chưa xác định'}</p><p class="card-substances">${[...new Set(r.certificates.map(c => substances.get(c.substance_id).inn))].slice(0,3).map(name=>`<span class="ingredient-line">${esc(name)}</span>`).join('')}</p><div class="chips">${types.map(t => { const certs = r.certificates.filter(c => c.type === t); const s = certs.some(c => state(c) === 'bad') ? 'bad' : certs.some(c => state(c) === 'good') ? 'good' : certs.some(c=>state(c)==='claim') ? 'claim' : 'unknown'; return helpChip(t, (labels[t] || t) + ' · ' + (s === 'good' ? 'Nguồn chính thức' : s === 'bad' ? 'Có hồ sơ không còn hiệu lực' : s === 'claim' ? 'Chưa xác minh' : 'Chưa rõ'), s); }).join('')}${helpChip('GMP_CPP','GMP · CPP/COPP: chưa có dữ liệu')}</div><p class="card-meta status-dot ${status}">● ${status === 'bad' ? 'Có hồ sơ không còn hiệu lực — xem nguồn' : status === 'good' ? 'Bản nguồn: còn hiệu lực / Active' : status==='claim' ? 'Chỉ có tuyên bố của NCC, chưa xác minh' : 'Chưa rõ trạng thái'} · ${r.certificates.length} bản ghi</p></article>`;
+      return `<article data-card="${i}" tabindex="0" aria-haspopup="dialog" aria-label="Xem nguồn ${esc(r.company.canonical_name)}" class="supplier-card ${selected === i ? 'selected' : ''}"><div class="card-top"><button class="supplier-name" data-open="${i}">${esc(r.company.canonical_name)}</button><div class="card-actions">${matched?helpChip('PROFILE_MATCH','Khớp tên hồ sơ','good profile-match'):''}<button class="save-button" data-save="${i}" data-help="SAVE" aria-pressed="${bag.some(b=>b.key===r.key)}" aria-label="${bag.some(b=>b.key===r.key) ? 'Bỏ lưu' : 'Lưu'} nhà cung cấp vào Bag" aria-describedby="term-help">${bag.some(b => b.key === r.key) ? '✓' : '+'}</button></div></div><p>${companyLink(r.company)}</p><p class="card-meta">${esc(countryText(r.company))} · ${r.certificates.some(c=>c.supplier_role==='seller') ? 'Bên bán / phân phối (theo nguồn)' : 'Nhà máy chưa xác định'}</p><p class="card-substances">${[...new Set(r.certificates.map(c => substances.get(c.substance_id).inn))].slice(0,3).map(name=>`<span class="ingredient-line">${esc(name)}</span>`).join('')}</p><div class="chips">${types.map(t => { const certs = r.certificates.filter(c => c.type === t); const s = certs.some(c => state(c) === 'bad') ? 'bad' : certs.some(c => state(c) === 'good') ? 'good' : certs.some(c=>state(c)==='claim') ? 'claim' : 'unknown'; return helpChip(t, (labels[t] || t) + ' · ' + (s === 'good' ? 'Nguồn chính thức' : s === 'bad' ? 'Có hồ sơ không còn hiệu lực' : s === 'claim' ? 'Chưa xác minh' : 'Chưa rõ'), s); }).join('')}${helpChip('GMP_CPP','GMP · CPP/COPP: chưa có dữ liệu')}</div><p class="card-meta status-dot ${status}">● ${status === 'bad' ? 'Có hồ sơ không còn hiệu lực — xem nguồn' : status === 'good' ? 'Bản nguồn: còn hiệu lực / Active' : status==='claim' ? 'Chỉ có tuyên bố của NCC, chưa xác minh' : 'Chưa rõ trạng thái'} · ${r.certificates.length} bản ghi</p></article>`;
     };
     $('results').innerHTML = profileCount ? results.slice(0, Math.min(profileCount,limit)).map(card).join('') : '<div class="empty">Chưa có hồ sơ khớp.</div>';
     $('online-suppliers').innerHTML = results.slice(profileCount,profileCount+limit).map((r,i)=>card(r,profileCount+i)).join('');
@@ -136,13 +147,17 @@ if (typeof document !== 'undefined') (async () => {
       if (s.cas === query || s.unii === query.toUpperCase() || norm(s.inn) === normalized || synonyms.some(x => norm(x) === normalized)) terms.push(norm(s.inn), ...synonyms.map(norm));
     }
     terms = [...new Set(terms.filter(Boolean))];
-    const groups = new Map(), onlineGroups = new Map();
+    const groups = new Map(), onlineGroups = new Map(), candidates = new Map();
+    const countries=[...document.querySelectorAll('[data-country]:checked')].map(n=>n.dataset.country), allCountries=document.querySelector('[data-country-all]').checked, statuses=[...document.querySelectorAll('[data-status]:checked')].map(n=>n.dataset.status);
     for (const entry of indexed) {
       const {cert, company, text, companyText} = entry;
       if (!terms.some(t => text.includes(` ${t} `) || companyText.includes(` ${t} `))) continue;
-      if ($('country').value && company.country !== $('country').value) continue;
-      const want = $('status').value, actual = state(cert);
-      if (want && want !== actual) continue;
+      if(cert.type!=='LISTING'){
+        if(!candidates.has(company.id))candidates.set(company.id,{company,certificates:[]});
+        candidates.get(company.id).certificates.push(cert);
+      }
+      if(!allCountries&&!countries.includes(company.country||'?'))continue;
+      if(!statuses.includes(state(cert)))continue;
       const target=cert.type==='LISTING' ? onlineGroups : groups;
       if (!target.has(company.id)) target.set(company.id, {company, certificates:[], key:`${company.id}:${normalized}`, query});
       target.get(company.id).certificates.push(cert);
@@ -151,6 +166,7 @@ if (typeof document !== 'undefined') (async () => {
     $('certificate-summary').textContent=types.length ? types.map(t=>labels[t] || (t==='COPP' ? 'CPP/COPP' : t)).join(' + ') : 'Chọn nhiều chứng chỉ';
     const filtered=group=>[...group.values()].filter(r=>matchesCertificates(r.certificates,types,$('certificate-mode').value==='all')).sort((a,b)=>(cardState(a)==='good'?0:1)-(cardState(b)==='good'?0:1)||a.company.canonical_name.localeCompare(b.company.canonical_name));
     const profiles=filtered(groups), online=filtered(onlineGroups);
+    profileCandidates=[...candidates.values()];
     profileCount=profiles.length;results=[...profiles,...online];
     selected=null;limit=40;if($('source-panel').open)$('source-panel').close();$('source-panel').hidden=true;render();
     updateSourceSearches(query);
@@ -225,13 +241,28 @@ if (typeof document !== 'undefined') (async () => {
     selected = i;
     const r = results[i];
     $('source-content').innerHTML = `<p><strong>${esc(r.company.canonical_name)}</strong></p><p>${companyLink(r.company)} <a href="${esc(googleUrl(r.query,r.company.canonical_name))}" target="_blank" rel="noopener noreferrer">Tìm hoạt chất + công ty trên Google ↗</a></p>${safeUrl(r.company.website) ? `<p class="muted">${esc(new URL(r.company.website).hostname)} · Rà soát ${date(r.company.website_checked_at)}${safeUrl(r.company.website_source) ? ` · <a href="${esc(safeUrl(r.company.website_source))}" target="_blank" rel="noopener noreferrer">Nguồn đối chiếu ↗</a>` : ''}</p>` : '<p class="muted">Chưa có website đã rà soát cho tên công ty này. Link trên mở trang NCC tại directory hoặc tìm Google; chưa phải website công ty đã xác minh.</p>'}<h3 class="source-heading">Hồ sơ & chứng chỉ</h3><p class="muted">Tên chủ hồ sơ được giữ nguyên. Không suy luận địa chỉ nhà máy. Mỗi hồ sơ giữ nguồn và mức xác minh riêng; tuyên bố của NCC không phải xác nhận của cơ quan cấp.</p>` + [...r.certificates].sort((a,b) => (state(a) === 'good' ? 0:1)-(state(b) === 'good' ? 0:1) || a.type.localeCompare(b.type)).map(sourceRecord).join('');
-    $('source-panel').dataset.side = i >= profileCount ? 'left' : 'right';
     $('source-panel').hidden = false; render(); $('source-panel').showModal(); $('panel-close').focus();
+    if(i>=profileCount){
+      const matches=matchingProfiles(r.company,profileCandidates);
+      if(matches.length)$('source-content').querySelector('.source-heading').insertAdjacentHTML('beforebegin',`<details class="matched-profile"><summary>Khớp tên hồ sơ · ${esc(matches[0].company.canonical_name)}</summary><p>Tên công ty khớp sau khi bỏ hậu tố Private/Ltd. Kiểm tra tên pháp nhân, địa chỉ nhà máy và đúng dạng hoạt chất trước khi sử dụng hồ sơ này.</p>${matches.map(m=>m.certificates.map(sourceRecord).join('')).join('')}</details>`);
+    }
     const references = [...new Map(r.certificates.flatMap(c => vnRefs(substances.get(c.substance_id).inn)).map(ref => [ref.sdk,ref])).values()];
     $('source-content').insertAdjacentHTML('beforeend', `<article class="source-record"><strong>Đối chiếu DAV theo hoạt chất</strong><p class="muted">${references.length ? references.map(ref=>esc(ref.sdk)+' · hạn '+date(ref.expiry)).join('<br>') : 'Chưa tìm thấy SĐK thuốc còn hạn khớp cách chuẩn hóa trong bản DAV đã nạp.'}</p><p class="muted">Bản DAV: ${esc(data.vn?.updated || 'Chưa nạp')}. Không xác nhận nguồn API/nhà máy đã được DAV duyệt. Chưa có dữ liệu SĐK nguyên liệu riêng.</p><p><a href="https://eudragmdp.ema.europa.eu/" target="_blank" rel="noopener noreferrer">Tra GMP EU ↗</a> · <a href="https://www.cphi.com/" target="_blank" rel="noopener noreferrer">Tra CPHI ↗</a> · <a href="https://www.pharmasources.com/" target="_blank" rel="noopener noreferrer">PharmaSources ↗</a></p><p class="muted">GMP / CPP-COPP / tham dự CPHI: chưa có dữ liệu đã kiểm chứng cho NCC này.</p></article>`);
   }
   $('search-form').addEventListener('submit', e => { e.preventDefault(); void submitSearch(); });
-  $('filters').addEventListener('change', ()=>search());
+  $('filters').addEventListener('change', e=>{
+    const n=e.target;
+    if(n.matches('[data-country-all]'))document.querySelectorAll('[data-country]').forEach(c=>c.checked=false);
+    if(n.matches('[data-country]'))document.querySelector('[data-country-all]').checked=false;
+    if(n.matches('[data-status-all]'))document.querySelectorAll('[data-status]').forEach(c=>c.checked=n.checked);
+    const statusBoxes=[...document.querySelectorAll('[data-status]')], chosen=statusBoxes.filter(c=>c.checked), all=document.querySelector('[data-status-all]');all.checked=chosen.length===statusBoxes.length;all.indeterminate=!!chosen.length&&!all.checked;
+    const countries=[...document.querySelectorAll('[data-country]:checked')].map(c=>c.dataset.country==='?'?'Chưa rõ':countryName(c.dataset.country));
+    $('country-summary').textContent=document.querySelector('[data-country-all]').checked?'Tất cả quốc gia':countries.length>2?countries.length+' quốc gia':countries.join(' + ')||'Chưa chọn quốc gia';
+    $('status-summary').textContent=all.checked?'Tất cả trạng thái':chosen.length?chosen.length+' trạng thái':'Chưa chọn trạng thái';
+    search();
+  });
+  document.addEventListener('click',e=>document.querySelectorAll('#filters details[open]').forEach(d=>{if(!d.contains(e.target))d.open=false;}));
+  $('mobile-views').addEventListener('click',e=>{const button=e.target.closest('[data-view]');if(!button)return;$('results-view').dataset.mobileView=button.dataset.view;document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b===button)));hideHelp();});
   $('query').addEventListener('input',()=>updateSourceSearches($('query').value.trim()));
   $('results-view').addEventListener('click', e => {
     const save=e.target.closest('[data-save]');
@@ -248,7 +279,7 @@ if (typeof document !== 'undefined') (async () => {
   async function closePanel() {
     const panel=$('source-panel');if(!panel.open||panel.dataset.closing)return;
     panel.dataset.closing='true';hideHelp();
-    const motion=panel.animate([{transform:getComputedStyle(panel).transform},{transform:`translateX(${panel.dataset.side==='left'?'-100%':'100%'})`}],{duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:180,easing:'ease-in',fill:'forwards'});
+    const motion=panel.animate([{transform:getComputedStyle(panel).transform,opacity:getComputedStyle(panel).opacity},{transform:matchMedia('(max-width:760px)').matches?'translateY(100%)':'translateY(12px) scale(.96)',opacity:0}],{duration:matchMedia('(prefers-reduced-motion: reduce)').matches?0:180,easing:'ease-in',fill:'forwards'});
     await motion.finished;panel.close();motion.cancel();delete panel.dataset.closing;
   }
   $('panel-close').addEventListener('click',closePanel);
@@ -294,10 +325,21 @@ if (typeof document !== 'undefined') (async () => {
     const listings=(data.listings||[]).map(l=>({...l,id:'listing:'+l.id,type:'LISTING',identifier:'Listing',status:'unknown',raw_status:'NCC tuyên bố, chưa xác minh',holder:companies.get(l.company_id).canonical_name}));
     indexed = [...data.certificates,...listings].map(cert => ({cert, company:companies.get(cert.company_id), text:` ${norm(substances.get(cert.substance_id).inn)} `, companyText:` ${norm(companies.get(cert.company_id).canonical_name)} `}));
     const counts = [...new Set(data.companies.map(c => c.country).filter(Boolean))].sort();
-    $('country').innerHTML += counts.map(c => `<option value="${esc(c)}">${esc(countryName(c))} (${esc(c)})</option>`).join('');
+    $('country-options').innerHTML = '<label><input type="checkbox" data-country="?"> Chưa rõ quốc gia</label>'+counts.map(c=>`<label><input type="checkbox" data-country="${esc(c)}"> ${esc(countryName(c))} (${esc(c)})</label>`).join('');
     $('suggestions').innerHTML = data.substances.filter(s => s.inn.length < 75).slice(0,2500).map(s => `<option value="${esc(s.inn)}"></option>`).join('');
     const publicSources=JSON.parse($('public-sources').textContent),officialLinks={EDQM:'https://extranet.edqm.eu/publications/recherches_CEP.shtml',FDA:'https://www.fda.gov/drugs/drug-master-files-dmfs/list-drug-master-files-dmfs',WHO:'https://extranet.who.int/prequal/medicines/prequalified/active-pharmaceutical-ingredients'};
-    $('official-sources').innerHTML='<details><summary>5 cổng hồ sơ công khai · nguồn & ngày cập nhật</summary><p class="muted">Hồ sơ công khai từ cơ quan quản lý · giữ ngày file và ngày tải riêng. Danh sách chủ hồ sơ không phải toàn văn DMF hay xác nhận còn hàng.</p><div class="source-registers">'+Object.entries(officialLinks).map(([source,url])=>{const run=data.runs.find(r=>r.source===source&&r.status==='ok');return `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer"><strong>${esc(source)}</strong><span>${data.certificates.filter(c=>c.source===source).length.toLocaleString('vi-VN')} bản ghi đã nạp</span><small>Ngày danh sách: ${date(run?.source_file_date)} · tải ${date(run?.finished_at)}</small></a>`;}).join('')+`<a href="${esc(publicSources.MHRA.source_url)}" target="_blank" rel="noopener noreferrer"><strong>MHRA API Register ↗</strong><span>${publicSources.MHRA.count} đăng ký cơ sở tại UK · tra trực tuyến</span><small>Đối chiếu ${date(publicSources.MHRA.fetched_at)} · không có hoạt chất trong Excel; chưa ghép vào kết quả</small></a><a href="https://eudragmdp.ema.europa.eu/" target="_blank" rel="noopener noreferrer"><strong>EudraGMDP ↗</strong><span>GMP / đăng ký API / không tuân thủ</span><small>Tra trực tuyến; chưa có bản xuất đầy đủ để ghép vào kết quả.</small></a></div></details>`;
+    const sourceRows=[
+      ['EDQM','CEP: tên nguyên liệu, chủ CEP, số hồ sơ, loại CEP và trạng thái.','Đối chiếu số CEP và dạng nguyên liệu; kiểm tra bản còn hiệu lực. CEP không thay cho GMP.',officialLinks.EDQM,'https://www.edqm.eu/en/web/edqm/actions-on-ceps'],
+      ['FDA','DMF: số hồ sơ, chủ hồ sơ, nguyên liệu (subject), loại hồ sơ và Active/Inactive.','Danh sách cập nhật theo quý. Type II là hồ sơ nguyên liệu; Active không có nghĩa FDA phê duyệt. Không công khai toàn văn DMF.',officialLinks.FDA,officialLinks.FDA],
+      ['WHO','WHO PQ API: nguồn API và cơ sở sản xuất được WHO đánh giá.','Đối chiếu đúng nguyên liệu và cơ sở trong danh sách; không áp dụng cho mọi sản phẩm của công ty.',officialLinks.WHO,officialLinks.WHO],
+      ['MHRA','Đăng ký cơ sở sản xuất, nhập khẩu và phân phối hoạt chất tại UK. Có bộ lọc hoạt chất trên website.','Kiểm tra pháp nhân, địa chỉ cơ sở và loại hoạt động. Đăng ký API không phải chứng chỉ GMP.',publicSources.MHRA.source_url,'https://www.gov.uk/guidance/medicines-register-to-manufacture-import-or-distributor-active-substances'],
+      ['EudraGMDP','GMP/GDP, đăng ký API, giấy phép cơ sở và thông báo không tuân thủ.','Tra theo tên và địa chỉ nhà máy; đọc phạm vi, ngày kiểm tra và thông báo không tuân thủ.','https://eudragmdp.ema.europa.eu/','https://www.ema.europa.eu/en/human-regulatory-overview/research-development/compliance-research-development/good-manufacturing-practice/eudragmdp-database']
+    ];
+    $('official-sources').innerHTML='<details><summary>5 cổng hồ sơ công khai · cách đọc & dữ liệu</summary><div class="source-table-wrap"><table class="source-table"><caption>Cách đối chiếu hồ sơ tại từng cổng</caption><thead><tr><th scope="col">Cổng hồ sơ</th><th scope="col">Tra được gì?</th><th scope="col">Cách đọc kết quả</th><th scope="col">Dữ liệu trong công cụ</th></tr></thead><tbody>'+sourceRows.map(([source,scope,use,url,guide])=>{
+      const run=data.runs.find(r=>r.source===source&&r.status==='ok'),count=data.certificates.filter(c=>c.source===source).length;
+      const imported=run?`${count.toLocaleString('vi-VN')} bản ghi đã nạp.<br>Ngày danh sách: ${date(run.source_file_date)}<br>Ngày tải: ${date(run.finished_at)}`:source==='MHRA'?`${publicSources.MHRA.count} đăng ký trong bản đối chiếu ${date(publicSources.MHRA.fetched_at)}.<br>Tra hoạt chất trực tiếp trên website; chưa ghép vào thẻ Hồ sơ.`:'Tra trực tuyến; chưa ghép dữ liệu vào thẻ Hồ sơ.';
+      return `<tr><th scope="row"><a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(source)} ↗</a></th><td>${esc(scope)}</td><td>${esc(use)} <a href="${esc(guide)}" target="_blank" rel="noopener noreferrer">Giải thích từ cơ quan ↗</a></td><td>${imported}</td></tr>`;
+    }).join('')+'</tbody></table></div></details>';
     $('source-health').innerHTML = '<div class="health-grid">' + ['EDQM','FDA','WHO'].map(source => {
       const run = data.runs.find(r => r.source === source && r.status === 'ok'), failure = data.runs.find(r => r.source === source);
       return `<div class="health-card">${helpChip({EDQM:'CEP',FDA:'DMF_US',WHO:'WHO_PQ'}[source],source)}<p>${data.certificates.filter(c => c.source === source).length.toLocaleString('vi-VN')} bản ghi</p><p>Ngày danh sách: ${date(run?.source_file_date)}</p><p>Ngày tải: ${date(run?.finished_at)}</p><p>${failure?.status === 'error' ? 'Lần cập nhật mới nhất lỗi; đang giữ bản trước.' : 'Đã nhập bản dữ liệu nguồn'}</p></div>`;

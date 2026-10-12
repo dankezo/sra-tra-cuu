@@ -36,3 +36,12 @@ assert.equal(sheets[0].rows[0][9],'Không');
 assert.match(sheets[0].rows[0][11].text,/chưa xác nhận nguồn API/);
 assert.equal(sheets[1].rows[0][3],'Edited');
 console.log('PASS: salt labels; multi certificates; accumulated web; evidence-aware Bag and edited email');
+
+const {companyNameKey,matchingProfiles}=require('./app.js');
+const aurore={company:{canonical_name:'AURORE LIFE SCIENCES PRIVATE LTD',country:'IN'}};
+assert.equal(companyNameKey('Aurore Life Sciences Pvt. Ltd.'),'aurore life sciences');
+assert.deepEqual(matchingProfiles({canonical_name:'Aurore Life Sciences',country:'IN'},[aurore]),[aurore]);
+assert.deepEqual(matchingProfiles({canonical_name:'Aurore Life Sciences',country:'US'},[aurore]),[]);
+assert.deepEqual(matchingProfiles({canonical_name:'Aurore Life Sciences'},[aurore,{company:{canonical_name:'Aurore Life Sciences Ltd'}}]),[]);
+assert.deepEqual(matchingProfiles({canonical_name:'Aurore Pharma Sciences'},[aurore]),[]);
+console.log('PASS: conservative company-name match; conflicting country and ambiguous holders rejected');

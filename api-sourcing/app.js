@@ -331,11 +331,9 @@ if (typeof document !== 'undefined') (async () => {
     let cache,response;
     try {cache=await caches.open('apisrc-snapshot-v2');response=await cache.match(dataUrl);} catch {}
     const cached=!!response;
-    if(!searchGeneration)setProgress(10,cached?'Đang đọc hồ sơ đã lưu':'Đang tải hồ sơ nguồn');
     if(!response){response=await fetch(dataUrl,{signal:AbortSignal.timeout(20000)});if(!response.ok)throw new Error('Không tải được dữ liệu nguồn. Tải lại trang để thử lại.');}
     const saved=response.clone();
     data=await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).json();
-    if(!searchGeneration)setProgress(65,'Đang sắp xếp hồ sơ và nhà cung cấp');
     if(data.format!==2)throw new Error('Phiên bản dữ liệu chưa phù hợp. Tải lại trang để cập nhật.');
     for(const [key,value] of Object.entries(data))if(value?.fields && value?.rows)data[key]=value.rows.map(row=>Object.fromEntries(value.fields.map((field,i)=>[field,row[i]])));
     if(cache && !cached)void cache.put(dataUrl,saved).then(async()=>{for(const key of await cache.keys())if(key.url!==dataUrl)await cache.delete(key);}).catch(()=>{});
@@ -370,8 +368,8 @@ if (typeof document !== 'undefined') (async () => {
     // Optional module extension points below are filled by later stages.
     window.APISRC_UI = {data, companies, substances, bag, saveBag, bagCount, notice, esc, date, sourceRecord, search, render, vnRefs, $};
     document.dispatchEvent(new Event('apisrc-ready'));
-    resolveData(true);if(!searchGeneration){setProgress(100,'Hồ sơ sẵn sàng');$('search-progress').hidden=true;}
-  } catch (error) { resolveData(false);if(!searchGeneration)$('search-progress').hidden=true;$('result-status').textContent = 'Không đọc được chỉ mục: ' + error.message; }
+    resolveData(true);
+  } catch (error) { resolveData(false);$('result-status').textContent = 'Không đọc được chỉ mục: ' + error.message; }
 })();
 
 if (typeof document !== 'undefined') document.addEventListener('apisrc-ready', () => {

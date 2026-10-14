@@ -1238,7 +1238,7 @@ details.cg > summary::after { margin-left: 4px; flex: 0 0 auto; }
 
 /* /sra-search-ui */
   </style>
-</head>
+<style id="tool-switcher-style">.tool-switcher{display:flex;gap:8px;margin-bottom:22px}.tool-switcher a{padding:9px 14px;border:1px solid #E4DCD0;border-radius:10px;color:#1C1917;font:600 13px/1.5 "Segoe UI",system-ui,sans-serif;text-decoration:none;background:#FFFCF7}.tool-switcher a span{font-size:10px;opacity:.65;margin-right:6px}.tool-switcher a[aria-current]{background:#0F6F68;border-color:#0F6F68;color:#fff}@media(max-width:760px){.tool-switcher{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}.tool-switcher a{padding:8px 5px;font-size:10px;text-align:center;line-height:1.35;display:grid;align-content:center;gap:3px;min-height:48px}.tool-switcher a span{font-size:9px;margin:0}}</style></head>
 <body>
   <div id="boot-screen" role="status" aria-live="polite" aria-busy="true">
     <div class="boot-panel">
@@ -1251,7 +1251,7 @@ details.cg > summary::after { margin-left: 4px; flex: 0 0 auto; }
     </div>
   </div>
   <div class="wrap">
-    <nav id="tool-switcher" aria-label="Chuyển công cụ" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px"><a href="./index.html" aria-current="page" style="padding:8px 14px;border-radius:10px;background:#0F6F68;color:white;text-decoration:none">Tra cứu thuốc SRA / DAV</a><a href="./api-sourcing/index.html" style="padding:8px 14px;border-radius:10px;border:1px solid #E4DCD0;color:#1C1917;text-decoration:none">API Sourcing · tìm NCC</a><a href="https://baoan-partner-catalogs.nuttysiren64.chatgpt.site/partner-catalogs" target="_blank" rel="noopener noreferrer" style="padding:8px 14px;border-radius:10px;border:1px solid #E4DCD0;color:#1C1917;text-decoration:none">Partner Catalogs</a></nav>
+    <nav id="tool-switcher" class="tool-switcher" aria-label="Chuyển công cụ"><a href="./index.html" aria-current="page"><span>01</span> SRA / DAV</a><a href="./api-sourcing/"><span>02</span> API Sourcing</a><a href="./partner-catalogs/"><span>03</span> Partner Catalogs</a></nav>
     <header class="hero">
       <p class="eyebrow">Bảo An Pharma · tài liệu nội bộ</p>
       <h1>Nước SRA và nơi tra cứu đăng ký thuốc</h1>

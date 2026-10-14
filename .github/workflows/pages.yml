@@ -43,6 +43,8 @@ jobs:
         run: |
           mkdir -p site
           cp index.html README.md .nojekyll site/
+          mkdir -p site/partner-catalogs
+          cp partner-catalogs/index.html site/partner-catalogs/
           mkdir -p site/api-sourcing
           cp api-sourcing/index.html api-sourcing/snapshot.json.gz api-sourcing/excel.js site/api-sourcing/
       - uses: actions/configure-pages@v5

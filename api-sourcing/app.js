@@ -138,12 +138,13 @@ if (typeof document !== 'undefined') (async () => {
     const card = (r, i) => {
       const status = cardState(r), matched=i>=profileCount && matchingProfiles(r.company,profileCandidates).length;
       const types = [...new Set(r.certificates.map(c => c.type))];
-      return `<article data-card="${i}" tabindex="0" aria-haspopup="dialog" aria-label="Xem nguồn ${esc(r.company.canonical_name)}" class="supplier-card ${selected === i ? 'selected' : ''}"><div class="card-top"><button class="supplier-name" data-open="${i}">${esc(r.company.canonical_name)}</button><div class="card-actions">${matched?helpChip('PROFILE_MATCH','Khớp tên hồ sơ','good profile-match'):''}<button class="save-button" data-save="${i}" data-help="SAVE" aria-pressed="${bag.some(b=>b.key===r.key)}" aria-label="${bag.some(b=>b.key===r.key) ? 'Bỏ lưu' : 'Lưu'} nhà cung cấp vào Bag" aria-describedby="term-help">${bag.some(b => b.key === r.key) ? '✓' : '+'}</button></div></div><p>${companyLink(r.company)}</p><p class="card-meta">${esc(countryText(r.company))} · ${r.certificates.some(c=>c.supplier_role==='seller') ? 'Bên bán / phân phối (theo nguồn)' : 'Nhà máy chưa xác định'}</p><p class="card-substances">${[...new Set(r.certificates.map(c => substances.get(c.substance_id).inn))].slice(0,3).map(name=>`<span class="ingredient-line">${esc(name)}</span>`).join('')}</p><div class="chips">${types.map(t => { const certs = r.certificates.filter(c => c.type === t); const s = certs.some(c => state(c) === 'bad') ? 'bad' : certs.some(c => state(c) === 'good') ? 'good' : certs.some(c=>state(c)==='claim') ? 'claim' : 'unknown'; return helpChip(t, (labels[t] || t) + ' · ' + (s === 'good' ? 'Nguồn chính thức' : s === 'bad' ? 'Có hồ sơ không còn hiệu lực' : s === 'claim' ? 'Chưa xác minh' : 'Chưa rõ'), s); }).join('')}${helpChip('GMP_CPP','GMP · CPP/COPP: chưa có dữ liệu')}</div><p class="card-meta status-dot ${status}">● ${status === 'bad' ? 'Có hồ sơ không còn hiệu lực — xem nguồn' : status === 'good' ? 'Bản nguồn: còn hiệu lực / Active' : status==='claim' ? 'Chỉ có tuyên bố của NCC, chưa xác minh' : 'Chưa rõ trạng thái'} · ${r.certificates.length} bản ghi</p></article>`;
+      return `<article data-card="${i}" tabindex="0" aria-haspopup="dialog" aria-label="Xem nguồn ${esc(r.company.canonical_name)}" class="supplier-card ${selected === i ? 'selected' : ''}"><div class="card-top"><button class="supplier-name" data-open="${i}">${esc(r.company.canonical_name)}</button><div class="card-actions">${matched?helpChip('PROFILE_MATCH','Khớp tên hồ sơ','good profile-match'):''}<button class="save-button" data-save="${i}" data-help="SAVE" aria-pressed="${bag.some(b=>b.key===r.key)}" aria-label="${bag.some(b=>b.key===r.key) ? 'Bỏ lưu' : 'Lưu'} nhà cung cấp vào Bag" aria-describedby="term-help">${bag.some(b => b.key === r.key) ? '✓' : '+'}</button></div></div><p>${companyLink(r.company)} · <a href="https://baoan-partner-catalogs.nuttysiren64.chatgpt.site/partner-catalogs?company_id=${encodeURIComponent(r.company.id)}" target="_blank" rel="noopener noreferrer">Partner Catalogs ↗</a></p><p class="card-meta">${esc(countryText(r.company))} · ${r.certificates.some(c=>c.supplier_role==='seller') ? 'Bên bán / phân phối (theo nguồn)' : 'Nhà máy chưa xác định'}</p><p class="card-substances">${[...new Set(r.certificates.map(c => substances.get(c.substance_id).inn))].slice(0,3).map(name=>`<span class="ingredient-line">${esc(name)}</span>`).join('')}</p><div class="chips">${types.map(t => { const certs = r.certificates.filter(c => c.type === t); const s = certs.some(c => state(c) === 'bad') ? 'bad' : certs.some(c => state(c) === 'good') ? 'good' : certs.some(c=>state(c)==='claim') ? 'claim' : 'unknown'; return helpChip(t, (labels[t] || t) + ' · ' + (s === 'good' ? 'Nguồn chính thức' : s === 'bad' ? 'Có hồ sơ không còn hiệu lực' : s === 'claim' ? 'Chưa xác minh' : 'Chưa rõ'), s); }).join('')}${helpChip('GMP_CPP','GMP · CPP/COPP: chưa có dữ liệu')}</div><p class="card-meta status-dot ${status}">● ${status === 'bad' ? 'Có hồ sơ không còn hiệu lực — xem nguồn' : status === 'good' ? 'Bản nguồn: còn hiệu lực / Active' : status==='claim' ? 'Chỉ có tuyên bố của NCC, chưa xác minh' : 'Chưa rõ trạng thái'} · ${r.certificates.length} bản ghi</p></article>`;
     };
     $('results').innerHTML = profileCount ? results.slice(0, Math.min(profileCount,limit)).map(card).join('') : '<div class="empty">Chưa có hồ sơ khớp.</div>';
     $('online-suppliers').innerHTML = results.slice(profileCount,profileCount+limit).map((r,i)=>card(r,profileCount+i)).join('');
     $('more').hidden = Math.max(profileCount,results.length-profileCount) <= limit;
   }
+  let linkedCompanyId=new URLSearchParams(location.search).get('company_id');
   function search() {
     if (!data) return;
     const query = $('query').value.trim();
@@ -159,7 +160,7 @@ if (typeof document !== 'undefined') (async () => {
     const countries=[...document.querySelectorAll('[data-country]:checked')].map(n=>n.dataset.country), allCountries=document.querySelector('[data-country-all]').checked, statuses=[...document.querySelectorAll('[data-status]:checked')].map(n=>n.dataset.status);
     for (const entry of indexed) {
       const {cert, company, text, companyText} = entry;
-      if (!terms.some(t => text.includes(` ${t} `) || companyText.includes(` ${t} `))) continue;
+      if (linkedCompanyId ? String(company.id)!==linkedCompanyId : !terms.some(t => text.includes(` ${t} `) || companyText.includes(` ${t} `))) continue;
       if(cert.type!=='LISTING'){
         if(!candidates.has(company.id))candidates.set(company.id,{company,certificates:[]});
         candidates.get(company.id).certificates.push(cert);
@@ -186,6 +187,7 @@ if (typeof document !== 'undefined') (async () => {
     $('progress-detail').textContent=detail;if(title)$('progress-title').textContent=title;
   }
   async function submitSearch() {
+    linkedCompanyId=null;
     const query=$('query').value.trim();if(query.length<2)return;
     const generation=++searchGeneration;
     $('search-progress').hidden=false;
@@ -369,6 +371,7 @@ if (typeof document !== 'undefined') (async () => {
     window.APISRC_UI = {data, companies, substances, bag, saveBag, bagCount, notice, esc, date, sourceRecord, search, render, vnRefs, $};
     document.dispatchEvent(new Event('apisrc-ready'));
     resolveData(true);
+    if(linkedCompanyId){const linked=companies.get(Number(linkedCompanyId))||companies.get(linkedCompanyId);if(linked){$('query').value=linked.canonical_name;search();}else notice('Không tìm thấy Company ID trong bản nguồn này.');}
   } catch (error) { resolveData(false);$('result-status').textContent = 'Không đọc được chỉ mục: ' + error.message; }
 })();
 

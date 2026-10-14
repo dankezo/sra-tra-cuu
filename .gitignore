@@ -20,3 +20,4 @@ api-sourcing/raw/
 api-sourcing/*.sqlite3*
 api-sourcing/private/
 api-sourcing/.venv/
+partner-catalogs/

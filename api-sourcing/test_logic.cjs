@@ -28,6 +28,14 @@ assert.equal(mergeWeb([{url:'https://example.com/'}],[{url:'https://example.com'
 assert.match(new URL(googleUrl('amlodipine','Example Co')).searchParams.get('q'),/amlodipine Example Co/);
 const item={snapshot:{company:{canonical_name:'Test Co',country:'IN',website:'https://example.com'},query:'amlodipine',substances:[{inn:'Amlodipine besylate'}],certificates:[cep,dmf]},email:{subject:'Edited',body:'Edited draft'}};
 assert.match(emailDraft(item.snapshot).subject,/Amlodipine besylate/);
+for(const kind of ['quote','documents']){
+ const draft=emailDraft(item.snapshot,kind);
+ assert.match(draft.body,/interested in Amlodipine besylate/);
+ assert.match(draft.body,/opportunity to explore working with you/);
+ assert.match(draft.body,/if the product has any certifications or supporting quality\/regulatory documents/);
+ assert.doesNotMatch(draft.body,/GMP|CEP|CPP|Public-source references|Please identify/);
+}
+assert.equal(bagSheets([{snapshot:item.snapshot}])[1].rows[0][4],emailDraft(item.snapshot).body);
 const sheets=bagSheets([item],{source:'https://dav.example/registry'},()=>[{sdk:'SDK123'}]);
 assert.equal(sheets.length,2);assert.equal(sheets[0].rows[0][0],1);
 assert.equal(sheets[0].rows[0][6].link,cep.source_url);
@@ -35,6 +43,7 @@ assert.match(sheets[0].rows[0][7].text,/Inactive/);
 assert.equal(sheets[0].rows[0][9],'Không');
 assert.match(sheets[0].rows[0][11].text,/chưa xác nhận nguồn API/);
 assert.equal(sheets[1].rows[0][3],'Edited');
+assert.equal(sheets[1].rows[0][4],'Edited draft');
 console.log('PASS: salt labels; multi certificates; accumulated web; evidence-aware Bag and edited email');
 
 const {companyNameKey,matchingProfiles}=require('./app.js');
